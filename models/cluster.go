@@ -39,6 +39,9 @@ type Cluster struct {
 	// Minimum: 1
 	ClusterNetworkHostPrefix int64 `json:"cluster_network_host_prefix,omitempty"`
 
+	// Json formatted string containing the majority groups for conectivity checks.
+	ConnectivityMajorityGroups string `json:"connectivity_majority_groups,omitempty" gorm:"type:varchar(2048)"`
+
 	// The time that this cluster was created.
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`

@@ -1054,6 +1054,10 @@ var _ = Describe("UpdateHostInstallProgress", func() {
 	})
 })
 
+func mockSetConnectivityNajorityGroupsForCluster(mockClusterApi *cluster.MockAPI) {
+	mockClusterApi.EXPECT().SetConnectivityNajorityGroupsForCluster(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+}
+
 var _ = Describe("cluster", func() {
 	masterHostId1 := strfmt.UUID(uuid.New().String())
 	masterHostId2 := strfmt.UUID(uuid.New().String())
@@ -1084,6 +1088,7 @@ var _ = Describe("cluster", func() {
 		mockS3Client = s3wrapper.NewMockAPI(ctrl)
 		mockEvents = events.NewMockHandler(ctrl)
 		mockMetric = metrics.NewMockAPI(ctrl)
+		mockSetConnectivityNajorityGroupsForCluster(mockClusterApi)
 	})
 
 	AfterEach(func() {
@@ -1925,6 +1930,7 @@ var _ = Describe("cluster", func() {
 					makeFreeNetworksAddressesStr(makeFreeAddresses("10.11.0.0/16", "10.11.12.15", "10.11.12.16", "10.11.12.13", "10.11.20.50"))).Error
 				Expect(err).ToNot(HaveOccurred())
 				mockDurationsSuccess()
+				mockSetConnectivityNajorityGroupsForCluster(mockClusterApi)
 			})
 
 			It("success", func() {
@@ -3335,7 +3341,7 @@ var _ = Describe("Install Hosts test", func() {
 		bm = NewBareMetalInventory(db, getTestLog(), mockHostApi, mockClusterApi, cfg, nil, nil, mockS3Client, nil, getTestAuthHandler())
 		body := &bytes.Buffer{}
 		request, _ = http.NewRequest("POST", "test", body)
-
+		mockSetConnectivityNajorityGroupsForCluster(mockClusterApi)
 	})
 
 	AfterEach(func() {

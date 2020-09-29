@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -74,6 +75,7 @@ type API interface {
 	SetVips(ctx context.Context, c *common.Cluster, apiVip, ingressVip string, db *gorm.DB) error
 	IsReadyForInstallation(c *common.Cluster) (bool, string)
 	CreateTarredClusterLogs(ctx context.Context, c *common.Cluster, objectHandler s3wrapper.API) (string, error)
+	SetConnectivityNajorityGroupsForCluster(c *common.Cluster, db *gorm.DB) error
 }
 
 type PrepareConfig struct {
@@ -285,6 +287,9 @@ func (m *Manager) ClusterMonitoring() {
 		if !m.leaderElector.IsLeader() {
 			m.log.Debugf("Not a leader, exiting ClusterMonitoring")
 			return
+		}
+		if err = m.SetConnectivityNajorityGroupsForCluster(cluster, m.db); err != nil {
+			log.WithError(err).Errorf("failed to set majority group for cluster %s", cluster.ID.String())
 		}
 		if clusterAfterRefresh, err = m.RefreshStatus(ctx, cluster, m.db); err != nil {
 			log.WithError(err).Errorf("failed to refresh cluster %s state", cluster.ID)
@@ -549,4 +554,39 @@ func (m *Manager) IsReadyForInstallation(c *common.Cluster) (bool, string) {
 		return false, swag.StringValue(c.StatusInfo)
 	}
 	return true, ""
+}
+
+func (m *Manager) SetConnectivityNajorityGroupsForCluster(c *common.Cluster, db *gorm.DB) error {
+	if db == nil {
+		db = m.db
+	}
+	if !funk.ContainsString([]string{models.ClusterStatusPendingForInput, models.ClusterStatusInsufficient, models.ClusterStatusReady}, swag.StringValue(c.Status)) {
+		return nil
+	}
+	var cluster common.Cluster
+	if err := db.Preload("Hosts", "status <> ? and connectivity <> ''", models.HostStatusDisabled).Take(&cluster, "id = ?", c.ID.String()).Error; err != nil {
+		return common.NewApiError(http.StatusBadRequest, errors.Wrapf(err, "Getting cluster %s", c.ID.String()))
+	}
+	majorityGroups := make(map[string][]strfmt.UUID)
+	for _, cidr := range network.GetClusterNetworks(&cluster, m.log) {
+		majorityGroup, err := network.CreateMajorityGroup(cidr, cluster.Hosts)
+		if err != nil {
+			m.log.WithError(err).Warnf("Create majority group for %s", cidr)
+			continue
+		}
+		majorityGroups[cidr] = majorityGroup
+	}
+	b, err := json.Marshal(&majorityGroups)
+	if err != nil {
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+	err = db.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Update(&common.Cluster{
+		Cluster: models.Cluster{
+			ConnectivityMajorityGroups: string(b),
+		},
+	}).Error
+	if err != nil {
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+	return nil
 }

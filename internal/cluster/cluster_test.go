@@ -1071,6 +1071,58 @@ func addInstallationRequirements(clusterId strfmt.UUID, db *gorm.DB) {
 	Expect(db.Model(&common.Cluster{Cluster: models.Cluster{ID: &clusterId}}).Updates(map[string]interface{}{"api_vip": "1.2.3.5", "ingress_vip": "1.2.3.6"}).Error).To(Not(HaveOccurred()))
 }
 
+func addInstallationRequirementsWithConnectivity(clusterId strfmt.UUID, db *gorm.DB, outgoingIpAddresses ...string) {
+	var hostId strfmt.UUID
+	var host models.Host
+	hostIds := []strfmt.UUID{
+		strfmt.UUID(uuid.New().String()),
+		strfmt.UUID(uuid.New().String()),
+		strfmt.UUID(uuid.New().String()),
+	}
+	for i := 0; i < 3; i++ {
+		hostId = hostIds[i]
+		otherIds := []strfmt.UUID{
+			hostIds[(i+1)%3],
+			hostIds[(i+2)%3],
+		}
+		makeL2Connectivity := func() []*models.L2Connectivity {
+			ret := make([]*models.L2Connectivity, 0)
+			for _, o := range outgoingIpAddresses {
+				ret = append(ret, &models.L2Connectivity{
+					Successful:        true,
+					OutgoingIPAddress: o,
+				})
+			}
+			return ret
+		}
+		connectivityReport := models.ConnectivityReport{
+			RemoteHosts: []*models.ConnectivityRemoteHost{
+				{
+					HostID:         otherIds[0],
+					L2Connectivity: makeL2Connectivity(),
+				},
+				{
+					HostID:         otherIds[1],
+					L2Connectivity: makeL2Connectivity(),
+				},
+			},
+		}
+		b, err := json.Marshal(&connectivityReport)
+		Expect(err).ToNot(HaveOccurred())
+		host = models.Host{
+			ID:           &hostId,
+			ClusterID:    clusterId,
+			Role:         models.HostRoleMaster,
+			Status:       swag.String("known"),
+			Inventory:    twoNetworksInventory(),
+			Connectivity: string(b),
+		}
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+
+	}
+	Expect(db.Model(&common.Cluster{Cluster: models.Cluster{ID: &clusterId}}).Updates(map[string]interface{}{"api_vip": "1.2.3.5", "ingress_vip": "1.2.3.6"}).Error).To(Not(HaveOccurred()))
+}
+
 func defaultInventory() string {
 	inventory := models.Inventory{
 		Interfaces: []*models.Interface{
@@ -1442,6 +1494,95 @@ var _ = Describe("SetVips", func() {
 	}
 	AfterEach(func() {
 		common.DeleteTestDB(db, dbName)
+	})
+})
+
+var _ = Describe("Majority groups", func() {
+	var (
+		dbIndex    int
+		clusterApi *Manager
+		db         *gorm.DB
+		id         strfmt.UUID
+		cluster    common.Cluster
+		ctrl       *gomock.Controller
+		mockEvents *events.MockHandler
+	)
+
+	BeforeEach(func() {
+		db = common.PrepareTestDB(fmt.Sprintf("cluster_majority_groups%d", dbIndex), &events.Event{})
+		dbIndex++
+		ctrl = gomock.NewController(GinkgoT())
+		mockEvents = events.NewMockHandler(ctrl)
+		dummy := &leader.DummyElector{}
+		clusterApi = NewManager(defaultTestConfig, getTestLog().WithField("pkg", "cluster-monitor"), db,
+			mockEvents, nil, nil, dummy)
+
+		id = strfmt.UUID(uuid.New().String())
+		cluster = common.Cluster{Cluster: models.Cluster{
+			ID:                       &id,
+			Status:                   swag.String(models.ClusterStatusReady),
+			MachineNetworkCidr:       "1.2.3.0/24",
+			BaseDNSDomain:            "test.com",
+			PullSecretSet:            true,
+			ServiceNetworkCidr:       "1.2.4.0/24",
+			ClusterNetworkCidr:       "1.3.0.0/16",
+			ClusterNetworkHostPrefix: 24,
+		}}
+		Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+	})
+	Context("Majority groups", func() {
+		It("Empty", func() {
+			addInstallationRequirementsWithConnectivity(id, db)
+
+			cluster = geCluster(*cluster.ID, db)
+			Expect(swag.StringValue(cluster.Status)).Should(Equal(models.ClusterStatusReady))
+			Expect(len(cluster.Hosts)).Should(Equal(3))
+			Expect(clusterApi.SetConnectivityNajorityGroupsForCluster(&cluster, db)).ToNot(HaveOccurred())
+			c := getCluster(*cluster.ID, db)
+			Expect(c.ConnectivityMajorityGroups).ToNot(BeEmpty())
+			majorityGroups := make(map[string][]strfmt.UUID)
+			Expect(json.Unmarshal([]byte(c.ConnectivityMajorityGroups), &majorityGroups)).ToNot(HaveOccurred())
+			for _, cidr := range []string{"1.2.3.0/24", "10.0.0.0/24"} {
+				Expect(majorityGroups[cidr]).To(BeEmpty())
+			}
+		})
+		It("Success", func() {
+			addInstallationRequirementsWithConnectivity(id, db, "1.2.3.10")
+
+			cluster = geCluster(*cluster.ID, db)
+			Expect(swag.StringValue(cluster.Status)).Should(Equal(models.ClusterStatusReady))
+			Expect(len(cluster.Hosts)).Should(Equal(3))
+			Expect(clusterApi.SetConnectivityNajorityGroupsForCluster(&cluster, db)).ToNot(HaveOccurred())
+			c := getCluster(*cluster.ID, db)
+			Expect(c.ConnectivityMajorityGroups).ToNot(BeEmpty())
+			majorityGroups := make(map[string][]strfmt.UUID)
+			Expect(json.Unmarshal([]byte(c.ConnectivityMajorityGroups), &majorityGroups)).ToNot(HaveOccurred())
+			Expect(majorityGroups).ToNot(BeEmpty())
+			group := majorityGroups["1.2.3.0/24"]
+			for _, h := range cluster.Hosts {
+				Expect(group).To(ContainElement(*h.ID))
+			}
+			Expect(majorityGroups["10.0.0.0/24"]).To(BeEmpty())
+		})
+		It("Two networks", func() {
+			addInstallationRequirementsWithConnectivity(id, db, "1.2.3.10", "10.0.0.15")
+
+			cluster = geCluster(*cluster.ID, db)
+			Expect(swag.StringValue(cluster.Status)).Should(Equal(models.ClusterStatusReady))
+			Expect(len(cluster.Hosts)).Should(Equal(3))
+			Expect(clusterApi.SetConnectivityNajorityGroupsForCluster(&cluster, db)).ToNot(HaveOccurred())
+			c := getCluster(*cluster.ID, db)
+			Expect(c.ConnectivityMajorityGroups).ToNot(BeEmpty())
+			majorityGroups := make(map[string][]strfmt.UUID)
+			Expect(json.Unmarshal([]byte(c.ConnectivityMajorityGroups), &majorityGroups)).ToNot(HaveOccurred())
+			Expect(majorityGroups).ToNot(BeEmpty())
+			for _, cidr := range []string{"1.2.3.0/24", "10.0.0.0/24"} {
+				group := majorityGroups[cidr]
+				for _, h := range cluster.Hosts {
+					Expect(group).To(ContainElement(*h.ID))
+				}
+			}
+		})
 	})
 })
 

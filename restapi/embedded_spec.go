@@ -2847,6 +2847,11 @@ func init() {
           "maximum": 32,
           "minimum": 1
         },
+        "connectivity_majority_groups": {
+          "description": "Json formatted string containing the majority groups for conectivity checks.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:varchar(2048)\""
+        },
         "created_at": {
           "description": "The time that this cluster was created.",
           "type": "string",
@@ -3869,7 +3874,8 @@ func init() {
         "hostname-unique",
         "hostname-valid",
         "belongs-to-machine-cidr",
-        "api-vip-connected"
+        "api-vip-connected",
+        "belongs-to-majority-group"
       ]
     },
     "host_network": {
@@ -7108,6 +7114,11 @@ func init() {
           "maximum": 32,
           "minimum": 1
         },
+        "connectivity_majority_groups": {
+          "description": "Json formatted string containing the majority groups for conectivity checks.",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:varchar(2048)\""
+        },
         "created_at": {
           "description": "The time that this cluster was created.",
           "type": "string",
@@ -8112,7 +8123,8 @@ func init() {
         "hostname-unique",
         "hostname-valid",
         "belongs-to-machine-cidr",
-        "api-vip-connected"
+        "api-vip-connected",
+        "belongs-to-majority-group"
       ]
     },
     "host_network": {

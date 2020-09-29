@@ -554,6 +554,40 @@ var _ = Describe("cluster install", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 	}
 
+	generateConnectivityPostStepReply := func(h *models.Host, connectivityReport *models.ConnectivityReport) {
+		fa, err := json.Marshal(connectivityReport)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = agentBMClient.Installer.PostStepReply(ctx, &installer.PostStepReplyParams{
+			ClusterID: h.ClusterID,
+			HostID:    *h.ID,
+			Reply: &models.StepReply{
+				ExitCode: 0,
+				Output:   string(fa),
+				StepID:   string(models.StepTypeConnectivityCheck),
+				StepType: models.StepTypeConnectivityCheck,
+			},
+		})
+		Expect(err).ShouldNot(HaveOccurred())
+	}
+
+	generateFullMeshConnectivity := func(cidr, outgoingAddress string, hosts ...*models.Host) {
+		var connectivityReport models.ConnectivityReport
+		for _, h := range hosts {
+			connectivityReport.RemoteHosts = append(connectivityReport.RemoteHosts, &models.ConnectivityRemoteHost{
+				HostID: *h.ID,
+				L2Connectivity: []*models.L2Connectivity{
+					{
+						OutgoingIPAddress: outgoingAddress,
+						Successful:        true,
+					},
+				},
+			})
+		}
+		for _, h := range hosts {
+			generateConnectivityPostStepReply(h, &connectivityReport)
+		}
+	}
+
 	register3nodes := func(clusterID strfmt.UUID) []*models.Host {
 		h1 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h1, validHwInfo, "h1")
@@ -562,6 +596,7 @@ var _ = Describe("cluster install", func() {
 		generateHWPostStepReply(ctx, h2, validHwInfo, "h2")
 		h3 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h3, validHwInfo, "h3")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3)
 
 		apiVip := "1.2.3.5"
 		ingressVip := "1.2.3.6"
@@ -587,6 +622,7 @@ var _ = Describe("cluster install", func() {
 		generateHWPostStepReply(ctx, h2, validMasterHwInfo, "h2")
 		h3 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h3, validMasterHwInfo, "h3")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3)
 		apiVip := "1.2.3.5"
 		ingressVip := "1.2.3.6"
 		_, err := userBMClient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
@@ -615,6 +651,7 @@ var _ = Describe("cluster install", func() {
 			IgnoreStateInfo)
 		generateHWPostStepReply(ctx, h5, validMasterHwInfo, "h5")
 
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4, h5)
 		waitForHostState(ctx, clusterID, *h4.ID, models.HostStatusKnown, defaultWaitForHostStateTimeout)
 		waitForHostState(ctx, clusterID, *h5.ID, models.HostStatusKnown, defaultWaitForHostStateTimeout)
 		waitForClusterState(ctx, clusterID, models.ClusterStatusReady, defaultWaitForClusterStateTimeout,
@@ -626,6 +663,7 @@ var _ = Describe("cluster install", func() {
 			IgnoreStateInfo)
 
 		generateHWPostStepReply(ctx, h6, validWorkerHwInfo, "h6")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4, h5, h6)
 		waitForHostState(ctx, clusterID, *h6.ID, models.HostStatusKnown, defaultWaitForHostStateTimeout)
 
 		waitForClusterState(ctx, clusterID, models.ClusterStatusReady, defaultWaitForClusterStateTimeout,
@@ -1479,6 +1517,9 @@ var _ = Describe("cluster install", func() {
 					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusDiscovering,
 						defaultWaitForHostStateTimeout)
 					generateHWPostStepReply(ctx, host, validHwInfo, fmt.Sprintf("host-after-reset-%d", i))
+				}
+				generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", c.Hosts...)
+				for _, host := range c.Hosts {
 					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusKnown,
 						defaultWaitForHostStateTimeout)
 					host = getHost(clusterID, *host.ID)
@@ -1529,6 +1570,9 @@ var _ = Describe("cluster install", func() {
 						waitForHostState(ctx, clusterID, *host.ID, models.HostStatusDiscovering,
 							defaultWaitForHostStateTimeout)
 						generateHWPostStepReply(ctx, host, validHwInfo, fmt.Sprintf("host-after-reset-%d", i))
+					}
+					generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", c.Hosts...)
+					for _, host := range c.Hosts {
 						waitForHostState(ctx, clusterID, *host.ID, models.HostStatusKnown,
 							defaultWaitForHostStateTimeout)
 
@@ -1788,6 +1832,7 @@ var _ = Describe("cluster install", func() {
 		waitForClusterState(ctx, clusterID, models.ClusterStatusInsufficient, defaultWaitForClusterStateTimeout, clusterInsufficientStateInfo)
 		generateHWPostStepReply(ctx, h4, validHwInfo, "h4")
 		// update role for the host4 to master -> state must be ready
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", hosts[0], hosts[1], hosts[2], h4)
 		_, err = userBMClient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *h4.ID, Role: models.HostRoleUpdateParamsMaster},
@@ -1808,6 +1853,7 @@ var _ = Describe("cluster install", func() {
 		generateHWPostStepReply(ctx, wh2, validHwInfo, "wh2")
 		wh3 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, wh3, validHwInfo, "wh3")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", wh1, wh2, wh3)
 
 		apiVip := "1.2.3.5"
 		ingressVip := "1.2.3.6"
@@ -1843,6 +1889,7 @@ var _ = Describe("cluster install", func() {
 		generateHWPostStepReply(ctx, mh2, validHwInfo, "mh2")
 		mh3 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, mh3, validHwInfo, "mh3")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", mh1, mh2, mh3, wh1, wh2, wh3)
 		clusterReply, _ = userBMClient.Installer.GetCluster(ctx, &installer.GetClusterParams{
 			ClusterID: clusterID,
 		})
@@ -1957,7 +2004,6 @@ var _ = Describe("cluster install", func() {
 			ClusterID: clusterID,
 		})
 		Expect(err).To(Not(HaveOccurred()))
-		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusKnown, defaultWaitForClusterStateTimeout)
 
 		By("Register 3 more hosts with valid hw info")
 		h2 := registerHost(clusterID)
@@ -1967,6 +2013,8 @@ var _ = Describe("cluster install", func() {
 		h4 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h4, validHwInfo, "h4")
 
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4)
+		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusKnown, defaultWaitForClusterStateTimeout)
 		_, err = userBMClient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *h1.ID, Role: models.HostRoleUpdateParamsMaster},
@@ -1993,6 +2041,9 @@ var _ = Describe("cluster install", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		h1 := getHost(clusterID, *hosts[0].ID)
+		h2 := getHost(clusterID, *hosts[1].ID)
+		h3 := getHost(clusterID, *hosts[2].ID)
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3)
 		waitForHostState(ctx, clusterID, *h1.ID, "known", 60*time.Second)
 		Expect(h1.RequestedHostname).Should(Equal("h1"))
 
@@ -2000,6 +2051,7 @@ var _ = Describe("cluster install", func() {
 		h4 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h4, validHwInfo, "h1")
 		h4 = getHost(clusterID, *h4.ID)
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4)
 		waitForHostState(ctx, clusterID, *h1.ID, "insufficient", 60*time.Second)
 		Expect(h4.RequestedHostname).Should(Equal("h1"))
 		h1 = getHost(clusterID, *h1.ID)
@@ -2169,6 +2221,7 @@ var _ = Describe("cluster install", func() {
 		By("Registering new host with same hostname as in node's inventory")
 		h4 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h4, validHwInfo, "h3")
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4)
 		h4 = getHost(clusterID, *h4.ID)
 		waitForHostState(ctx, clusterID, *h4.ID, models.HostStatusInsufficient, time.Minute)
 		waitForHostState(ctx, clusterID, *h3.ID, models.HostStatusInsufficient, time.Minute)
@@ -2181,6 +2234,7 @@ var _ = Describe("cluster install", func() {
 		h5 := registerHost(clusterID)
 		generateHWPostStepReply(ctx, h5, validHwInfo, "reqh0")
 		h5 = getHost(clusterID, *h5.ID)
+		generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", h1, h2, h3, h4, h5)
 		waitForHostState(ctx, clusterID, *h5.ID, models.HostStatusInsufficient, time.Minute)
 		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusInsufficient, time.Minute)
 
@@ -2316,6 +2370,39 @@ func registerHostsAndSetRoles(clusterID strfmt.UUID, numHosts int) []*models.Hos
 		})
 		Expect(err).ShouldNot(HaveOccurred())
 	}
+	generateConnectivityPostStepReply := func(h *models.Host, connectivityReport *models.ConnectivityReport) {
+		fa, err := json.Marshal(connectivityReport)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = agentBMClient.Installer.PostStepReply(ctx, &installer.PostStepReplyParams{
+			ClusterID: h.ClusterID,
+			HostID:    *h.ID,
+			Reply: &models.StepReply{
+				ExitCode: 0,
+				Output:   string(fa),
+				StepID:   string(models.StepTypeConnectivityCheck),
+				StepType: models.StepTypeConnectivityCheck,
+			},
+		})
+		Expect(err).ShouldNot(HaveOccurred())
+	}
+
+	generateFullMeshConnectivity := func(cidr, outgoingAddress string, hosts ...*models.Host) {
+		var connectivityReport models.ConnectivityReport
+		for _, h := range hosts {
+			connectivityReport.RemoteHosts = append(connectivityReport.RemoteHosts, &models.ConnectivityRemoteHost{
+				HostID: *h.ID,
+				L2Connectivity: []*models.L2Connectivity{
+					{
+						OutgoingIPAddress: outgoingAddress,
+						Successful:        true,
+					},
+				},
+			})
+		}
+		for _, h := range hosts {
+			generateConnectivityPostStepReply(h, &connectivityReport)
+		}
+	}
 	for i := 0; i < numHosts; i++ {
 		hostname := fmt.Sprintf("h%d", i)
 		host := registerHost(clusterID)
@@ -2334,7 +2421,9 @@ func registerHostsAndSetRoles(clusterID strfmt.UUID, numHosts int) []*models.Hos
 			ClusterID: clusterID,
 		})
 		Expect(err).NotTo(HaveOccurred())
+		hosts = append(hosts, host)
 	}
+	generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", hosts...)
 	apiVip := ""
 	ingressVip := ""
 	_, err := userBMClient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
@@ -2389,6 +2478,39 @@ func registerHostsAndSetRolesDHCP(clusterID strfmt.UUID, numHosts int) []*models
 		})
 		Expect(err).ShouldNot(HaveOccurred())
 	}
+	generateConnectivityPostStepReply := func(h *models.Host, connectivityReport *models.ConnectivityReport) {
+		fa, err := json.Marshal(connectivityReport)
+		Expect(err).NotTo(HaveOccurred())
+		_, err = agentBMClient.Installer.PostStepReply(ctx, &installer.PostStepReplyParams{
+			ClusterID: h.ClusterID,
+			HostID:    *h.ID,
+			Reply: &models.StepReply{
+				ExitCode: 0,
+				Output:   string(fa),
+				StepID:   string(models.StepTypeConnectivityCheck),
+				StepType: models.StepTypeConnectivityCheck,
+			},
+		})
+		Expect(err).ShouldNot(HaveOccurred())
+	}
+
+	generateFullMeshConnectivity := func(cidr, outgoingAddress string, hosts ...*models.Host) {
+		var connectivityReport models.ConnectivityReport
+		for _, h := range hosts {
+			connectivityReport.RemoteHosts = append(connectivityReport.RemoteHosts, &models.ConnectivityRemoteHost{
+				HostID: *h.ID,
+				L2Connectivity: []*models.L2Connectivity{
+					{
+						OutgoingIPAddress: outgoingAddress,
+						Successful:        true,
+					},
+				},
+			})
+		}
+		for _, h := range hosts {
+			generateConnectivityPostStepReply(h, &connectivityReport)
+		}
+	}
 	for i := 0; i < numHosts; i++ {
 		hostname := fmt.Sprintf("h%d", i)
 		host := registerHost(clusterID)
@@ -2408,6 +2530,7 @@ func registerHostsAndSetRolesDHCP(clusterID strfmt.UUID, numHosts int) []*models
 		Expect(err).NotTo(HaveOccurred())
 		hosts = append(hosts, host)
 	}
+	generateFullMeshConnectivity("1.2.3.0/24", "1.2.3.10", hosts...)
 	_, err := userBMClient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 		ClusterUpdateParams: &models.ClusterUpdateParams{
 			MachineNetworkCidr: swag.String("1.2.3.0/24"),

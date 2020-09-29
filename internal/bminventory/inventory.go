@@ -842,6 +842,10 @@ func (c *clusterInstaller) installHosts(cluster *common.Cluster, tx *gorm.DB) er
 }
 
 func (b *bareMetalInventory) refreshAllHosts(ctx context.Context, cluster *common.Cluster) error {
+	err := b.setMajorityGroupForCluster(cluster.ID, b.db)
+	if err != nil {
+		return err
+	}
 	for _, chost := range cluster.Hosts {
 		if swag.StringValue(chost.Status) != models.HostStatusKnown && swag.StringValue(chost.Kind) != models.HostKindAddToExistingClusterHost {
 			return common.NewApiError(http.StatusBadRequest, errors.Errorf("Host %s is in status %s and not ready for install",
@@ -1149,6 +1153,11 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 }
 
 func (b *bareMetalInventory) refreshClusterHosts(ctx context.Context, cluster *common.Cluster, tx *gorm.DB, log logrus.FieldLogger) error {
+	err := b.setMajorityGroupForCluster(cluster.ID, tx)
+	if err != nil {
+		log.WithError(err).Errorf("Failed to set cluster %s majority groups", cluster.ID.String())
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
 	for _, h := range cluster.Hosts {
 		var host models.Host
 		var err error
@@ -2104,7 +2113,10 @@ func (b *bareMetalInventory) refreshHostAndClusterStatuses(
 		}
 		err = common.NewApiError(http.StatusInternalServerError, err)
 	}()
-
+	err = b.setMajorityGroupForCluster(clusterID, db)
+	if err != nil {
+		return nil, err
+	}
 	err = b.refreshHostStatus(ctx, hostID, clusterID, db)
 	if err != nil {
 		return nil, err
@@ -2132,6 +2144,16 @@ func (b *bareMetalInventory) refreshHostStatus(
 	}
 
 	return nil
+}
+
+func (b *bareMetalInventory) setMajorityGroupForCluster(clusterID *strfmt.UUID, db *gorm.DB) error {
+	var cluster common.Cluster
+	var err error
+
+	if err = db.Select("id, status").Take(&cluster, "id = ?", clusterID.String()).Error; err != nil {
+		return errors.Wrapf(err, "Failed to get cluster %s", clusterID.String())
+	}
+	return b.clusterApi.SetConnectivityNajorityGroupsForCluster(&cluster, db)
 }
 
 func (b *bareMetalInventory) refreshClusterStatus(
