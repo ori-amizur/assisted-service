@@ -25,16 +25,22 @@ var _ = Describe("reset", func() {
 
 	BeforeEach(func() {
 		db = common.PrepareTestDB(dbName)
-		rstCmd = NewResetInstallationCmd(getTestLog())
+		rstCmd = NewResetInstallationCmd(getTestLog(), db)
 
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
+		cluster := getTestCluster(clusterId, "1.2.3.0/24")
+		cluster.APIVip = "1.2.3.4"
+		cluster.IngressVip = "1.2.3.5"
+		Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 		host = getTestHost(id, clusterId, models.HostStatusResetting)
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 	})
 
 	It("get_step", func() {
 		stepReply, stepErr = rstCmd.GetStep(ctx, &host)
+		Expect(stepErr).ToNot(HaveOccurred())
+		Expect(stepReply).ToNot(BeNil())
 		Expect(stepReply.StepType).To(Equal(models.StepTypeResetInstallation))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 	})
