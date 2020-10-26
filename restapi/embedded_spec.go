@@ -3880,10 +3880,18 @@ func init() {
         "ingress_vip_mac"
       ],
       "properties": {
+        "api_vip_lease": {
+          "description": "Contents of lease file to be used for API virtual IP.",
+          "type": "string"
+        },
         "api_vip_mac": {
           "description": "MAC address for the API virtual IP.",
           "type": "string",
           "format": "mac"
+        },
+        "ingress_vip_lease": {
+          "description": "Contents of lease file to be used for for Ingress virtual IP.",
+          "type": "string"
         },
         "ingress_vip_mac": {
           "description": "MAC address for the Ingress virtual IP.",
@@ -3908,10 +3916,18 @@ func init() {
           "type": "string",
           "format": "ipv4"
         },
+        "api_vip_lease": {
+          "description": "Contents of last aquired lease for API virtual IP.",
+          "type": "string"
+        },
         "ingress_vip_address": {
           "description": "The IPv4 address that was allocated by DHCP for the Ingress virtual IP.",
           "type": "string",
           "format": "ipv4"
+        },
+        "ingress_vip_lease": {
+          "description": "Contents of last aquired lease for Ingress virtual IP.",
+          "type": "string"
         }
       }
     },
@@ -8718,10 +8734,18 @@ func init() {
         "ingress_vip_mac"
       ],
       "properties": {
+        "api_vip_lease": {
+          "description": "Contents of lease file to be used for API virtual IP.",
+          "type": "string"
+        },
         "api_vip_mac": {
           "description": "MAC address for the API virtual IP.",
           "type": "string",
           "format": "mac"
+        },
+        "ingress_vip_lease": {
+          "description": "Contents of lease file to be used for for Ingress virtual IP.",
+          "type": "string"
         },
         "ingress_vip_mac": {
           "description": "MAC address for the Ingress virtual IP.",
@@ -8746,10 +8770,18 @@ func init() {
           "type": "string",
           "format": "ipv4"
         },
+        "api_vip_lease": {
+          "description": "Contents of last aquired lease for API virtual IP.",
+          "type": "string"
+        },
         "ingress_vip_address": {
           "description": "The IPv4 address that was allocated by DHCP for the Ingress virtual IP.",
           "type": "string",
           "format": "ipv4"
+        },
+        "ingress_vip_lease": {
+          "description": "Contents of last aquired lease for Ingress virtual IP.",
+          "type": "string"
         }
       }
     },
