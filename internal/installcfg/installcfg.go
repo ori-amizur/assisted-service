@@ -3,8 +3,10 @@ package installcfg
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/internal/common"
@@ -100,7 +102,18 @@ func getBMHName(host *models.Host, masterIdx, workerIdx *int) string {
 	return name
 }
 
+func isIPV6CIDR(cidr string) bool {
+	_, _, err := net.ParseCIDR(cidr)
+	return err == nil && strings.Contains(cidr, ":")
+}
+
 func getBasicInstallConfig(cluster *common.Cluster) *InstallerConfigBaremetal {
+	var networkType string
+	if isIPV6CIDR(cluster.ClusterNetworkCidr) {
+		networkType = "OVNKubernetes"
+	} else {
+		networkType = "OpenShiftSDN"
+	}
 	cfg := &InstallerConfigBaremetal{
 		APIVersion: "v1",
 		BaseDomain: cluster.BaseDNSDomain,
@@ -115,7 +128,7 @@ func getBasicInstallConfig(cluster *common.Cluster) *InstallerConfigBaremetal {
 			} `yaml:"machineNetwork"`
 			ServiceNetwork []string `yaml:"serviceNetwork"`
 		}{
-			NetworkType: "OpenShiftSDN",
+			NetworkType: networkType,
 			ClusterNetwork: []struct {
 				Cidr       string `yaml:"cidr"`
 				HostPrefix int    `yaml:"hostPrefix"`

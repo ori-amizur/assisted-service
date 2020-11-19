@@ -472,7 +472,8 @@ func (v *validator) printAPIVipConnected(c *validationContext, status validation
 }
 
 func (v *validator) belongsToMajorityGroup(c *validationContext) validationStatus {
-	if isDay2Host(c.host) {
+	// TODO IPv6 Change
+	if isDay2Host(c.host) || isIPv6CIDR(c.cluster.MachineNetworkCidr) {
 		return ValidationSuccess
 	}
 	if c.cluster.MachineNetworkCidr == "" || c.cluster.ConnectivityMajorityGroups == "" {

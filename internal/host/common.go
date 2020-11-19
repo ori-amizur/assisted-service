@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -122,6 +123,11 @@ func isDay2Host(h *models.Host) bool {
 	return funk.ContainsString(day2HostKinds, swag.StringValue(h.Kind))
 }
 
+func isIPv6CIDR(machineNetworkCIDR string) bool {
+	_, _, e := net.ParseCIDR(machineNetworkCIDR)
+	return strings.Contains(machineNetworkCIDR, ":") && e == nil
+}
+
 func UpdateHost(log logrus.FieldLogger, db *gorm.DB, clusterId strfmt.UUID, hostId strfmt.UUID,
 	srcStatus string, extra ...interface{}) (*models.Host, error) {
 	updates := make(map[string]interface{})
@@ -209,7 +215,7 @@ func CreateUploadLogsCmd(host *models.Host, baseURL, agentImage string, skipCert
 		"BOOTSTRAP":              strconv.FormatBool(host.Bootstrap),
 		"INSTALLER_GATHER":       strconv.FormatBool(withInstallerGatherLogging),
 	}
-	cmdArgsTmpl += "podman run --rm --privileged " +
+	cmdArgsTmpl += "podman run --rm --privileged --net=host " +
 		"-v /run/systemd/journal/socket:/run/systemd/journal/socket -v /var/log:/var/log " +
 		"--env PULL_SECRET_TOKEN --name logs-sender --pid=host {{.AGENT_IMAGE}} logs_sender " +
 		"-url {{.BASE_URL}} -cluster-id {{.CLUSTER_ID}} -host-id {{.HOST_ID}} " +
