@@ -78,7 +78,7 @@ REPORTS ?= $(ROOT_DIR)/reports
 ifneq ($(BUILD_TYPE), standalone)
 	TEST_FORMAT = standard-verbose
 else
-	TEST_FORMAT = pkgname
+	TEST_FORMAT = standard-verbose
 endif
 
 GOTEST_FLAGS = --format=$(TEST_FORMAT) $(GOTEST_PUBLISH_FLAGS) -- -count=1 -cover -coverprofile=$(REPORTS)/$(TEST_SCENARIO)_coverage.out
@@ -383,7 +383,7 @@ unit-test:
 	docker run -d  --rm --tmpfs /var/lib/postgresql/data --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 \
 		quay.io/ocpmetal/postgres:12.3-alpine -c 'max_connections=10000'
 	timeout 5m ./hack/wait_for_postgres.sh
-	SKIP_UT_DB=1 $(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep -v subsystem))" || (docker kill postgres && /bin/false)
+	SKIP_UT_DB=1 $(MAKE) _test TEST_SCENARIO=unit TIMEOUT=30m TEST="$(or $(TEST),$(shell go list ./... | grep host | grep -v subsystem))" || (docker kill postgres && /bin/false)
 	docker kill postgres
 
 $(REPORTS):

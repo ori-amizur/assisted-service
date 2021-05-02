@@ -125,15 +125,17 @@ func (c *validationContext) loadClusterHostRequirements(hwValidator hardware.Val
 	return err
 }
 
-func newValidationContext(host *models.Host, db *gorm.DB, hwValidator hardware.Validator) (*validationContext, error) {
+func newValidationContext(host *models.Host, c *common.Cluster, db *gorm.DB, hwValidator hardware.Validator) (*validationContext, error) {
 	ret := &validationContext{
-		host: host,
-		db:   db,
+		host:    host,
+		db:      db,
+		cluster: c,
 	}
-	err := ret.loadCluster()
-	if err == nil {
-		err = ret.loadInventory()
-	}
+	var err error
+	//timeIt(func() {
+	//	err = ret.loadCluster()
+	//}, "loadCluster")
+	err = ret.loadInventory()
 	if err == nil {
 		err = ret.validateRole()
 	}
@@ -141,7 +143,9 @@ func newValidationContext(host *models.Host, db *gorm.DB, hwValidator hardware.V
 		err = ret.validateMachineCIDR()
 	}
 	if err == nil {
-		err = ret.loadClusterHostRequirements(hwValidator)
+		timeIt(func() {
+			err = ret.loadClusterHostRequirements(hwValidator)
+		}, "loadClusterHostRequirements")
 	}
 	if err != nil {
 		return nil, err

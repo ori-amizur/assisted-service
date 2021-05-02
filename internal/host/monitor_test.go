@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/openshift/assisted-service/internal/operators/api"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/leader"
+	"github.com/sirupsen/logrus"
 )
 
 var _ = Describe("monitor_disconnection", func() {
@@ -202,4 +204,64 @@ var _ = Describe("TestHostMonitoring", func() {
 		})
 	})
 
+})
+
+func inc(ip net.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+		if ip[j] > 0 {
+			break
+		}
+	}
+}
+
+var _ = Describe("Host performance", func() {
+	var (
+		log        logrus.FieldLogger
+		db         *gorm.DB
+		state      API
+		cfg        Config
+		mockEvents events.Handler
+		dbName     string
+	)
+	BeforeEach(func() {
+		db, dbName = common.PrepareTestDB()
+		log = common.GetTestLog()
+		mockEvents = events.New(db, log)
+		Expect(envconfig.Process(common.EnvConfigPrefix, &cfg)).ShouldNot(HaveOccurred())
+		mockOperators := operators.NewManager(log, nil, operators.Options{})
+		mockHwValidator := hardware.NewValidator(log, hardware.ValidatorCfg{}, mockOperators)
+		state = NewManager(log, db, mockEvents, mockHwValidator, nil, createValidatorCfg(),
+			nil, &cfg, &leader.DummyElector{}, mockOperators)
+		durations = make(map[string]stats)
+	})
+	AfterEach(func() {
+		printTimes()
+		common.DeleteTestDB(db, dbName)
+	})
+	createClusterAndHosts := func(numHosts int) {
+		clusterID := strfmt.UUID(uuid.New().String())
+		cluster := hostutil.GenerateTestCluster(clusterID, "1.1.0.0/16")
+		cluster.Status = swag.String(models.ClusterStatusInsufficient)
+		cluster.APIVip = "1.1.1.1"
+		cluster.IngressVip = "1.1.1.2"
+		Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
+		ip := net.ParseIP("1.1.1.3")
+		for i := 0; i != numHosts; i++ {
+			host := hostutil.GenerateTestHost(strfmt.UUID(uuid.New().String()), clusterID, models.HostStatusInsufficient)
+			host.Inventory = workerInventoryWithIP(ip)
+			inc(ip)
+			Expect(db.Create(&host).Error).ToNot(HaveOccurred())
+		}
+	}
+	It("Test 1", func() {
+		for i := 0; i != 50; i++ {
+			createClusterAndHosts(3)
+		}
+		for i := 0; i != 10; i++ {
+			timeIt(func() {
+				state.HostMonitoring()
+			}, "monitoring")
+		}
+	})
 })
