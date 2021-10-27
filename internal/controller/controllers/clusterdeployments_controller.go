@@ -29,7 +29,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/openshift/assisted-service/api/common"
 	hiveext "github.com/openshift/assisted-service/api/hiveextension/v1beta1"
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
@@ -52,6 +51,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1354,13 +1354,13 @@ func clusterRequirementsMet(clusterInstall *hiveext.AgentClusterInstall, status 
 			reason = hiveext.ClusterReadyReason
 			msg = hiveext.ClusterReadyMsg
 		}
-	case models.ClusterStatusInsufficient, models.ClusterStatusPendingForInput:
+	case models.ClusterStatusInsufficient, models.ClusterStatusPendingDashForDashInput:
 		condStatus = corev1.ConditionFalse
 		reason = hiveext.ClusterNotReadyReason
 		msg = hiveext.ClusterNotReadyMsg
-	case models.ClusterStatusPreparingForInstallation,
-		models.ClusterStatusInstalling, models.ClusterStatusInstallingPendingUserAction,
-		models.ClusterStatusAddingHosts, models.ClusterStatusFinalizing:
+	case models.ClusterStatusPreparingDashForDashInstallation,
+		models.ClusterStatusInstalling, models.ClusterStatusInstallingDashPendingDashUserDashAction,
+		models.ClusterStatusAddingDashHosts, models.ClusterStatusFinalizing:
 		condStatus = corev1.ConditionTrue
 		reason = hiveext.ClusterAlreadyInstallingReason
 		msg = hiveext.ClusterAlreadyInstallingMsg
@@ -1394,7 +1394,7 @@ func clusterCompleted(clusterInstall *hiveext.AgentClusterInstall, status, statu
 		}
 	}
 	switch status {
-	case models.ClusterStatusInstalled, models.ClusterStatusAddingHosts:
+	case models.ClusterStatusInstalled, models.ClusterStatusAddingDashHosts:
 		condStatus = corev1.ConditionTrue
 		reason = hiveext.ClusterInstalledReason
 		msg = fmt.Sprintf("%s %s", hiveext.ClusterInstalledMsg, statusInfo)
@@ -1410,12 +1410,12 @@ func clusterCompleted(clusterInstall *hiveext.AgentClusterInstall, status, statu
 			reason = hiveext.ClusterInstallationOnHoldReason
 			msg = hiveext.ClusterInstallationOnHoldMsg
 		}
-	case models.ClusterStatusInsufficient, models.ClusterStatusPendingForInput:
+	case models.ClusterStatusInsufficient, models.ClusterStatusPendingDashForDashInput:
 		condStatus = corev1.ConditionFalse
 		reason = hiveext.ClusterInstallationNotStartedReason
 		msg = hiveext.ClusterInstallationNotStartedMsg
-	case models.ClusterStatusPreparingForInstallation, models.ClusterStatusInstalling, models.ClusterStatusFinalizing,
-		models.ClusterStatusInstallingPendingUserAction:
+	case models.ClusterStatusPreparingDashForDashInstallation, models.ClusterStatusInstalling, models.ClusterStatusFinalizing,
+		models.ClusterStatusInstallingDashPendingDashUserDashAction:
 		condStatus = corev1.ConditionFalse
 		reason = hiveext.ClusterInstallationInProgressReason
 		msg = fmt.Sprintf("%s %s%s", hiveext.ClusterInstallationInProgressMsg, statusInfo, cvoMsg)
@@ -1506,11 +1506,11 @@ func clusterValidated(clusterInstall *hiveext.AgentClusterInstall, status string
 		condStatus = corev1.ConditionFalse
 		reason = hiveext.ClusterValidationsFailingReason
 		msg = fmt.Sprintf("%s %s", hiveext.ClusterValidationsFailingMsg, failedValidationInfo)
-	case models.ClusterStatusPendingForInput == status:
+	case models.ClusterStatusPendingDashForDashInput == status:
 		condStatus = corev1.ConditionFalse
 		reason = hiveext.ClusterValidationsUserPendingReason
 		msg = fmt.Sprintf("%s %s", hiveext.ClusterValidationsUserPendingMsg, failedValidationInfo)
-	case models.ClusterStatusAddingHosts == status:
+	case models.ClusterStatusAddingDashHosts == status:
 		condStatus = corev1.ConditionTrue
 		reason = hiveext.ClusterValidationsPassingReason
 		msg = hiveext.ClusterValidationsOKMsg

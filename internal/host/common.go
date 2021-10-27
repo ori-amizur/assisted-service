@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -44,12 +44,12 @@ const (
 
 var hostStatusesBeforeInstallation = [...]string{
 	models.HostStatusDiscovering, models.HostStatusKnown, models.HostStatusDisconnected,
-	models.HostStatusInsufficient, models.HostStatusPendingForInput,
+	models.HostStatusInsufficient, models.HostStatusPendingDashForDashInput,
 }
 
 var hostStatusesInInfraEnv = [...]string{
-	models.HostStatusDisconnectedUnbound, models.HostStatusInsufficientUnbound, models.HostStatusDiscoveringUnbound,
-	models.HostStatusKnownUnbound,
+	models.HostStatusDisconnectedDashUnbound, models.HostStatusInsufficientDashUnbound, models.HostStatusDiscoveringDashUnbound,
+	models.HostStatusKnownDashUnbound,
 }
 
 type UpdateReply struct {

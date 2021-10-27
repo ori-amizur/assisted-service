@@ -47,7 +47,7 @@ func (c *diskPerfCheckCmd) GetSteps(_ context.Context, host *models.Host) ([]*mo
 	}
 
 	step := &models.Step{
-		StepType: models.StepTypeInstallationDiskSpeedCheck,
+		StepType: models.StepTypeInstallationDashDiskDashSpeedDashCheck,
 		Command:  "bash",
 		Args:     args,
 	}

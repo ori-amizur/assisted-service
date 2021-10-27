@@ -59,7 +59,6 @@ func (o *UploadLogsReader) ReadResponse(response runtime.ClientResponse, consume
 			return nil, err
 		}
 		return nil, result
-
 	default:
 		return nil, runtime.NewAPIError("response status code does not match any response statuses defined for this endpoint in the swagger spec", response, response.Code())
 	}
@@ -70,7 +69,7 @@ func NewUploadLogsNoContent() *UploadLogsNoContent {
 	return &UploadLogsNoContent{}
 }
 
-/*UploadLogsNoContent handles this case with default header values.
+/* UploadLogsNoContent describes a response with status code 204, with default header values.
 
 Success.
 */
@@ -91,7 +90,7 @@ func NewUploadLogsUnauthorized() *UploadLogsUnauthorized {
 	return &UploadLogsUnauthorized{}
 }
 
-/*UploadLogsUnauthorized handles this case with default header values.
+/* UploadLogsUnauthorized describes a response with status code 401, with default header values.
 
 Unauthorized.
 */
@@ -102,7 +101,6 @@ type UploadLogsUnauthorized struct {
 func (o *UploadLogsUnauthorized) Error() string {
 	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/logs][%d] uploadLogsUnauthorized  %+v", 401, o.Payload)
 }
-
 func (o *UploadLogsUnauthorized) GetPayload() *models.InfraError {
 	return o.Payload
 }
@@ -124,7 +122,7 @@ func NewUploadLogsForbidden() *UploadLogsForbidden {
 	return &UploadLogsForbidden{}
 }
 
-/*UploadLogsForbidden handles this case with default header values.
+/* UploadLogsForbidden describes a response with status code 403, with default header values.
 
 Forbidden.
 */
@@ -135,7 +133,6 @@ type UploadLogsForbidden struct {
 func (o *UploadLogsForbidden) Error() string {
 	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/logs][%d] uploadLogsForbidden  %+v", 403, o.Payload)
 }
-
 func (o *UploadLogsForbidden) GetPayload() *models.InfraError {
 	return o.Payload
 }
@@ -157,7 +154,7 @@ func NewUploadLogsNotFound() *UploadLogsNotFound {
 	return &UploadLogsNotFound{}
 }
 
-/*UploadLogsNotFound handles this case with default header values.
+/* UploadLogsNotFound describes a response with status code 404, with default header values.
 
 Error.
 */
@@ -168,7 +165,6 @@ type UploadLogsNotFound struct {
 func (o *UploadLogsNotFound) Error() string {
 	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/logs][%d] uploadLogsNotFound  %+v", 404, o.Payload)
 }
-
 func (o *UploadLogsNotFound) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -190,7 +186,7 @@ func NewUploadLogsInternalServerError() *UploadLogsInternalServerError {
 	return &UploadLogsInternalServerError{}
 }
 
-/*UploadLogsInternalServerError handles this case with default header values.
+/* UploadLogsInternalServerError describes a response with status code 500, with default header values.
 
 Error.
 */
@@ -201,7 +197,6 @@ type UploadLogsInternalServerError struct {
 func (o *UploadLogsInternalServerError) Error() string {
 	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/logs][%d] uploadLogsInternalServerError  %+v", 500, o.Payload)
 }
-
 func (o *UploadLogsInternalServerError) GetPayload() *models.Error {
 	return o.Payload
 }
@@ -223,7 +218,7 @@ func NewUploadLogsServiceUnavailable() *UploadLogsServiceUnavailable {
 	return &UploadLogsServiceUnavailable{}
 }
 
-/*UploadLogsServiceUnavailable handles this case with default header values.
+/* UploadLogsServiceUnavailable describes a response with status code 503, with default header values.
 
 Unavailable.
 */
@@ -234,7 +229,6 @@ type UploadLogsServiceUnavailable struct {
 func (o *UploadLogsServiceUnavailable) Error() string {
 	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/logs][%d] uploadLogsServiceUnavailable  %+v", 503, o.Payload)
 }
-
 func (o *UploadLogsServiceUnavailable) GetPayload() *models.Error {
 	return o.Payload
 }

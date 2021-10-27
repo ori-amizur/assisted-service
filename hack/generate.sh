@@ -14,15 +14,13 @@ function lint_swagger() {
 function generate_go_server() {
     rm -rf restapi
     docker run -u $(id -u):$(id -u) -v ${__root}:${__root}:rw,Z -v /etc/passwd:/etc/passwd -w ${__root} \
-        quay.io/goswagger/swagger:v0.25.0 generate server --template=stratoscale -f ${__root}/swagger.yaml \
-        --template-dir=/templates/contrib
+        quay.io/goswagger/swagger:v0.28.0 generate server --template=stratoscale -f ${__root}/swagger.yaml
 }
 
 function generate_go_client() {
     rm -rf client models
     docker run -u $(id -u):$(id -u) -v ${__root}:${__root}:rw,Z -v /etc/passwd:/etc/passwd -w ${__root} \
-        quay.io/goswagger/swagger:v0.25.0 generate client --template=stratoscale -f swagger.yaml \
-        --template-dir=/templates/contrib
+        quay.io/goswagger/swagger:v0.28.0 generate client --template=stratoscale -f swagger.yaml
 }
 
 function generate_python_client() {

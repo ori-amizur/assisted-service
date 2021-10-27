@@ -6,7 +6,9 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
+	timeext "time"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -31,8 +33,7 @@ type InfraEnv struct {
 
 	// created at
 	// Required: true
-	// Format: date-time
-	CreatedAt *strfmt.DateTime `json:"created_at" gorm:"type:timestamp with time zone"`
+	CreatedAt *timeext.Time `json:"created_at" gorm:"type:timestamp with time zone"`
 
 	// download url
 	DownloadURL string `json:"download_url,omitempty"`
@@ -54,7 +55,7 @@ type InfraEnv struct {
 	// Unique identifier of the object.
 	// Required: true
 	// Format: uuid
-	ID *strfmt.UUID `json:"id" gorm:"primary_key"`
+	ID *strfmt.UUID `json:"id" gorm:"primaryKey"`
 
 	// Json formatted string containing the user overrides for the initial ignition config.
 	IgnitionConfigOverride string `json:"ignition_config_override,omitempty"`
@@ -75,7 +76,7 @@ type InfraEnv struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// proxy
-	Proxy *Proxy `json:"proxy,omitempty" gorm:"embedded;embedded_prefix:proxy_"`
+	Proxy *Proxy `json:"proxy,omitempty"`
 
 	// True if the pull secret has been added to the cluster.
 	PullSecretSet bool `json:"pull_secret_set,omitempty"`
@@ -92,12 +93,11 @@ type InfraEnv struct {
 
 	// type
 	// Required: true
-	Type ImageType `json:"type"`
+	Type *ImageType `json:"type"`
 
 	// The last time that this infraenv was updated.
 	// Required: true
-	// Format: date-time
-	UpdatedAt *strfmt.DateTime `json:"updated_at" gorm:"type:timestamp with time zone"`
+	UpdatedAt *timeext.Time `json:"updated_at" gorm:"type:timestamp with time zone"`
 
 	// user name
 	UserName string `json:"user_name,omitempty"`
@@ -158,7 +158,6 @@ func (m *InfraEnv) Validate(formats strfmt.Registry) error {
 }
 
 func (m *InfraEnv) validateClusterID(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ClusterID) { // not required
 		return nil
 	}
@@ -172,19 +171,14 @@ func (m *InfraEnv) validateClusterID(formats strfmt.Registry) error {
 
 func (m *InfraEnv) validateCreatedAt(formats strfmt.Registry) error {
 
-	if err := validate.Required("created_at", "body", m.CreatedAt); err != nil {
-		return err
-	}
-
-	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
-		return err
+	if m.CreatedAt == nil {
+		return errors.Required("created_at", "body", m.CreatedAt)
 	}
 
 	return nil
 }
 
 func (m *InfraEnv) validateExpiresAt(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.ExpiresAt) { // not required
 		return nil
 	}
@@ -268,7 +262,6 @@ func (m *InfraEnv) validateName(formats strfmt.Registry) error {
 }
 
 func (m *InfraEnv) validateProxy(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.Proxy) { // not required
 		return nil
 	}
@@ -277,6 +270,8 @@ func (m *InfraEnv) validateProxy(formats strfmt.Registry) error {
 		if err := m.Proxy.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("proxy")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("proxy")
 			}
 			return err
 		}
@@ -286,12 +281,11 @@ func (m *InfraEnv) validateProxy(formats strfmt.Registry) error {
 }
 
 func (m *InfraEnv) validateSizeBytes(formats strfmt.Registry) error {
-
 	if swag.IsZero(m.SizeBytes) { // not required
 		return nil
 	}
 
-	if err := validate.MinimumInt("size_bytes", "body", int64(*m.SizeBytes), 0, false); err != nil {
+	if err := validate.MinimumInt("size_bytes", "body", *m.SizeBytes, 0, false); err != nil {
 		return err
 	}
 
@@ -300,11 +294,23 @@ func (m *InfraEnv) validateSizeBytes(formats strfmt.Registry) error {
 
 func (m *InfraEnv) validateType(formats strfmt.Registry) error {
 
-	if err := m.Type.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("type")
-		}
+	if err := validate.Required("type", "body", m.Type); err != nil {
 		return err
+	}
+
+	if err := validate.Required("type", "body", m.Type); err != nil {
+		return err
+	}
+
+	if m.Type != nil {
+		if err := m.Type.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("type")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("type")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -312,12 +318,58 @@ func (m *InfraEnv) validateType(formats strfmt.Registry) error {
 
 func (m *InfraEnv) validateUpdatedAt(formats strfmt.Registry) error {
 
-	if err := validate.Required("updated_at", "body", m.UpdatedAt); err != nil {
-		return err
+	if m.UpdatedAt == nil {
+		return errors.Required("updated_at", "body", m.UpdatedAt)
 	}
 
-	if err := validate.FormatOf("updated_at", "body", "date-time", m.UpdatedAt.String(), formats); err != nil {
-		return err
+	return nil
+}
+
+// ContextValidate validate this infra env based on the context it is used
+func (m *InfraEnv) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateProxy(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateType(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *InfraEnv) contextValidateProxy(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Proxy != nil {
+		if err := m.Proxy.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("proxy")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("proxy")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *InfraEnv) contextValidateType(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Type != nil {
+		if err := m.Type.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("type")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("type")
+			}
+			return err
+		}
 	}
 
 	return nil

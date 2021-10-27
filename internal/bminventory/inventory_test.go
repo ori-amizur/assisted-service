@@ -27,8 +27,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/kelseyhightower/envconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -66,6 +64,8 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -225,7 +225,7 @@ func addVMToCluster(cluster *common.Cluster, db *gorm.DB) {
 	}
 	inventoryByte, err := json.Marshal(inventory)
 	Expect(err).ToNot(HaveOccurred())
-	host := addHost(hostID, models.HostRoleAutoAssign, models.HostStatusKnown, models.HostKindHost,
+	host := addHost(hostID, models.HostRoleAutoDashAssign, models.HostStatusKnown, models.HostKindHost,
 		*infraEnv.ID, *cluster.ID, string(inventoryByte), db)
 	cluster.Hosts = append(cluster.Hosts, &host)
 }
@@ -1294,7 +1294,7 @@ var _ = Describe("RegisterHost", func() {
 
 		allowedStates := []string{
 			models.ClusterStatusInsufficient, models.ClusterStatusReady,
-			models.ClusterStatusPendingForInput, models.ClusterStatusAddingHosts}
+			models.ClusterStatusPendingDashForDashInput, models.ClusterStatusAddingDashHosts}
 		err := errors.Errorf(
 			"Cluster %s is in installing state, host can register only in one of %s",
 			cluster.ID, allowedStates)
@@ -1327,7 +1327,7 @@ var _ = Describe("RegisterHost", func() {
 			availability string
 			expectedRole models.HostRole
 		}{
-			{availability: models.ClusterHighAvailabilityModeFull, expectedRole: models.HostRoleAutoAssign},
+			{availability: models.ClusterHighAvailabilityModeFull, expectedRole: models.HostRoleAutoDashAssign},
 			{availability: models.ClusterHighAvailabilityModeNone, expectedRole: models.HostRoleMaster},
 		} {
 			test := test
@@ -1387,7 +1387,7 @@ var _ = Describe("RegisterHost", func() {
 		mockHostApi.EXPECT().RegisterHost(gomock.Any(), gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, h *models.Host, db *gorm.DB) error {
 				// validate that host is registered with auto-assign role
-				Expect(h.Role).Should(Equal(models.HostRoleAutoAssign))
+				Expect(h.Role).Should(Equal(models.HostRoleAutoDashAssign))
 				Expect(h.InfraEnvID).Should(Equal(*infraEnv.ID))
 				return nil
 			}).Times(1)
@@ -1477,7 +1477,7 @@ var _ = Describe("v2RegisterHost", func() {
 
 		allowedStates := []string{
 			models.ClusterStatusInsufficient, models.ClusterStatusReady,
-			models.ClusterStatusPendingForInput, models.ClusterStatusAddingHosts}
+			models.ClusterStatusPendingDashForDashInput, models.ClusterStatusAddingDashHosts}
 		err := errors.Errorf(
 			"Cluster %s is in installing state, host can register only in one of %s",
 			cluster.ID, allowedStates)
@@ -1510,7 +1510,7 @@ var _ = Describe("v2RegisterHost", func() {
 			availability string
 			expectedRole models.HostRole
 		}{
-			{availability: models.ClusterHighAvailabilityModeFull, expectedRole: models.HostRoleAutoAssign},
+			{availability: models.ClusterHighAvailabilityModeFull, expectedRole: models.HostRoleAutoDashAssign},
 			{availability: models.ClusterHighAvailabilityModeNone, expectedRole: models.HostRoleMaster},
 		} {
 			test := test
@@ -1571,7 +1571,7 @@ var _ = Describe("v2RegisterHost", func() {
 		mockHostApi.EXPECT().RegisterHost(gomock.Any(), gomock.Any(), gomock.Any()).
 			DoAndReturn(func(ctx context.Context, h *models.Host, db *gorm.DB) error {
 				// validate that host is registered with auto-assign role
-				Expect(h.Role).Should(Equal(models.HostRoleAutoAssign))
+				Expect(h.Role).Should(Equal(models.HostRoleAutoDashAssign))
 				Expect(h.InfraEnvID).Should(Equal(*infraEnv.ID))
 				return nil
 			}).Times(1)
@@ -1621,7 +1621,7 @@ var _ = Describe("v2RegisterHost", func() {
 	})
 
 	It("register day2 bound host", func() {
-		cluster := createCluster(db, models.ClusterStatusAddingHosts)
+		cluster := createCluster(db, models.ClusterStatusAddingDashHosts)
 		Expect(db.Model(&cluster).Update("kind", swag.String(models.ClusterKindAddHostsCluster)).Error).ShouldNot(HaveOccurred())
 		infraEnvId := strToUUID(uuid.New().String())
 		_ = createInfraEnv(db, *infraEnvId, "")
@@ -1713,7 +1713,7 @@ var _ = Describe("GetNextSteps", func() {
 
 		var err error
 		expectedStepsReply := models.Steps{NextInstructionSeconds: defaultNextStepIn, Instructions: []*models.Step{{StepType: models.StepTypeInventory},
-			{StepType: models.StepTypeConnectivityCheck}}}
+			{StepType: models.StepTypeConnectivityDashCheck}}}
 		h1, err := common.GetHostFromDB(db, infraEnvId.String(), hostId.String())
 		Expect(err).ToNot(HaveOccurred())
 		mockHostApi.EXPECT().GetNextSteps(gomock.Any(), gomock.Any()).Return(expectedStepsReply, err)
@@ -1723,7 +1723,7 @@ var _ = Describe("GetNextSteps", func() {
 		})
 		Expect(reply).Should(BeAssignableToTypeOf(installer.NewV2GetNextStepsOK()))
 		stepsReply := reply.(*installer.V2GetNextStepsOK).Payload
-		expectedStepsType := []models.StepType{models.StepTypeInventory, models.StepTypeConnectivityCheck}
+		expectedStepsType := []models.StepType{models.StepTypeInventory, models.StepTypeConnectivityDashCheck}
 		Expect(stepsReply.Instructions).To(HaveLen(len(expectedStepsType)))
 		for i, step := range stepsReply.Instructions {
 			Expect(step.StepType).Should(Equal(expectedStepsType[i]))
@@ -1784,7 +1784,7 @@ var _ = Describe("v2GetNextSteps", func() {
 
 		var err error
 		expectedStepsReply := models.Steps{NextInstructionSeconds: defaultNextStepIn, Instructions: []*models.Step{{StepType: models.StepTypeInventory},
-			{StepType: models.StepTypeConnectivityCheck}}}
+			{StepType: models.StepTypeConnectivityDashCheck}}}
 		h1, err := common.GetHostFromDB(db, infraEnvId.String(), hostId.String())
 		Expect(err).ToNot(HaveOccurred())
 		mockHostApi.EXPECT().GetNextSteps(gomock.Any(), gomock.Any()).Return(expectedStepsReply, err)
@@ -1794,7 +1794,7 @@ var _ = Describe("v2GetNextSteps", func() {
 		})
 		Expect(reply).Should(BeAssignableToTypeOf(installer.NewV2GetNextStepsOK()))
 		stepsReply := reply.(*installer.V2GetNextStepsOK).Payload
-		expectedStepsType := []models.StepType{models.StepTypeInventory, models.StepTypeConnectivityCheck}
+		expectedStepsType := []models.StepType{models.StepTypeInventory, models.StepTypeConnectivityDashCheck}
 		Expect(stepsReply.Instructions).To(HaveLen(len(expectedStepsType)))
 		for i, step := range stepsReply.Instructions {
 			Expect(step.StepType).Should(Equal(expectedStepsType[i]))
@@ -1875,7 +1875,7 @@ var _ = Describe("PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: MediaDisconnected,
 					Output:   "output",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -1897,7 +1897,7 @@ var _ = Describe("PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: MediaDisconnected,
 					Output:   "output",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -1919,7 +1919,7 @@ var _ = Describe("PostStepReply", func() {
 					ExitCode: MediaDisconnected,
 					Output:   "output",
 					Error:    "error",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -1938,7 +1938,7 @@ var _ = Describe("PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 		}
@@ -1995,7 +1995,7 @@ var _ = Describe("PostStepReply", func() {
 					HostID:     hostID,
 					Reply: &models.StepReply{
 						Output:   string(b),
-						StepType: models.StepTypeDhcpLeaseAllocate,
+						StepType: models.StepTypeDhcpDashLeaseDashAllocate,
 					},
 				}
 			}
@@ -2174,7 +2174,7 @@ var _ = Describe("PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeNtpSynchronizer,
+					StepType: models.StepTypeNtpDashSynchronizer,
 				},
 			}
 		}
@@ -2234,7 +2234,7 @@ var _ = Describe("PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeContainerImageAvailability,
+					StepType: models.StepTypeContainerDashImageDashAvailability,
 				},
 			}
 		}
@@ -2298,7 +2298,7 @@ var _ = Describe("PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: exitCode,
 					Output:   string(b),
-					StepType: models.StepTypeInstallationDiskSpeedCheck,
+					StepType: models.StepTypeInstallationDashDiskDashSpeedDashCheck,
 				},
 			}
 		}
@@ -2394,7 +2394,7 @@ var _ = Describe("v2PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: MediaDisconnected,
 					Output:   "output",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -2416,7 +2416,7 @@ var _ = Describe("v2PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: MediaDisconnected,
 					Output:   "output",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -2438,7 +2438,7 @@ var _ = Describe("v2PostStepReply", func() {
 					ExitCode: MediaDisconnected,
 					Output:   "output",
 					Error:    "error",
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 
@@ -2457,7 +2457,7 @@ var _ = Describe("v2PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeFreeNetworkAddresses,
+					StepType: models.StepTypeFreeDashNetworkDashAddresses,
 				},
 			}
 		}
@@ -2514,7 +2514,7 @@ var _ = Describe("v2PostStepReply", func() {
 					HostID:     hostID,
 					Reply: &models.StepReply{
 						Output:   string(b),
-						StepType: models.StepTypeDhcpLeaseAllocate,
+						StepType: models.StepTypeDhcpDashLeaseDashAllocate,
 					},
 				}
 			}
@@ -2693,7 +2693,7 @@ var _ = Describe("v2PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeNtpSynchronizer,
+					StepType: models.StepTypeNtpDashSynchronizer,
 				},
 			}
 		}
@@ -2753,7 +2753,7 @@ var _ = Describe("v2PostStepReply", func() {
 				HostID:     hostID,
 				Reply: &models.StepReply{
 					Output:   string(b),
-					StepType: models.StepTypeContainerImageAvailability,
+					StepType: models.StepTypeContainerDashImageDashAvailability,
 				},
 			}
 		}
@@ -2817,7 +2817,7 @@ var _ = Describe("v2PostStepReply", func() {
 				Reply: &models.StepReply{
 					ExitCode: exitCode,
 					Output:   string(b),
-					StepType: models.StepTypeInstallationDiskSpeedCheck,
+					StepType: models.StepTypeInstallationDashDiskDashSpeedDashCheck,
 				},
 			}
 		}
@@ -10209,7 +10209,7 @@ var _ = Describe("Register AddHostsCluster test", func() {
 			ID:               &clusterID,
 			Kind:             swag.String(models.ClusterKindAddHostsCluster),
 			OpenshiftVersion: common.TestDefaultConfig.OpenShiftVersion,
-			Status:           swag.String(models.ClusterStatusAddingHosts),
+			Status:           swag.String(models.ClusterStatusAddingDashHosts),
 		}}).Error
 		Expect(err).ShouldNot(HaveOccurred())
 		res := bm.RegisterAddHostsCluster(ctx, params)
@@ -10238,7 +10238,7 @@ var _ = Describe("Reset Host test", func() {
 			ID:               &clusterID,
 			Kind:             swag.String(models.ClusterKindAddHostsCluster),
 			OpenshiftVersion: common.TestDefaultConfig.OpenShiftVersion,
-			Status:           swag.String(models.ClusterStatusAddingHosts),
+			Status:           swag.String(models.ClusterStatusAddingDashHosts),
 		}}).Error
 		Expect(err).ShouldNot(HaveOccurred())
 		bm = createInventory(db, cfg)
@@ -10343,7 +10343,7 @@ var _ = Describe("Install Host test", func() {
 			ID:               &clusterID,
 			Kind:             swag.String(models.ClusterKindAddHostsCluster),
 			OpenshiftVersion: common.TestDefaultConfig.OpenShiftVersion,
-			Status:           swag.String(models.ClusterStatusAddingHosts),
+			Status:           swag.String(models.ClusterStatusAddingDashHosts),
 		}}).Error
 		Expect(err).ShouldNot(HaveOccurred())
 		bm = createInventory(db, cfg)
@@ -10532,7 +10532,7 @@ var _ = Describe("InstallSingleDay2Host test", func() {
 			ID:               &clusterID,
 			Kind:             swag.String(models.ClusterKindAddHostsCluster),
 			OpenshiftVersion: common.TestDefaultConfig.OpenShiftVersion,
-			Status:           swag.String(models.ClusterStatusAddingHosts),
+			Status:           swag.String(models.ClusterStatusAddingDashHosts),
 		}}).Error
 		Expect(err).ShouldNot(HaveOccurred())
 
@@ -10637,7 +10637,7 @@ var _ = Describe("Install Hosts test", func() {
 			ID:               &clusterID,
 			Kind:             swag.String(models.ClusterKindAddHostsCluster),
 			OpenshiftVersion: common.TestDefaultConfig.OpenShiftVersion,
-			Status:           swag.String(models.ClusterStatusAddingHosts),
+			Status:           swag.String(models.ClusterStatusAddingDashHosts),
 		}}).Error
 		Expect(err).ShouldNot(HaveOccurred())
 
@@ -10679,7 +10679,7 @@ var _ = Describe("Install Hosts test", func() {
 		knownHostID := strfmt.UUID(uuid.New().String())
 		addHost(knownHostID, models.HostRoleWorker, models.HostStatusKnown, models.HostKindAddToExistingClusterHost, clusterID, clusterID, getInventoryStr("hostname2", "bootMode", "1.2.3.4/24", "10.11.50.90/16"), db)
 		addHost(strfmt.UUID(uuid.New().String()), models.HostRoleWorker, models.HostStatusInstalled, models.HostKindAddToExistingClusterHost, clusterID, clusterID, getInventoryStr("hostname3", "bootMode", "1.2.3.4/24", "10.11.50.90/16"), db)
-		addHost(strfmt.UUID(uuid.New().String()), models.HostRoleWorker, models.HostStatusAddedToExistingCluster, models.HostKindAddToExistingClusterHost, clusterID, clusterID, getInventoryStr("hostname4", "bootMode", "1.2.3.4/24", "10.11.50.90/16"), db)
+		addHost(strfmt.UUID(uuid.New().String()), models.HostRoleWorker, models.HostStatusAddedDashToDashExistingDashCluster, models.HostKindAddToExistingClusterHost, clusterID, clusterID, getInventoryStr("hostname4", "bootMode", "1.2.3.4/24", "10.11.50.90/16"), db)
 		mockHostApi.EXPECT().AutoAssignRole(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		mockHostApi.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(5)
 		mockHostApi.EXPECT().Install(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -13317,7 +13317,7 @@ var _ = Describe("DownloadClusterFiles", func() {
 	It("allows downloading kubeconfig-noingress when cluster is installing pending user action", func() {
 		fileName := "kubeconfig-noingress"
 		By(fmt.Sprintf("downloading %s", fileName))
-		newCluster = createCluster(db, models.ClusterStatusInstallingPendingUserAction)
+		newCluster = createCluster(db, models.ClusterStatusInstallingDashPendingDashUserDashAction)
 		params := installer.DownloadClusterFilesParams{
 			ClusterID: *newCluster.ID,
 			FileName:  fileName,
@@ -13442,7 +13442,7 @@ var _ = Describe("Update cluster - feature usage flags", func() {
 		cfg = Config{}
 		db, dbName = common.PrepareTestDB()
 		bm = createInventory(db, cfg)
-		cluster = createCluster(db, models.ClusterStatusPendingForInput)
+		cluster = createCluster(db, models.ClusterStatusPendingDashForDashInput)
 	})
 
 	AfterEach(func() {

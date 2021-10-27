@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/network"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type dhcpAllocateCmd struct {
@@ -75,7 +75,7 @@ func (f *dhcpAllocateCmd) GetSteps(ctx context.Context, host *models.Host) ([]*m
 		return nil, err
 	}
 	step := &models.Step{
-		StepType: models.StepTypeDhcpLeaseAllocate,
+		StepType: models.StepTypeDhcpDashLeaseDashAllocate,
 		Command:  "podman",
 		Args: []string{
 			"run", "--privileged", "--net=host", "--rm", "--quiet",

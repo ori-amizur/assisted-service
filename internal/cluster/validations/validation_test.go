@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-openapi/swag"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/network"
@@ -16,6 +15,7 @@ import (
 	"github.com/openshift/assisted-service/pkg/ocm"
 	"github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
+	_ "gorm.io/driver/postgres"
 )
 
 // #nosec

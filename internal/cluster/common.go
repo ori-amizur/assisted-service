@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	eventgen "github.com/openshift/assisted-service/internal/common/events"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
@@ -18,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -93,7 +93,7 @@ func updateLogsProgress(log logrus.FieldLogger, db *gorm.DB, c *common.Cluster, 
 		}
 	}
 
-	err := db.Model(c).Update(updates).Error
+	err := db.Model(c).Updates(updates).Error
 	if err != nil {
 		log.WithError(err).Errorf("could not update log progress %v on cluster %s", updates, *c.ID)
 		return err
@@ -143,7 +143,7 @@ func getKnownMastersNodesIds(c *common.Cluster, db *gorm.DB) ([]*strfmt.UUID, er
 		return nil, errors.Errorf("cluster %s not found", c.ID)
 	}
 
-	allowedStatuses := []string{models.HostStatusKnown, models.HostStatusPreparingForInstallation}
+	allowedStatuses := []string{models.HostStatusKnown, models.HostStatusPreparingDashForDashInstallation}
 	for _, host := range cluster.Hosts {
 		if common.GetEffectiveRole(host) == models.HostRoleMaster && funk.ContainsString(allowedStatuses, swag.StringValue(host.Status)) {
 			masterNodesIds = append(masterNodesIds, host.ID)
@@ -215,7 +215,7 @@ func UpdateMachineCidr(db *gorm.DB, cluster *common.Cluster, machineCidr string)
 
 	if machineCidr != previousPrimaryMachineCidr {
 		if machineCidr != "" {
-			if err := db.Model(&models.MachineNetwork{}).Save(&models.MachineNetwork{
+			if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&models.MachineNetwork{}).Save(&models.MachineNetwork{
 				ClusterID: *cluster.ID,
 				Cidr:      models.Subnet(machineCidr),
 			}).Error; err != nil {

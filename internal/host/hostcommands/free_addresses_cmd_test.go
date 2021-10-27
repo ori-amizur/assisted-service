@@ -5,12 +5,12 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("free_addresses", func() {
@@ -37,7 +37,7 @@ var _ = Describe("free_addresses", func() {
 	It("happy flow", func() {
 		stepReply, stepErr = fCmd.GetSteps(ctx, &host)
 		Expect(stepReply).ToNot(BeNil())
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeFreeNetworkAddresses))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeFreeDashNetworkDashAddresses))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 	})
 

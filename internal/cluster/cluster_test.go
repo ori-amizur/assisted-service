@@ -14,8 +14,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/kelseyhightower/envconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -35,6 +33,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -76,9 +76,9 @@ var _ = Describe("stateMachine", func() {
 
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 			mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-				{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-				{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
-				{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
+				{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+				{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
+				{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
 			}, nil)
 		})
 
@@ -139,9 +139,9 @@ var _ = Describe("TestClusterMonitoring", func() {
 		mockMetric.EXPECT().Duration("ClusterMonitoring", gomock.Any()).AnyTimes()
 		mockMetric.EXPECT().MonitoredClusterCount(int64(1)).AnyTimes()
 		mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 	Context("single cluster monitoring", func() {
@@ -596,11 +596,11 @@ var _ = Describe("TestClusterMonitoring", func() {
 
 			clusterApi.ClusterMonitoring()
 
-			var count int
+			var count int64
 			err = db.Model(&common.Cluster{}).Where("status = ?", models.ClusterStatusInsufficient).
 				Count(&count).Error
 			Expect(err).ShouldNot(HaveOccurred())
-			Expect(count).Should(Equal(nClusters))
+			Expect(count).Should(Equal(int64(nClusters)))
 		}
 
 		It("10 clusters monitor", func() {
@@ -689,9 +689,9 @@ var _ = Describe("lease timeout event", func() {
 		mockMetric.EXPECT().MonitoredClusterCount(int64(1)).AnyTimes()
 		mockMetric.EXPECT().Duration("ClusterMonitoring", gomock.Any()).AnyTimes()
 		mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 	tests := []struct {
@@ -801,9 +801,9 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		mockMetric.EXPECT().MonitoredClusterCount(int64(1)).AnyTimes()
 		mockMetric.EXPECT().Duration("ClusterMonitoring", gomock.Any()).AnyTimes()
 		mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 	tests := []struct {
@@ -820,12 +820,12 @@ var _ = Describe("Auto assign machine CIDR", func() {
 	}{
 		{
 			name:        "No hosts",
-			srcState:    models.ClusterStatusPendingForInput,
+			srcState:    models.ClusterStatusPendingDashForDashInput,
 			dhcpEnabled: true,
 		},
 		{
 			name:     "One discovering host",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusDiscovering),
@@ -836,7 +836,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -850,10 +850,10 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Host with two networks",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: twoNetworksInventory(),
 				},
 			},
@@ -861,14 +861,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, one networks",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestInventoryWithNetwork(defaultIPv4Address),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestInventoryWithNetwork(defaultIPv4Address),
 				},
 			},
@@ -879,14 +879,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, two networks",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: nonDefaultInventory(),
 				},
 			},
@@ -894,7 +894,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network, machine cidr already set",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -909,14 +909,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, one networks, dhcp disabled, no vips",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 			},
@@ -926,13 +926,13 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:        "No hosts - dhcp disabled",
-			srcState:    models.ClusterStatusPendingForInput,
+			srcState:    models.ClusterStatusPendingDashForDashInput,
 			dhcpEnabled: false,
 			apiVip:      "1.2.3.8",
 		},
 		{
 			name:     "One discovering host - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status: swag.String(models.HostStatusDiscovering),
@@ -943,7 +943,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -958,10 +958,10 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Host with two networks - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: twoNetworksInventory(),
 				},
 			},
@@ -971,14 +971,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, one networks - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 			},
@@ -990,14 +990,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, one networks - dhcp disabled, user managed networking",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 			},
@@ -1009,14 +1009,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, one networks - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestInventoryWithNetwork(defaultIPv4Address),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestInventoryWithNetwork(defaultIPv4Address),
 				},
 			},
@@ -1028,14 +1028,14 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "Two hosts, two networks - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: common.GenerateTestDefaultInventory(),
 				},
 				{
-					Status:    swag.String(models.HostStatusPendingForInput),
+					Status:    swag.String(models.HostStatusPendingDashForDashInput),
 					Inventory: nonDefaultInventory(),
 				},
 			},
@@ -1045,7 +1045,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network, different machine cidr already set - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -1061,7 +1061,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network, same machine cidr already set - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -1077,7 +1077,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:                    "No hosts, machine cidr already set - dhcp disabled",
-			srcState:                models.ClusterStatusPendingForInput,
+			srcState:                models.ClusterStatusPendingDashForDashInput,
 			userActionResetExpected: true,
 			eventCallExpected:       true,
 			machineNetworkCIDR:      "192.168.0.0/16",
@@ -1086,7 +1086,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, no networks, machine cidr already set - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status: swag.String(models.HostStatusInsufficient),
@@ -1100,7 +1100,7 @@ var _ = Describe("Auto assign machine CIDR", func() {
 		},
 		{
 			name:     "One insufficient host, one network, machine cidr already set, no vips - dhcp disabled",
-			srcState: models.ClusterStatusPendingForInput,
+			srcState: models.ClusterStatusPendingDashForDashInput,
 			hosts: []*models.Host{
 				{
 					Status:    swag.String(models.HostStatusInsufficient),
@@ -1608,8 +1608,8 @@ var _ = Describe("PrepareForInstallation", func() {
 			eventstest.WithClusterIdMatcher(clusterId.String()))).Times(1)
 		Expect(capi.PrepareForInstallation(ctx, cluster, db)).NotTo(HaveOccurred())
 		Expect(db.Take(cluster, "id = ?", clusterId).Error).NotTo(HaveOccurred())
-		Expect(swag.StringValue(cluster.Status)).To(Equal(models.ClusterStatusPreparingForInstallation))
-		Expect(cluster.ControllerLogsCollectedAt).To(Equal(strfmt.DateTime(time.Time{})))
+		Expect(swag.StringValue(cluster.Status)).To(Equal(models.ClusterStatusPreparingDashForDashInstallation))
+		Expect(time.Time(cluster.ControllerLogsCollectedAt).Equal(time.Time{})).To(BeTrue())
 	}
 
 	// status should not change
@@ -1633,7 +1633,7 @@ var _ = Describe("PrepareForInstallation", func() {
 		},
 		{
 			name:       "already prepared for installation - should fail",
-			srcState:   models.ClusterStatusPreparingForInstallation,
+			srcState:   models.ClusterStatusPreparingDashForDashInstallation,
 			validation: failure,
 		},
 		{
@@ -1696,7 +1696,7 @@ var _ = Describe("HandlePreInstallationChanges", func() {
 		mockEvents = eventsapi.NewMockHandler(ctrl)
 		capi = NewManager(getDefaultConfig(), common.GetTestLog(), db, mockEvents, nil, nil, nil, dummy, mockOperators, nil, nil, nil)
 		clusterId = strfmt.UUID(uuid.New().String())
-		cluster := &common.Cluster{Cluster: models.Cluster{ID: &clusterId, Status: swag.String(models.ClusterStatusPreparingForInstallation)}}
+		cluster := &common.Cluster{Cluster: models.Cluster{ID: &clusterId, Status: swag.String(models.ClusterStatusPreparingDashForDashInstallation)}}
 		Expect(db.Create(cluster).Error).ShouldNot(HaveOccurred())
 	})
 
@@ -1804,13 +1804,13 @@ var _ = Describe("SetVipsData", func() {
 		},
 		{
 			name:               "success-empty, from pending-from-input",
-			srcState:           models.ClusterStatusPendingForInput,
+			srcState:           models.ClusterStatusPendingDashForDashInput,
 			apiVip:             "1.2.3.4",
 			ingressVip:         "1.2.3.5",
 			expectedApiVip:     "1.2.3.4",
 			expectedIngressVip: "1.2.3.5",
 			errorExpected:      false,
-			expectedState:      models.ClusterStatusPendingForInput,
+			expectedState:      models.ClusterStatusPendingDashForDashInput,
 			eventExpected:      true,
 		},
 		{
@@ -1963,9 +1963,9 @@ var _ = Describe("Majority groups", func() {
 		mockMetricApi.EXPECT().MonitoredClusterCount(int64(1)).AnyTimes()
 		mockMetricApi.EXPECT().Duration("ClusterMonitoring", gomock.Any()).AnyTimes()
 		mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 
@@ -2072,9 +2072,9 @@ var _ = Describe("ready_state", func() {
 			eventstest.WithClusterIdMatcher(cluster.ID.String()))).AnyTimes()
 
 		mockOperators.EXPECT().ValidateCluster(gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 
@@ -2203,7 +2203,7 @@ var _ = Describe("prepare-for-installation refresh status", func() {
 		cl = common.Cluster{
 			Cluster: models.Cluster{
 				ID:              &clusterId,
-				Status:          swag.String(models.ClusterStatusPreparingForInstallation),
+				Status:          swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 				StatusUpdatedAt: strfmt.DateTime(time.Now()),
 			},
 		}
@@ -2216,7 +2216,7 @@ var _ = Describe("prepare-for-installation refresh status", func() {
 		Expect(db.Take(&cl, "id = ?", clusterId).Error).NotTo(HaveOccurred())
 		refreshedCluster, err := capi.RefreshStatus(ctx, &cl, db)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(*refreshedCluster.Status).To(Equal(models.ClusterStatusPreparingForInstallation))
+		Expect(*refreshedCluster.Status).To(Equal(models.ClusterStatusPreparingDashForDashInstallation))
 	})
 
 	It("timeout", func() {
@@ -2228,7 +2228,7 @@ var _ = Describe("prepare-for-installation refresh status", func() {
 	})
 
 	AfterEach(func() {
-		db.Close()
+		common.CloseDB(db)
 	})
 
 	AfterEach(func() {
@@ -2266,7 +2266,7 @@ var _ = Describe("Cluster tarred files", func() {
 		cl = common.Cluster{
 			Cluster: models.Cluster{
 				ID:              &clusterId,
-				Status:          swag.String(models.ClusterStatusPreparingForInstallation),
+				Status:          swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 				StatusUpdatedAt: strfmt.DateTime(time.Now()),
 			},
 		}
@@ -2457,7 +2457,7 @@ var _ = Describe("Deregister inactive clusters", func() {
 	wasDeregisterd := func(db *gorm.DB, clusterId strfmt.UUID) bool {
 		c, err := common.GetClusterFromDBWhere(db, common.UseEagerLoading, true, "id = ?", clusterId.String())
 		Expect(err).ShouldNot(HaveOccurred())
-		return c.DeletedAt != nil
+		return c.DeletedAt.Valid
 	}
 
 	BeforeEach(func() {
@@ -2573,7 +2573,7 @@ var _ = Describe("Permanently delete clusters", func() {
 	}
 
 	verifyClusterSubComponentsDeletion := func(clusterID strfmt.UUID, isDeleted bool) {
-		Expect(db.Unscoped().Where("id = ?", clusterID).Find(&common.Cluster{}).RowsAffected == 0).Should(Equal(isDeleted))
+		ExpectWithOffset(1, db.Unscoped().Where("id = ?", clusterID).Find(&common.Cluster{}).RowsAffected == 0).Should(Equal(isDeleted))
 
 		clusterEvents, err := eventsHandler.V2GetEvents(ctx, &clusterID, nil, nil)
 		if isDeleted {
@@ -2631,6 +2631,7 @@ var _ = Describe("Permanently delete clusters", func() {
 		Expect(state.PermanentClustersDeletion(ctx, strfmt.DateTime(time.Now()), mockS3Api)).ShouldNot(HaveOccurred())
 
 		verifyClusterSubComponentsDeletion(*c1.ID, true)
+
 		verifyClusterSubComponentsDeletion(*c2.ID, true)
 		verifyClusterSubComponentsDeletion(*c3.ID, false)
 	})
@@ -2763,13 +2764,13 @@ var _ = Describe("Transform day1 cluster to a day2 cluster", func() {
 		},
 		{
 			name:          "fail to transform day1 cluster to a day2 cluster - preparing-for-installation",
-			clusterStatus: models.ClusterStatusPreparingForInstallation,
+			clusterStatus: models.ClusterStatusPreparingDashForDashInstallation,
 			clusterKind:   models.ClusterKindCluster,
 			errorExpected: true,
 		},
 		{
 			name:          "fail to transform day1 cluster to a day2 cluster - status pending-for-input",
-			clusterStatus: models.ClusterStatusPendingForInput,
+			clusterStatus: models.ClusterStatusPendingDashForDashInput,
 			clusterKind:   models.ClusterKindCluster,
 			errorExpected: true,
 		},
@@ -2787,7 +2788,7 @@ var _ = Describe("Transform day1 cluster to a day2 cluster", func() {
 		},
 		{
 			name:          "fail to transform day1 cluster to a day2 cluster - status adding-hosts",
-			clusterStatus: models.ClusterStatusAddingHosts,
+			clusterStatus: models.ClusterStatusAddingDashHosts,
 			clusterKind:   models.ClusterKindAddHostsCluster,
 			errorExpected: true,
 		},
@@ -2799,7 +2800,7 @@ var _ = Describe("Transform day1 cluster to a day2 cluster", func() {
 		},
 		{
 			name:          "fail to transform day1 cluster to a day2 cluster - status installing-pending-user-action",
-			clusterStatus: models.ClusterStatusInstallingPendingUserAction,
+			clusterStatus: models.ClusterStatusInstallingDashPendingDashUserDashAction,
 			clusterKind:   models.ClusterKindCluster,
 			errorExpected: true,
 		},
@@ -2827,7 +2828,7 @@ var _ = Describe("Transform day1 cluster to a day2 cluster", func() {
 				var c common.Cluster
 				Expect(db.Take(&c, "id = ?", cluster.ID.String()).Error).ToNot(HaveOccurred())
 				Expect(c.Kind).To(Equal(swag.String(models.ClusterKindAddHostsCluster)))
-				Expect(c.Status).To(Equal(swag.String(models.ClusterStatusAddingHosts)))
+				Expect(c.Status).To(Equal(swag.String(models.ClusterStatusAddingDashHosts)))
 				apiVipDnsname := fmt.Sprintf("api.%s.%s", c.Name, c.BaseDNSDomain)
 				Expect(c.APIVipDNSName).To(Equal(swag.String(apiVipDnsname)))
 			}
@@ -2957,7 +2958,7 @@ var _ = Describe("Validation metrics and events", func() {
 		mockS3Client.EXPECT().DoesObjectExist(gomock.Any(), gomock.Any()).Return(false, nil).Times(1)
 		mockS3Client.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Times(0)
 		mockHost.EXPECT().ReportValidationFailedMetrics(ctx, gomock.Any(), openshiftVersion, emailDomain)
-		mockMetric.EXPECT().ClusterValidationFailed(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientMastersCount)
+		mockMetric.EXPECT().ClusterValidationFailed(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientDashMastersDashCount)
 		mockEvents.EXPECT().SendClusterEvent(ctx, eventstest.NewEventMatcher(
 			eventstest.WithNameMatcher(eventgen.DeregisteredClusterEventName),
 			eventstest.WithClusterIdMatcher(c.ID.String())))
@@ -2969,7 +2970,7 @@ var _ = Describe("Validation metrics and events", func() {
 		mockS3Client.EXPECT().DoesObjectExist(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		mockS3Client.EXPECT().DeleteObject(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
 		mockHost.EXPECT().ReportValidationFailedMetrics(ctx, gomock.Any(), openshiftVersion, emailDomain)
-		mockMetric.EXPECT().ClusterValidationFailed(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientMastersCount)
+		mockMetric.EXPECT().ClusterValidationFailed(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientDashMastersDashCount)
 		mockEvents.EXPECT().SendClusterEvent(ctx, eventstest.NewEventMatcher(
 			eventstest.WithNameMatcher(eventgen.DeregisteredClusterEventName),
 			eventstest.WithClusterIdMatcher(c.ID.String())))
@@ -2986,7 +2987,7 @@ var _ = Describe("Validation metrics and events", func() {
 		Expect(err).ToNot(HaveOccurred())
 		m.reportValidationStatusChanged(ctx, c, newValidationRes, currentValidationRes)
 
-		mockMetric.EXPECT().ClusterValidationChanged(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientMastersCount)
+		mockMetric.EXPECT().ClusterValidationChanged(openshiftVersion, emailDomain, models.ClusterValidationIDSufficientDashMastersDashCount)
 		mockEvents.EXPECT().SendClusterEvent(ctx, eventstest.NewEventMatcher(
 			eventstest.WithClusterIdMatcher(c.ID.String())))
 
@@ -3021,7 +3022,7 @@ var _ = Describe("Console-operator's availability", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		db, dbName = common.PrepareTestDB(dbName)
+		db, dbName = common.PrepareTestDB()
 		mockEvents = eventsapi.NewMockHandler(ctrl)
 		clusterApi = NewManager(getDefaultConfig(), common.GetTestLog(), db, mockEvents, nil, nil, nil, nil, nil, nil, nil, nil)
 	})

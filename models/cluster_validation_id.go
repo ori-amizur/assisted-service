@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -18,64 +19,69 @@ import (
 // swagger:model cluster-validation-id
 type ClusterValidationID string
 
+func NewClusterValidationID(value ClusterValidationID) *ClusterValidationID {
+	v := value
+	return &v
+}
+
 const (
 
-	// ClusterValidationIDMachineCidrDefined captures enum value "machine-cidr-defined"
-	ClusterValidationIDMachineCidrDefined ClusterValidationID = "machine-cidr-defined"
+	// ClusterValidationIDMachineDashCidrDashDefined captures enum value "machine-cidr-defined"
+	ClusterValidationIDMachineDashCidrDashDefined ClusterValidationID = "machine-cidr-defined"
 
-	// ClusterValidationIDClusterCidrDefined captures enum value "cluster-cidr-defined"
-	ClusterValidationIDClusterCidrDefined ClusterValidationID = "cluster-cidr-defined"
+	// ClusterValidationIDClusterDashCidrDashDefined captures enum value "cluster-cidr-defined"
+	ClusterValidationIDClusterDashCidrDashDefined ClusterValidationID = "cluster-cidr-defined"
 
-	// ClusterValidationIDServiceCidrDefined captures enum value "service-cidr-defined"
-	ClusterValidationIDServiceCidrDefined ClusterValidationID = "service-cidr-defined"
+	// ClusterValidationIDServiceDashCidrDashDefined captures enum value "service-cidr-defined"
+	ClusterValidationIDServiceDashCidrDashDefined ClusterValidationID = "service-cidr-defined"
 
-	// ClusterValidationIDNoCidrsOverlapping captures enum value "no-cidrs-overlapping"
-	ClusterValidationIDNoCidrsOverlapping ClusterValidationID = "no-cidrs-overlapping"
+	// ClusterValidationIDNoDashCidrsDashOverlapping captures enum value "no-cidrs-overlapping"
+	ClusterValidationIDNoDashCidrsDashOverlapping ClusterValidationID = "no-cidrs-overlapping"
 
-	// ClusterValidationIDNetworkPrefixValid captures enum value "network-prefix-valid"
-	ClusterValidationIDNetworkPrefixValid ClusterValidationID = "network-prefix-valid"
+	// ClusterValidationIDNetworkDashPrefixDashValid captures enum value "network-prefix-valid"
+	ClusterValidationIDNetworkDashPrefixDashValid ClusterValidationID = "network-prefix-valid"
 
-	// ClusterValidationIDMachineCidrEqualsToCalculatedCidr captures enum value "machine-cidr-equals-to-calculated-cidr"
-	ClusterValidationIDMachineCidrEqualsToCalculatedCidr ClusterValidationID = "machine-cidr-equals-to-calculated-cidr"
+	// ClusterValidationIDMachineDashCidrDashEqualsDashToDashCalculatedDashCidr captures enum value "machine-cidr-equals-to-calculated-cidr"
+	ClusterValidationIDMachineDashCidrDashEqualsDashToDashCalculatedDashCidr ClusterValidationID = "machine-cidr-equals-to-calculated-cidr"
 
-	// ClusterValidationIDAPIVipDefined captures enum value "api-vip-defined"
-	ClusterValidationIDAPIVipDefined ClusterValidationID = "api-vip-defined"
+	// ClusterValidationIDAPIDashVipDashDefined captures enum value "api-vip-defined"
+	ClusterValidationIDAPIDashVipDashDefined ClusterValidationID = "api-vip-defined"
 
-	// ClusterValidationIDAPIVipValid captures enum value "api-vip-valid"
-	ClusterValidationIDAPIVipValid ClusterValidationID = "api-vip-valid"
+	// ClusterValidationIDAPIDashVipDashValid captures enum value "api-vip-valid"
+	ClusterValidationIDAPIDashVipDashValid ClusterValidationID = "api-vip-valid"
 
-	// ClusterValidationIDIngressVipDefined captures enum value "ingress-vip-defined"
-	ClusterValidationIDIngressVipDefined ClusterValidationID = "ingress-vip-defined"
+	// ClusterValidationIDIngressDashVipDashDefined captures enum value "ingress-vip-defined"
+	ClusterValidationIDIngressDashVipDashDefined ClusterValidationID = "ingress-vip-defined"
 
-	// ClusterValidationIDIngressVipValid captures enum value "ingress-vip-valid"
-	ClusterValidationIDIngressVipValid ClusterValidationID = "ingress-vip-valid"
+	// ClusterValidationIDIngressDashVipDashValid captures enum value "ingress-vip-valid"
+	ClusterValidationIDIngressDashVipDashValid ClusterValidationID = "ingress-vip-valid"
 
-	// ClusterValidationIDAllHostsAreReadyToInstall captures enum value "all-hosts-are-ready-to-install"
-	ClusterValidationIDAllHostsAreReadyToInstall ClusterValidationID = "all-hosts-are-ready-to-install"
+	// ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall captures enum value "all-hosts-are-ready-to-install"
+	ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall ClusterValidationID = "all-hosts-are-ready-to-install"
 
-	// ClusterValidationIDSufficientMastersCount captures enum value "sufficient-masters-count"
-	ClusterValidationIDSufficientMastersCount ClusterValidationID = "sufficient-masters-count"
+	// ClusterValidationIDSufficientDashMastersDashCount captures enum value "sufficient-masters-count"
+	ClusterValidationIDSufficientDashMastersDashCount ClusterValidationID = "sufficient-masters-count"
 
-	// ClusterValidationIDDNSDomainDefined captures enum value "dns-domain-defined"
-	ClusterValidationIDDNSDomainDefined ClusterValidationID = "dns-domain-defined"
+	// ClusterValidationIDDNSDashDomainDashDefined captures enum value "dns-domain-defined"
+	ClusterValidationIDDNSDashDomainDashDefined ClusterValidationID = "dns-domain-defined"
 
-	// ClusterValidationIDPullSecretSet captures enum value "pull-secret-set"
-	ClusterValidationIDPullSecretSet ClusterValidationID = "pull-secret-set"
+	// ClusterValidationIDPullDashSecretDashSet captures enum value "pull-secret-set"
+	ClusterValidationIDPullDashSecretDashSet ClusterValidationID = "pull-secret-set"
 
-	// ClusterValidationIDNtpServerConfigured captures enum value "ntp-server-configured"
-	ClusterValidationIDNtpServerConfigured ClusterValidationID = "ntp-server-configured"
+	// ClusterValidationIDNtpDashServerDashConfigured captures enum value "ntp-server-configured"
+	ClusterValidationIDNtpDashServerDashConfigured ClusterValidationID = "ntp-server-configured"
 
-	// ClusterValidationIDLsoRequirementsSatisfied captures enum value "lso-requirements-satisfied"
-	ClusterValidationIDLsoRequirementsSatisfied ClusterValidationID = "lso-requirements-satisfied"
+	// ClusterValidationIDLsoDashRequirementsDashSatisfied captures enum value "lso-requirements-satisfied"
+	ClusterValidationIDLsoDashRequirementsDashSatisfied ClusterValidationID = "lso-requirements-satisfied"
 
-	// ClusterValidationIDOcsRequirementsSatisfied captures enum value "ocs-requirements-satisfied"
-	ClusterValidationIDOcsRequirementsSatisfied ClusterValidationID = "ocs-requirements-satisfied"
+	// ClusterValidationIDOcsDashRequirementsDashSatisfied captures enum value "ocs-requirements-satisfied"
+	ClusterValidationIDOcsDashRequirementsDashSatisfied ClusterValidationID = "ocs-requirements-satisfied"
 
-	// ClusterValidationIDCnvRequirementsSatisfied captures enum value "cnv-requirements-satisfied"
-	ClusterValidationIDCnvRequirementsSatisfied ClusterValidationID = "cnv-requirements-satisfied"
+	// ClusterValidationIDCnvDashRequirementsDashSatisfied captures enum value "cnv-requirements-satisfied"
+	ClusterValidationIDCnvDashRequirementsDashSatisfied ClusterValidationID = "cnv-requirements-satisfied"
 
-	// ClusterValidationIDNetworkTypeValid captures enum value "network-type-valid"
-	ClusterValidationIDNetworkTypeValid ClusterValidationID = "network-type-valid"
+	// ClusterValidationIDNetworkDashTypeDashValid captures enum value "network-type-valid"
+	ClusterValidationIDNetworkDashTypeDashValid ClusterValidationID = "network-type-valid"
 )
 
 // for schema
@@ -110,5 +116,10 @@ func (m ClusterValidationID) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// ContextValidate validates this cluster validation id based on context it is used
+func (m ClusterValidationID) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

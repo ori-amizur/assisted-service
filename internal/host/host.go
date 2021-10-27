@@ -13,7 +13,6 @@ import (
 	"github.com/filanov/stateswitch"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	eventgen "github.com/openshift/assisted-service/internal/common/events"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
@@ -30,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -260,7 +260,7 @@ func (m *Manager) HandleInstallationFailure(ctx context.Context, h *models.Host)
 		reason: "installation command failed",
 	})
 	if err == nil {
-		m.reportInstallationMetrics(ctx, h, &models.HostProgressInfo{CurrentStage: "installation command failed",
+		m.reportInstallationMetrics(ctx, h, &models.HostProgressInfo{CurrentStage: common.HostStagePtr("installation command failed"),
 			StageStartedAt: lastStatusUpdateTime}, models.HostStageFailed)
 	}
 	return err
@@ -310,7 +310,7 @@ func (m *Manager) HandlePrepareInstallationFailure(ctx context.Context, h *model
 		reason: reason,
 	})
 	if err == nil {
-		m.reportInstallationMetrics(ctx, h, &models.HostProgressInfo{CurrentStage: "installation command failed",
+		m.reportInstallationMetrics(ctx, h, &models.HostProgressInfo{CurrentStage: common.HostStagePtr("installation command failed"),
 			StageStartedAt: lastStatusUpdateTime}, models.HostStageFailed)
 	}
 	return err
@@ -328,7 +328,7 @@ func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, 
 	log := logutil.FromContext(ctx, m.log)
 
 	hostStatus := swag.StringValue(h.Status)
-	allowedStatuses := append(hostStatusesBeforeInstallation[:], models.HostStatusInstallingInProgress)
+	allowedStatuses := append(hostStatusesBeforeInstallation[:], models.HostStatusInstallingDashInDashProgress)
 	allowedStatuses = append(allowedStatuses, hostStatusesInInfraEnv[:]...)
 
 	if !funk.ContainsString(allowedStatuses, hostStatus) {
@@ -384,7 +384,7 @@ func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, 
 	// If there is substantial change in the inventory that might cause the state machine to move to a new status
 	// or one of the validations to change, then the updated_at field has to be modified.  Otherwise, we just
 	// perform update with touching the updated_at field
-	return db.Model(h).Update(map[string]interface{}{
+	return db.Model(h).Updates(map[string]interface{}{
 		"inventory":              inventoryStr,
 		"installation_disk_path": installationDiskPath,
 		"installation_disk_id":   installationDiskID,
@@ -398,7 +398,7 @@ func (m *Manager) refreshRoleInternal(ctx context.Context, h *models.Host, db *g
 	if m.Config.EnableAutoAssign || forceRefresh {
 		//because of possible hw changes, suggested role should be calculated
 		//periodically even if the suggested role is already set
-		if h.Role == models.HostRoleAutoAssign &&
+		if h.Role == models.HostRoleAutoDashAssign &&
 			funk.ContainsString(hostStatusesBeforeInstallation[:], *h.Status) {
 			if suggestedRole, err = m.autoRoleSelection(ctx, h, db); err == nil {
 				if h.SuggestedRole != suggestedRole {
@@ -546,28 +546,33 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 	}
 
 	validStatuses := []string{
-		models.HostStatusInstalling, models.HostStatusInstallingInProgress, models.HostStatusInstallingPendingUserAction,
+		models.HostStatusInstalling, models.HostStatusInstallingDashInDashProgress, models.HostStatusInstallingDashPendingDashUserDashAction,
 	}
 	if !funk.ContainsString(validStatuses, swag.StringValue(h.Status)) {
 		return errors.Errorf("Can't set progress <%s> to host in status <%s>", progress.CurrentStage, swag.StringValue(h.Status))
 	}
 
 	var extra []interface{}
-	if progress.CurrentStage != models.HostStageFailed {
+	currentStage := common.HostStageValue(progress.CurrentStage)
+	var previousStage models.HostStage
+	if previousProgress != nil {
+		previousStage = common.HostStageValue(previousProgress.CurrentStage)
+	}
+	if currentStage != models.HostStageFailed {
 		isSno := hostutil.IsSingleNode(m.log, m.db, h)
 
 		stages := m.GetStagesByRole(h.Role, h.Bootstrap, isSno)
-		if previousProgress.CurrentStage != "" {
+		if previousStage != "" {
 			// Verify the new stage is higher or equal to the current host stage according to its role stages array
-			currentIndex := m.IndexOfStage(progress.CurrentStage, stages)
+			currentIndex := m.IndexOfStage(currentStage, stages)
 
 			if currentIndex == -1 {
 				return errors.Errorf("Stages %s isn't available for host role %s bootstrap %s",
-					progress.CurrentStage, h.Role, strconv.FormatBool(h.Bootstrap))
+					currentStage, h.Role, strconv.FormatBool(h.Bootstrap))
 			}
-			if currentIndex < m.IndexOfStage(previousProgress.CurrentStage, stages) {
+			if currentIndex < m.IndexOfStage(previousStage, stages) {
 				return errors.Errorf("Can't assign lower stage \"%s\" after host has been in stage \"%s\"",
-					progress.CurrentStage, previousProgress.CurrentStage)
+					currentStage, previousStage)
 			}
 		}
 
@@ -576,19 +581,19 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 			rebootingIndex := m.IndexOfStage(models.HostStageRebooting, stages)
 			stages = stages[:rebootingIndex+1]
 		}
-		currentIndex := m.IndexOfStage(progress.CurrentStage, stages)
+		currentIndex := m.IndexOfStage(currentStage, stages)
 		installationPercentage := (float64(currentIndex+1) / float64(len(stages))) * 100
 		extra = append(extra, "progress_installation_percentage", installationPercentage)
 	}
 
-	statusInfo := string(progress.CurrentStage)
+	statusInfo := string(currentStage)
 
 	var err error
-	switch progress.CurrentStage {
+	switch currentStage {
 	case models.HostStageDone:
 		_, err = hostutil.UpdateHostProgress(ctx, logutil.FromContext(ctx, m.log), m.db, m.eventsHandler, h.InfraEnvID, *h.ID,
 			swag.StringValue(h.Status), models.HostStatusInstalled, statusInfo,
-			previousProgress.CurrentStage, progress.CurrentStage, progress.ProgressInfo, extra...)
+			previousStage, currentStage, progress.ProgressInfo, extra...)
 	case models.HostStageFailed:
 		// Keeps the last progress
 
@@ -601,17 +606,17 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 	case models.HostStageRebooting:
 		if swag.StringValue(h.Kind) == models.HostKindAddToExistingClusterHost {
 			_, err = hostutil.UpdateHostProgress(ctx, logutil.FromContext(ctx, m.log), m.db, m.eventsHandler, h.InfraEnvID, *h.ID,
-				swag.StringValue(h.Status), models.HostStatusAddedToExistingCluster, statusInfoRebootingDay2,
-				h.Progress.CurrentStage, models.HostStageDone, progress.ProgressInfo, extra...)
+				swag.StringValue(h.Status), models.HostStatusAddedDashToDashExistingDashCluster, statusInfoRebootingDay2,
+				common.HostStageValue(h.Progress.CurrentStage), models.HostStageDone, progress.ProgressInfo, extra...)
 			break
 		}
 		fallthrough
 	default:
 		_, err = hostutil.UpdateHostProgress(ctx, logutil.FromContext(ctx, m.log), m.db, m.eventsHandler, h.InfraEnvID, *h.ID,
-			swag.StringValue(h.Status), models.HostStatusInstallingInProgress, statusInfo,
-			previousProgress.CurrentStage, progress.CurrentStage, progress.ProgressInfo, extra...)
+			swag.StringValue(h.Status), models.HostStatusInstallingDashInDashProgress, statusInfo,
+			previousStage, currentStage, progress.ProgressInfo, extra...)
 	}
-	m.reportInstallationMetrics(ctx, h, previousProgress, progress.CurrentStage)
+	m.reportInstallationMetrics(ctx, h, previousProgress, currentStage)
 	return err
 }
 
@@ -1051,7 +1056,7 @@ func (m *Manager) updateValidationsInDB(ctx context.Context, db *gorm.DB, h *mod
 }
 
 func (m *Manager) AutoAssignRole(ctx context.Context, h *models.Host, db *gorm.DB) (bool, error) {
-	if h.Role == models.HostRoleAutoAssign {
+	if h.Role == models.HostRoleAutoDashAssign {
 		log := logutil.FromContext(ctx, m.log)
 		// If role is auto-assigned calculate the suggested roles
 		// to make sure the suggestion is fresh
@@ -1061,7 +1066,7 @@ func (m *Manager) AutoAssignRole(ctx context.Context, h *models.Host, db *gorm.D
 
 		//copy the suggested role into the role and update the host record
 		log.Infof("suggested role %s for host %s cluster %s", h.SuggestedRole, h.ID.String(), h.ClusterID.String())
-		if err := updateRole(m.log, h, h.SuggestedRole, h.SuggestedRole, db, string(models.HostRoleAutoAssign)); err != nil {
+		if err := updateRole(m.log, h, h.SuggestedRole, h.SuggestedRole, db, string(models.HostRoleAutoDashAssign)); err != nil {
 			log.WithError(err).Errorf("failed to update role %s for host %s cluster %s",
 				h.SuggestedRole, h.ID.String(), h.ClusterID.String())
 			return true, err
@@ -1090,7 +1095,7 @@ func (m *Manager) autoRoleSelection(ctx context.Context, host *models.Host, db *
 // 3. in case of missing inventory or an internal error the function returns auto-assign
 func (m *Manager) selectRole(ctx context.Context, h *models.Host, db *gorm.DB) (models.HostRole, error) {
 	var (
-		autoSelectedRole = models.HostRoleAutoAssign
+		autoSelectedRole = models.HostRoleAutoDashAssign
 		log              = logutil.FromContext(ctx, m.log)
 		err              error
 		vc               *validationContext
@@ -1210,7 +1215,7 @@ func (m *Manager) resetDiskSpeedValidation(host *models.Host, log logrus.FieldLo
 	if err != nil {
 		return common.NewApiError(http.StatusInternalServerError, errors.New("Reset disk speed"))
 	}
-	return db.Model(&models.Host{}).Where("cluster_id = ? and id = ?", host.ClusterID.String(), host.ID.String()).Update(&updatedHost).Error
+	return db.Model(&models.Host{}).Where("cluster_id = ? and id = ?", host.ClusterID.String(), host.ID.String()).Updates(&updatedHost).Error
 }
 
 func (m *Manager) resetContainerImagesValidation(host *models.Host, db *gorm.DB) error {
@@ -1243,9 +1248,9 @@ func (m *Manager) ResetHostValidation(ctx context.Context, hostID, infraEnvID st
 
 	host := &h.Host
 	switch validationID {
-	case string(models.HostValidationIDSufficientInstallationDiskSpeed):
+	case string(models.HostValidationIDSufficientDashInstallationDashDiskDashSpeed):
 		return m.resetDiskSpeedValidation(host, log, db)
-	case string(models.HostValidationIDContainerImagesAvailable):
+	case string(models.HostValidationIDContainerDashImagesDashAvailable):
 		return m.resetContainerImagesValidation(host, db)
 	default:
 		return common.NewApiError(http.StatusBadRequest, errors.Errorf("Validation \"%s\" cannot be reset or does not exist", validationID))

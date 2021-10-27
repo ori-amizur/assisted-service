@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -63,6 +63,9 @@ type Cluster struct {
 
 	// StaticNetworkConfigured indicates if static network configuration was set for the ISO used by clusters' nodes
 	StaticNetworkConfigured bool `json:"static_network_configured"`
+
+	// To enable soft delete
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 type Event struct {
@@ -79,6 +82,9 @@ type Host struct {
 
 	// Timestamp to trigger monitor. Monitor will be triggered if timestamp is recent
 	TriggerMonitorTimestamp time.Time
+
+	// To enable soft delete
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 type InfraEnv struct {
@@ -106,7 +112,7 @@ type InfraEnv struct {
 
 	// Hosts relationship
 	// TODO Add a helper function(s) to load InfraEnv(s) with eager-loading parameter
-	Hosts []*Host `json:"hosts" gorm:"foreignkey:InfraEnvID;association_foreignkey:ID"`
+	Hosts []*Host `json:"hosts" gorm:"foreignkey:InfraEnvID;references:ID"`
 }
 
 type EagerLoadingState bool
@@ -134,8 +140,8 @@ const (
 var ClusterSubTables = [...]string{HostsTable, MonitoredOperatorsTable, ClusterNetworksTable, ServiceNetworksTable, MachineNetworksTable}
 
 func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&models.MonitoredOperator{}, &Host{}, &Cluster{}, &Event{}, &InfraEnv{},
-		&models.ClusterNetwork{}, &models.ServiceNetwork{}, &models.MachineNetwork{}).Error
+	return db.AutoMigrate(&models.MonitoredOperator{}, &InfraEnv{}, &Host{}, &Cluster{}, &Event{},
+		&models.ClusterNetwork{}, &models.ServiceNetwork{}, &models.MachineNetwork{})
 }
 
 func LoadTableFromDB(db *gorm.DB, tableName string, conditions ...interface{}) *gorm.DB {
@@ -318,6 +324,9 @@ func ToModelsHosts(hosts []*Host) []*models.Host {
 
 func (c *Cluster) AfterFind(db *gorm.DB) error {
 	for _, h := range c.Hosts {
+		if h.Status == nil {
+			continue
+		}
 		if *h.Status == models.HostStatusKnown {
 			c.ReadyHostCount++
 			c.EnabledHostCount++
@@ -345,7 +354,7 @@ func CreateInfraEnvForCluster(db *gorm.DB, cluster *Cluster, imageType models.Im
 	}
 	infraEnv := &InfraEnv{InfraEnv: models.InfraEnv{
 		ID:               cluster.ID,
-		ClusterID:        *cluster.ID,
+		ClusterID:     	   *cluster.ID,
 		OpenshiftVersion: cluster.OpenshiftVersion,
 		PullSecretSet:    true,
 		Proxy:            &proxy,
@@ -353,11 +362,19 @@ func CreateInfraEnvForCluster(db *gorm.DB, cluster *Cluster, imageType models.Im
 		EmailDomain:      cluster.EmailDomain,
 		OrgID:            cluster.OrgID,
 		UserName:         cluster.UserName,
-		Type:             imageType,
+		Type:             &imageType,
 	},
 		PullSecret: cluster.PullSecret,
 		Generated:  false,
 	}
 	err := db.Create(infraEnv).Error
 	return err
+}
+
+func CloseDB(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }

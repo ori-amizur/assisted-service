@@ -316,7 +316,7 @@ func (v *validator) getOCPInfraEnvHostRoleRequirementsForVersion(infraEnv *commo
 	if role == models.HostRoleMaster {
 		return *requirements.MasterRequirements, nil
 	}
-	if role == models.HostRoleWorker || role == models.HostRoleAutoAssign {
+	if role == models.HostRoleWorker || role == models.HostRoleAutoDashAssign {
 		return *requirements.WorkerRequirements, nil
 	}
 	return models.ClusterHostRequirementsDetails{}, fmt.Errorf("Invalid role for host %s", role)

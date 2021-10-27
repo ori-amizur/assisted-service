@@ -14,8 +14,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/kelseyhightower/envconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -34,6 +32,8 @@ import (
 	"github.com/openshift/assisted-service/pkg/leader"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -137,7 +137,7 @@ var _ = Describe("update_role", func() {
 			},
 			{
 				name:     "installing-in-progress",
-				srcState: models.HostStatusInstallingInProgress,
+				srcState: models.HostStatusInstallingDashInDashProgress,
 				testFunc: failure,
 			},
 		}
@@ -218,7 +218,7 @@ var _ = Describe("update_role", func() {
 				name:                      "day2-update-auto-assign",
 				day2:                      true,
 				role:                      models.HostRoleMaster,
-				previousRole:              models.HostRoleAutoAssign,
+				previousRole:              models.HostRoleAutoDashAssign,
 				expectedMachineConfigPool: string(models.HostRoleMaster),
 			},
 			{
@@ -327,7 +327,7 @@ var _ = Describe("update_progress", func() {
 					eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 				Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 				hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 			})
 
 			It("same_value", func() {
@@ -339,12 +339,12 @@ var _ = Describe("update_progress", func() {
 					eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 				Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 				hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 				updatedAt := hostFromDB.StageUpdatedAt.String()
 
 				Expect(state.UpdateInstallProgress(ctx, &hostFromDB.Host, &progress)).ShouldNot(HaveOccurred())
 				hostFromDB = hostutil.GetHostFromDB(*hostFromDB.ID, host.InfraEnvID, db)
-				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 				Expect(hostFromDB.StageUpdatedAt.String()).Should(Equal(updatedAt))
 			})
 
@@ -359,7 +359,7 @@ var _ = Describe("update_progress", func() {
 				Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 				hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 
-				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 			})
 
 			It("done", func() {
@@ -423,7 +423,7 @@ var _ = Describe("update_progress", func() {
 						eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 					Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 					hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 					Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
 
 					Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
@@ -455,7 +455,7 @@ var _ = Describe("update_progress", func() {
 			It("lower_stage", func() {
 				verifyDb := func() {
 					hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 					Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
 
 					Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
@@ -578,7 +578,7 @@ var _ = Describe("update progress special cases", func() {
 				eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
 
 			progress.CurrentStage = models.HostStageWritingImageToDisk
@@ -600,7 +600,7 @@ var _ = Describe("update progress special cases", func() {
 				eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
 
 			progress.CurrentStage = models.HostStageInstalling
@@ -619,7 +619,7 @@ var _ = Describe("update progress special cases", func() {
 				eventstest.WithSeverityMatcher(models.EventSeverityInfo)))
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingInProgress))
+			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
 
 			progress.CurrentStage = models.HostStageWritingImageToDisk
@@ -784,7 +784,7 @@ var _ = Describe("reset host", func() {
 			Expect(*resetEvent.Severity).Should(Equal(models.EventSeverityInfo))
 			eventMessage := fmt.Sprintf("Installation reset for host %s", hostutil.GetHostnameForMsg(&h))
 			Expect(*resetEvent.Message).Should(Equal(eventMessage))
-			Expect(h.LogsCollectedAt).Should(Equal(strfmt.DateTime(time.Time{})))
+			Expect(time.Time(h.LogsCollectedAt).Equal(time.Time{})).Should(BeTrue())
 		})
 
 		It("register resetting host", func() {
@@ -815,7 +815,7 @@ var _ = Describe("reset host", func() {
 			Expect(state.IsRequireUserActionReset(&h)).Should(Equal(true))
 			Expect(state.ResetPendingUserAction(ctx, &h, db)).ShouldNot(HaveOccurred())
 			db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
-			Expect(*h.Status).Should(Equal(models.HostStatusResettingPendingUserAction))
+			Expect(*h.Status).Should(Equal(models.HostStatusResettingDashPendingDashUserDashAction))
 			events, err := eventsHandler.V2GetEvents(ctx, &clusterId, h.ID, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(events)).ShouldNot(Equal(0))
@@ -841,7 +841,7 @@ var _ = Describe("reset host", func() {
 			Expect(state.IsRequireUserActionReset(&h)).Should(Equal(true))
 			Expect(state.ResetPendingUserAction(ctx, &h, db)).ShouldNot(HaveOccurred())
 			db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
-			Expect(*h.Status).Should(Equal(models.HostStatusResettingPendingUserAction))
+			Expect(*h.Status).Should(Equal(models.HostStatusResettingDashPendingDashUserDashAction))
 			events, err := eventsHandler.V2GetEvents(ctx, h.ClusterID, h.ID, nil)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(len(events)).ShouldNot(Equal(0))
@@ -902,7 +902,7 @@ var _ = Describe("register host", func() {
 		db            *gorm.DB
 		ctrl          *gomock.Controller
 		state         API
-		h             models.Host
+		h             common.Host
 		eventsHandler *eventsapi.MockHandler
 		dbName        string
 		config        Config
@@ -921,22 +921,22 @@ var _ = Describe("register host", func() {
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		infraEnvId := strfmt.UUID(uuid.New().String())
-		h = hostutil.GenerateTestHost(id, infraEnvId, clusterId, models.HostStatusDiscovering)
+		h.Host = hostutil.GenerateTestHost(id, infraEnvId, clusterId, models.HostStatusDiscovering)
 	})
 
 	It("register host success", func() {
-		Expect(state.RegisterHost(ctx, &h, db)).ShouldNot(HaveOccurred())
+		Expect(state.RegisterHost(ctx, &h.Host, db)).ShouldNot(HaveOccurred())
 		db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
 		Expect(*h.Status).Should(Equal(models.HostStatusDiscovering))
 	})
 
 	It("register (soft) deleted host success", func() {
-		Expect(state.RegisterHost(ctx, &h, db)).ShouldNot(HaveOccurred())
+		Expect(state.RegisterHost(ctx, &h.Host, db)).ShouldNot(HaveOccurred())
 		db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
 		Expect(*h.Status).Should(Equal(models.HostStatusDiscovering))
 		Expect(db.Delete(&h).RowsAffected).Should(Equal(int64(1)))
 		Expect(db.Unscoped().Find(&h).RowsAffected).Should(Equal(int64(1)))
-		Expect(state.RegisterHost(ctx, &h, db)).ShouldNot(HaveOccurred())
+		Expect(state.RegisterHost(ctx, &h.Host, db)).ShouldNot(HaveOccurred())
 		db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
 		Expect(*h.Status).Should(Equal(models.HostStatusDiscovering))
 
@@ -1346,13 +1346,13 @@ var _ = Describe("UpdateInventory", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInstallingInProgress,
-				srcState:   models.HostStatusInstallingInProgress,
+				name:       models.HostStatusInstallingDashInDashProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: success,
 			},
 			{
-				name:       models.HostStatusResettingPendingUserAction,
-				srcState:   models.HostStatusResettingPendingUserAction,
+				name:       models.HostStatusResettingDashPendingDashUserDashAction,
+				srcState:   models.HostStatusResettingDashPendingDashUserDashAction,
 				validation: failure,
 			},
 			{
@@ -1366,8 +1366,8 @@ var _ = Describe("UpdateInventory", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				validation: success,
 			},
 		}
@@ -1461,13 +1461,13 @@ var _ = Describe("Update hostname", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInstallingInProgress,
-				srcState:   models.HostStatusInstallingInProgress,
+				name:       models.HostStatusInstallingDashInDashProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusResettingPendingUserAction,
-				srcState:   models.HostStatusResettingPendingUserAction,
+				name:       models.HostStatusResettingDashPendingDashUserDashAction,
+				srcState:   models.HostStatusResettingDashPendingDashUserDashAction,
 				validation: failure,
 			},
 			{
@@ -1481,8 +1481,8 @@ var _ = Describe("Update hostname", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				validation: success,
 			},
 		}
@@ -1579,13 +1579,13 @@ var _ = Describe("Bind host", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInstallingInProgress,
-				srcState:   models.HostStatusInstallingInProgress,
+				name:       models.HostStatusInstallingDashInDashProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusResettingPendingUserAction,
-				srcState:   models.HostStatusResettingPendingUserAction,
+				name:       models.HostStatusResettingDashPendingDashUserDashAction,
+				srcState:   models.HostStatusResettingDashPendingDashUserDashAction,
 				validation: failure,
 			},
 			{
@@ -1599,33 +1599,33 @@ var _ = Describe("Bind host", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusKnownUnbound,
-				srcState:   models.HostStatusKnownUnbound,
+				name:       models.HostStatusKnownDashUnbound,
+				srcState:   models.HostStatusKnownDashUnbound,
 				validation: success,
 			},
 			{
-				name:       models.HostStatusDisconnectedUnbound,
-				srcState:   models.HostStatusDisconnectedUnbound,
+				name:       models.HostStatusDisconnectedDashUnbound,
+				srcState:   models.HostStatusDisconnectedDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInsufficientUnbound,
-				srcState:   models.HostStatusInsufficientUnbound,
+				name:       models.HostStatusInsufficientDashUnbound,
+				srcState:   models.HostStatusInsufficientDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusDisabledUnbound,
-				srcState:   models.HostStatusDisabledUnbound,
+				name:       models.HostStatusDisabledDashUnbound,
+				srcState:   models.HostStatusDisabledDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusDiscoveringUnbound,
-				srcState:   models.HostStatusDiscoveringUnbound,
+				name:       models.HostStatusDiscoveringDashUnbound,
+				srcState:   models.HostStatusDiscoveringDashUnbound,
 				validation: failure,
 			},
 			{
@@ -1734,13 +1734,13 @@ var _ = Describe("Unbind host", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInstallingInProgress,
-				srcState:   models.HostStatusInstallingInProgress,
+				name:       models.HostStatusInstallingDashInDashProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusResettingPendingUserAction,
-				srcState:   models.HostStatusResettingPendingUserAction,
+				name:       models.HostStatusResettingDashPendingDashUserDashAction,
+				srcState:   models.HostStatusResettingDashPendingDashUserDashAction,
 				validation: failure,
 			},
 			{
@@ -1755,33 +1755,33 @@ var _ = Describe("Unbind host", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				validation: success,
 			},
 			{
-				name:       models.HostStatusKnownUnbound,
-				srcState:   models.HostStatusKnownUnbound,
+				name:       models.HostStatusKnownDashUnbound,
+				srcState:   models.HostStatusKnownDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusDisconnectedUnbound,
-				srcState:   models.HostStatusDisconnectedUnbound,
+				name:       models.HostStatusDisconnectedDashUnbound,
+				srcState:   models.HostStatusDisconnectedDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusInsufficientUnbound,
-				srcState:   models.HostStatusInsufficientUnbound,
+				name:       models.HostStatusInsufficientDashUnbound,
+				srcState:   models.HostStatusInsufficientDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusDisabledUnbound,
-				srcState:   models.HostStatusDisabledUnbound,
+				name:       models.HostStatusDisabledDashUnbound,
+				srcState:   models.HostStatusDisabledDashUnbound,
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusDiscoveringUnbound,
-				srcState:   models.HostStatusDiscoveringUnbound,
+				name:       models.HostStatusDiscoveringDashUnbound,
+				srcState:   models.HostStatusDiscoveringDashUnbound,
 				validation: failure,
 			},
 		}
@@ -1913,13 +1913,13 @@ var _ = Describe("Update disk installation path", func() {
 				validation: false,
 			},
 			{
-				name:       models.HostStatusInstallingInProgress,
-				srcState:   models.HostStatusInstallingInProgress,
+				name:       models.HostStatusInstallingDashInDashProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: false,
 			},
 			{
-				name:       models.HostStatusResettingPendingUserAction,
-				srcState:   models.HostStatusResettingPendingUserAction,
+				name:       models.HostStatusResettingDashPendingDashUserDashAction,
+				srcState:   models.HostStatusResettingDashPendingDashUserDashAction,
 				validation: false,
 			},
 			{
@@ -1933,8 +1933,8 @@ var _ = Describe("Update disk installation path", func() {
 				validation: false,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				validation: true,
 			},
 		}
@@ -2189,7 +2189,7 @@ var _ = Describe("update logs_info", func() {
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 		infraEnvId = strfmt.UUID(uuid.New().String())
-		host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingInProgress)
+		host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingDashInDashProgress)
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 	})
 
@@ -2198,11 +2198,11 @@ var _ = Describe("update logs_info", func() {
 	})
 
 	validateLogsStartedAt := func(h *models.Host) {
-		Expect(h.LogsStartedAt).NotTo(Equal(strfmt.DateTime(time.Time{})))
+		Expect(time.Time(h.LogsStartedAt).Equal(time.Time{})).To(BeFalse())
 	}
 
 	validateCollectedAtNotUpdated := func(h *models.Host) {
-		Expect(h.LogsCollectedAt).To(Equal(strfmt.DateTime(time.Time{})))
+		Expect(time.Time(h.LogsStartedAt).Equal(time.Time{})).To(BeTrue())
 	}
 
 	tests := []struct {
@@ -2490,9 +2490,9 @@ var _ = Describe("AutoAssignRole", func() {
 		)
 		Expect(db.Create(&common.Cluster{Cluster: models.Cluster{ID: &clusterId, Kind: swag.String(models.ClusterKindCluster)}}).Error).ShouldNot(HaveOccurred())
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 		masterRequirements := models.ClusterHostRequirementsDetails{
 			CPUCores:   4,
@@ -2531,7 +2531,7 @@ var _ = Describe("AutoAssignRole", func() {
 
 	AfterEach(func() {
 		common.DeleteTestDB(db, dbName)
-		db.Close()
+		common.CloseDB(db)
 		ctrl.Finish()
 	})
 
@@ -2581,21 +2581,21 @@ var _ = Describe("AutoAssignRole", func() {
 				expectedRole: models.HostRoleMaster,
 			}, {
 				name:         "no inventory",
-				srcRole:      models.HostRoleAutoAssign,
+				srcRole:      models.HostRoleAutoDashAssign,
 				inventory:    "",
 				success:      false,
 				selected:     false,
-				expectedRole: models.HostRoleAutoAssign,
+				expectedRole: models.HostRoleAutoDashAssign,
 			}, {
 				name:         "auto-assign master",
-				srcRole:      models.HostRoleAutoAssign,
+				srcRole:      models.HostRoleAutoDashAssign,
 				inventory:    hostutil.GenerateMasterInventory(),
 				success:      true,
 				selected:     true,
 				expectedRole: models.HostRoleMaster,
 			}, {
 				name:         "auto-assign worker",
-				srcRole:      models.HostRoleAutoAssign,
+				srcRole:      models.HostRoleAutoDashAssign,
 				inventory:    workerInventory(),
 				success:      true,
 				selected:     true,
@@ -2621,7 +2621,7 @@ var _ = Describe("AutoAssignRole", func() {
 		for i := 0; i < common.MinMasterHostsNeededForInstallation; i++ {
 			h := hostutil.GenerateTestHost(strfmt.UUID(uuid.New().String()), infraEnvId, clusterId, models.HostStatusKnown)
 			h.Inventory = hostutil.GenerateMasterInventory()
-			h.Role = models.HostRoleAutoAssign
+			h.Role = models.HostRoleAutoDashAssign
 			h.SuggestedRole = ""
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 			verifyAutoAssignRole(&h, true, true)
@@ -2630,7 +2630,7 @@ var _ = Describe("AutoAssignRole", func() {
 
 		h := hostutil.GenerateTestHost(strfmt.UUID(uuid.New().String()), infraEnvId, clusterId, models.HostStatusKnown)
 		h.Inventory = hostutil.GenerateMasterInventory()
-		h.Role = models.HostRoleAutoAssign
+		h.Role = models.HostRoleAutoDashAssign
 		h.SuggestedRole = ""
 		Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 		verifyAutoAssignRole(&h, true, true)
@@ -2674,15 +2674,15 @@ var _ = Describe("IsValidMasterCandidate", func() {
 		)
 		Expect(db.Create(&common.Cluster{Cluster: models.Cluster{ID: &clusterId, Kind: swag.String(models.ClusterKindCluster)}}).Error).ShouldNot(HaveOccurred())
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 	})
 
 	AfterEach(func() {
 		common.DeleteTestDB(db, dbName)
-		db.Close()
+		common.CloseDB(db)
 		ctrl.Finish()
 	})
 
@@ -2696,8 +2696,8 @@ var _ = Describe("IsValidMasterCandidate", func() {
 		}{
 			{
 				name:      "not ready host",
-				srcState:  models.HostStatusPendingForInput,
-				srcRole:   models.HostRoleAutoAssign,
+				srcState:  models.HostStatusPendingDashForDashInput,
+				srcRole:   models.HostRoleAutoDashAssign,
 				inventory: hostutil.GenerateMasterInventory(),
 				isValid:   true,
 			}, {
@@ -2721,13 +2721,13 @@ var _ = Describe("IsValidMasterCandidate", func() {
 			}, {
 				name:      "valid for master with auto-assign role",
 				srcState:  models.HostStatusKnown,
-				srcRole:   models.HostRoleAutoAssign,
+				srcRole:   models.HostRoleAutoDashAssign,
 				inventory: hostutil.GenerateMasterInventory(),
 				isValid:   true,
 			}, {
 				name:      "worker inventory",
 				srcState:  models.HostStatusKnown,
-				srcRole:   models.HostRoleAutoAssign,
+				srcRole:   models.HostRoleAutoDashAssign,
 				inventory: workerInventory(),
 				isValid:   false,
 			},
@@ -2830,7 +2830,7 @@ var _ = Describe("Validation metrics and events", func() {
 
 	It("Test ReportValidationFailedMetrics", func() {
 
-		mockMetric.EXPECT().HostValidationFailed(openshiftVersion, emailDomain, models.HostValidationIDHasMinCPUCores)
+		mockMetric.EXPECT().HostValidationFailed(openshiftVersion, emailDomain, models.HostValidationIDHasDashMinDashCPUDashCores)
 
 		err := m.ReportValidationFailedMetrics(ctx, h, openshiftVersion, emailDomain)
 		Expect(err).ToNot(HaveOccurred())
@@ -2850,7 +2850,7 @@ var _ = Describe("Validation metrics and events", func() {
 		Expect(err).ToNot(HaveOccurred())
 		m.reportValidationStatusChanged(ctx, vc, h, newValidationRes, currentValidationRes)
 
-		mockMetric.EXPECT().HostValidationChanged(openshiftVersion, emailDomain, models.HostValidationIDHasMinCPUCores)
+		mockMetric.EXPECT().HostValidationChanged(openshiftVersion, emailDomain, models.HostValidationIDHasDashMinDashCPUDashCores)
 		mockEvents.EXPECT().SendHostEvent(ctx, eventstest.NewEventMatcher(
 			eventstest.WithNameMatcher(eventgen.HostValidationFallingEventName),
 			eventstest.WithHostIdMatcher(h.ID.String()),
@@ -2875,7 +2875,7 @@ var _ = Describe("Validation metrics and events", func() {
 		Expect(err).ToNot(HaveOccurred())
 		m.reportValidationStatusChanged(ctx, vc, h, newValidationRes, currentValidationRes)
 
-		mockMetric.EXPECT().HostValidationChanged(openshiftVersion, emailDomain, models.HostValidationIDHasMinCPUCores)
+		mockMetric.EXPECT().HostValidationChanged(openshiftVersion, emailDomain, models.HostValidationIDHasDashMinDashCPUDashCores)
 		mockEvents.EXPECT().SendHostEvent(ctx, eventstest.NewEventMatcher(
 			eventstest.WithNameMatcher(eventgen.HostValidationFallingEventName),
 			eventstest.WithHostIdMatcher(h.ID.String()),
@@ -3059,7 +3059,7 @@ var _ = Describe("ResetHostValidation", func() {
 		var newHost models.Host
 		Expect(db.Take(&newHost, "id = ? and infra_env_id = ?", h.ID.String(), h.InfraEnvID.String()).Error).ToNot(HaveOccurred())
 		verifyExistingDiskResult(&newHost, "/dev/sda", 5, 2)
-		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDSufficientInstallationDiskSpeed), nil)).ToNot(HaveOccurred())
+		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDSufficientDashInstallationDashDiskDashSpeed), nil)).ToNot(HaveOccurred())
 		Expect(db.Take(&newHost, "id = ? and infra_env_id = ?", h.ID.String(), h.InfraEnvID.String()).Error).ToNot(HaveOccurred())
 		verifyNonExistentDiskResult(&newHost, "/dev/sda")
 	})
@@ -3075,7 +3075,7 @@ var _ = Describe("ResetHostValidation", func() {
 		imageStatus, exists := common.GetImageStatus(imageStatuses, "a.b.c")
 		Expect(exists).To(BeTrue())
 		Expect(imageStatus.Result).To(Equal(models.ContainerImageAvailabilityResultFailure))
-		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDContainerImagesAvailable), nil)).ToNot(HaveOccurred())
+		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDContainerDashImagesDashAvailable), nil)).ToNot(HaveOccurred())
 		Expect(db.Take(&newHost, "id = ? and cluster_id = ?", h.ID.String(), h.ClusterID.String()).Error).ToNot(HaveOccurred())
 		imageStatuses, err = common.UnmarshalImageStatuses(newHost.ImagesStatus)
 		Expect(err).ToNot(HaveOccurred())
@@ -3083,13 +3083,13 @@ var _ = Describe("ResetHostValidation", func() {
 		Expect(exists).To(BeFalse())
 	})
 	It("Unsupported validation", func() {
-		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDAPIVipConnected), nil)).To(HaveOccurred())
+		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDAPIDashVipDashConnected), nil)).To(HaveOccurred())
 	})
 	It("Nonexistant validation", func() {
 		Expect(m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, "abcd", nil)).To(HaveOccurred())
 	})
 	It("Host not found", func() {
-		err := m.ResetHostValidation(ctx, strfmt.UUID(uuid.New().String()), h.InfraEnvID, string(models.HostValidationIDContainerImagesAvailable), nil)
+		err := m.ResetHostValidation(ctx, strfmt.UUID(uuid.New().String()), h.InfraEnvID, string(models.HostValidationIDContainerDashImagesDashAvailable), nil)
 		Expect(err).To(HaveOccurred())
 		apiErr, ok := err.(*common.ApiErrorResponse)
 		Expect(ok).To(BeTrue())
@@ -3097,7 +3097,7 @@ var _ = Describe("ResetHostValidation", func() {
 	})
 	It("Unassigned host", func() {
 		h = registerUnassignedTestHost(strfmt.UUID(uuid.New().String()))
-		err := m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDContainerImagesAvailable), nil)
+		err := m.ResetHostValidation(ctx, *h.ID, h.InfraEnvID, string(models.HostValidationIDContainerDashImagesDashAvailable), nil)
 		Expect(err).To(HaveOccurred())
 		apiErr, ok := err.(*common.ApiErrorResponse)
 		Expect(ok).To(BeTrue())
@@ -3359,7 +3359,7 @@ var _ = Describe("Installation stages", func() {
 			h = hFromDB.Host
 			expectedInstallationPercentage := int64(100)
 			Expect(h.Progress.InstallationPercentage).To(Equal(expectedInstallationPercentage))
-			Expect(*h.Status).To(Equal(models.HostStatusAddedToExistingCluster))
+			Expect(*h.Status).To(Equal(models.HostStatusAddedDashToDashExistingDashCluster))
 		})
 	})
 })

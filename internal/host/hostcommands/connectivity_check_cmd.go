@@ -3,10 +3,10 @@ package hostcommands
 import (
 	"context"
 
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/connectivity"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type connectivityCheckCmd struct {
@@ -45,7 +45,7 @@ func (c *connectivityCheckCmd) GetSteps(ctx context.Context, host *models.Host) 
 	}
 
 	step := &models.Step{
-		StepType: models.StepTypeConnectivityCheck,
+		StepType: models.StepTypeConnectivityDashCheck,
 		Command:  "podman",
 		Args: []string{
 			"run", "--privileged", "--net=host", "--rm", "--quiet",

@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
@@ -33,6 +32,7 @@ import (
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/conversions"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	"k8s.io/utils/pointer"
 )
 
@@ -127,7 +127,7 @@ var _ = Describe("RegisterHost", func() {
 			},
 			{
 				name:                "insufficient",
-				srcState:            models.HostStatusInstallingInProgress,
+				srcState:            models.HostStatusInstallingDashInDashProgress,
 				dstState:            models.HostStatusError,
 				expectedEventInfo:   "Host %s: updated status from \"installing-in-progress\" to \"error\" (The host unexpectedly restarted during the installation)",
 				expectedEventStatus: models.EventSeverityError,
@@ -135,8 +135,8 @@ var _ = Describe("RegisterHost", func() {
 			{
 				name:                  "pending-user-action",
 				progressStage:         models.HostStageRebooting,
-				srcState:              models.HostStatusInstallingPendingUserAction,
-				dstState:              models.HostStatusInstallingPendingUserAction,
+				srcState:              models.HostStatusInstallingDashPendingDashUserDashAction,
+				dstState:              models.HostStatusInstallingDashPendingDashUserDashAction,
 				errorCode:             http.StatusForbidden,
 				expectedEventInfo:     "",
 				expectedNilStatusInfo: true,
@@ -384,11 +384,11 @@ var _ = Describe("RegisterHost", func() {
 			hostKind           string
 		}{
 			{
-				srcState: models.HostStatusInstallingInProgress,
+				srcState: models.HostStatusInstallingDashInDashProgress,
 				progress: models.HostProgressInfo{
 					CurrentStage: models.HostStageRebooting,
 				},
-				dstState:      models.HostStatusInstallingPendingUserAction,
+				dstState:      models.HostStatusInstallingDashPendingDashUserDashAction,
 				eventSeverity: models.EventSeverityWarning,
 				eventMessage: "Host %s: updated status from \"installing-in-progress\" to \"installing-pending-user-action\" " +
 					"(Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot " +
@@ -412,7 +412,7 @@ var _ = Describe("RegisterHost", func() {
 				origRole:          models.HostRoleMaster,
 			},
 			{
-				srcState: models.HostStatusResettingPendingUserAction,
+				srcState: models.HostStatusResettingDashPendingDashUserDashAction,
 				progress: models.HostProgressInfo{
 					CurrentStage: models.HostStageRebooting,
 				},
@@ -426,11 +426,11 @@ var _ = Describe("RegisterHost", func() {
 				origRole:           models.HostRoleMaster,
 			},
 			{
-				srcState: models.HostStatusAddedToExistingCluster,
+				srcState: models.HostStatusAddedDashToDashExistingDashCluster,
 				progress: models.HostProgressInfo{
 					CurrentStage: models.HostStageRebooting,
 				},
-				dstState:      models.HostStatusInstallingPendingUserAction,
+				dstState:      models.HostStatusInstallingDashPendingDashUserDashAction,
 				eventSeverity: models.EventSeverityWarning,
 				eventMessage: "Host %s: updated status from \"added-to-existing-cluster\" to \"installing-pending-user-action\" " +
 					"(Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot " +
@@ -507,49 +507,49 @@ var _ = Describe("RegisterHost", func() {
 			{
 				name:        "register new host to pool",
 				srcState:    "",
-				dstState:    models.HostStatusDiscoveringUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     true,
 				eventRaised: false,
 			},
 			{
 				name:        "dicovering-unbound to discovering-unbound",
-				srcState:    models.HostStatusDiscoveringUnbound,
-				dstState:    models.HostStatusDiscoveringUnbound,
+				srcState:    models.HostStatusDiscoveringDashUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     false,
 				eventRaised: false,
 			},
 			{
 				name:        "disconnected-unbound to discovering-unbound",
-				srcState:    models.HostStatusDisconnectedUnbound,
-				dstState:    models.HostStatusDiscoveringUnbound,
+				srcState:    models.HostStatusDisconnectedDashUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     false,
 				eventRaised: true,
 			},
 			{
 				name:        "insufficient-unbound to discovering-unbound",
-				srcState:    models.HostStatusInsufficientUnbound,
-				dstState:    models.HostStatusDiscoveringUnbound,
+				srcState:    models.HostStatusInsufficientDashUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     false,
 				eventRaised: true,
 			},
 			{
 				name:        "known-unbound to discovering-unbound",
-				srcState:    models.HostStatusKnownUnbound,
-				dstState:    models.HostStatusDiscoveringUnbound,
+				srcState:    models.HostStatusKnownDashUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     false,
 				eventRaised: true,
 			},
 			{
 				name:        "disabled-unbound to disabled-unbound",
-				srcState:    models.HostStatusDisabledUnbound,
-				dstState:    models.HostStatusDisabledUnbound,
+				srcState:    models.HostStatusDisabledDashUnbound,
+				dstState:    models.HostStatusDisabledDashUnbound,
 				newHost:     false,
 				eventRaised: false,
 			},
 			{
 				name:        "unbinding to discovering-unbound",
 				srcState:    models.HostStatusUnbinding,
-				dstState:    models.HostStatusDiscoveringUnbound,
+				dstState:    models.HostStatusDiscoveringDashUnbound,
 				newHost:     false,
 				eventRaised: true,
 			},
@@ -703,18 +703,18 @@ var _ = Describe("Cancel host installation", func() {
 		statusCode    int32
 		expectedState string
 	}{
-		{state: models.HostStatusPreparingForInstallation, success: true, changeState: true, expectedState: models.HostStatusKnown},
-		{state: models.HostStatusPreparingSuccessful, success: true, changeState: true, expectedState: models.HostStatusKnown},
+		{state: models.HostStatusPreparingDashForDashInstallation, success: true, changeState: true, expectedState: models.HostStatusKnown},
+		{state: models.HostStatusPreparingDashSuccessful, success: true, changeState: true, expectedState: models.HostStatusKnown},
 		{state: models.HostStatusInstalling, success: true, changeState: true},
-		{state: models.HostStatusInstallingInProgress, success: true, changeState: true},
+		{state: models.HostStatusInstallingDashInDashProgress, success: true, changeState: true},
 		{state: models.HostStatusInstalled, success: true, changeState: true},
 		{state: models.HostStatusError, success: true, changeState: true},
 		{state: models.HostStatusDisabled, success: true, changeState: false},
-		{state: models.HostStatusInstallingPendingUserAction, success: true, changeState: true},
+		{state: models.HostStatusInstallingDashPendingDashUserDashAction, success: true, changeState: true},
 		{state: models.HostStatusDiscovering, success: false, statusCode: http.StatusConflict, changeState: false},
 		{state: models.HostStatusKnown, success: true, changeState: false},
-		{state: models.HostStatusPendingForInput, success: false, statusCode: http.StatusConflict, changeState: false},
-		{state: models.HostStatusResettingPendingUserAction, success: false, statusCode: http.StatusConflict, changeState: false},
+		{state: models.HostStatusPendingDashForDashInput, success: false, statusCode: http.StatusConflict, changeState: false},
+		{state: models.HostStatusResettingDashPendingDashUserDashAction, success: false, statusCode: http.StatusConflict, changeState: false},
 		{state: models.HostStatusDisconnected, success: false, statusCode: http.StatusConflict, changeState: false},
 		{state: models.HostStatusCancelled, success: false, statusCode: http.StatusConflict, changeState: false},
 	}
@@ -798,19 +798,19 @@ var _ = Describe("Reset host", func() {
 		statusCode    int32
 		expectedState string
 	}{
-		{state: models.HostStatusPreparingForInstallation, success: true, changeState: true, expectedState: models.HostStatusKnown},
+		{state: models.HostStatusPreparingDashForDashInstallation, success: true, changeState: true, expectedState: models.HostStatusKnown},
 		{state: models.HostStatusInstalling, success: true, changeState: true},
-		{state: models.HostStatusInstallingInProgress, success: true, changeState: true},
+		{state: models.HostStatusInstallingDashInDashProgress, success: true, changeState: true},
 		{state: models.HostStatusInstalled, success: true, changeState: true},
 		{state: models.HostStatusError, success: true, changeState: true},
 		{state: models.HostStatusDisabled, success: true, changeState: false},
-		{state: models.HostStatusInstallingPendingUserAction, success: true, changeState: true},
+		{state: models.HostStatusInstallingDashPendingDashUserDashAction, success: true, changeState: true},
 		{state: models.HostStatusCancelled, success: true, changeState: true},
-		{state: models.HostStatusAddedToExistingCluster, success: true, changeState: true},
+		{state: models.HostStatusAddedDashToDashExistingDashCluster, success: true, changeState: true},
 		{state: models.HostStatusDiscovering, success: false, statusCode: http.StatusConflict, changeState: false},
 		{state: models.HostStatusKnown, success: true, changeState: false},
-		{state: models.HostStatusPendingForInput, success: false, statusCode: http.StatusConflict, changeState: false},
-		{state: models.HostStatusResettingPendingUserAction, success: false, statusCode: http.StatusConflict, changeState: false},
+		{state: models.HostStatusPendingDashForDashInput, success: false, statusCode: http.StatusConflict, changeState: false},
+		{state: models.HostStatusResettingDashPendingDashUserDashAction, success: false, statusCode: http.StatusConflict, changeState: false},
 		{state: models.HostStatusDisconnected, success: false, statusCode: http.StatusConflict, changeState: false},
 	}
 
@@ -911,12 +911,12 @@ var _ = Describe("Install", func() {
 		}{
 			{
 				name:       "prepared",
-				srcState:   models.HostStatusPreparingSuccessful,
+				srcState:   models.HostStatusPreparingDashSuccessful,
 				validation: failure,
 			},
 			{
 				name:       "preparing",
-				srcState:   models.HostStatusPreparingForInstallation,
+				srcState:   models.HostStatusPreparingDashForDashInstallation,
 				validation: failure,
 			},
 			{
@@ -956,7 +956,7 @@ var _ = Describe("Install", func() {
 			},
 			{
 				name:       "in-progress",
-				srcState:   models.HostStatusInstallingInProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: failure,
 			},
 			{
@@ -990,7 +990,7 @@ var _ = Describe("Install", func() {
 
 	Context("install with transaction", func() {
 		BeforeEach(func() {
-			host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingSuccessful)
+			host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingDashSuccessful)
 			host.StatusInfo = swag.String(statusInfoHostPreparationSuccessful)
 			host.Inventory = hostutil.GenerateMasterInventory()
 			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
@@ -1035,7 +1035,7 @@ var _ = Describe("Install", func() {
 			Expect(hapi.RefreshStatus(ctx, &host, tx)).ShouldNot(HaveOccurred())
 			Expect(tx.Rollback().Error).ShouldNot(HaveOccurred())
 			h := hostutil.GetHostFromDB(hostId, infraEnvId, db)
-			Expect(*h.Status).Should(Equal(models.HostStatusPreparingSuccessful))
+			Expect(*h.Status).Should(Equal(models.HostStatusPreparingDashSuccessful))
 			Expect(*h.StatusInfo).Should(Equal(statusInfoHostPreparationSuccessful))
 		})
 	})
@@ -1146,7 +1146,7 @@ var _ = Describe("Disable", func() {
 			},
 			{
 				name:       "in-progress",
-				srcState:   models.HostStatusInstallingInProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				poolHost:   false,
 				validation: failure,
 			},
@@ -1164,36 +1164,36 @@ var _ = Describe("Disable", func() {
 				validation: failure,
 			},
 			{
-				name:       models.HostStatusPendingForInput,
-				srcState:   models.HostStatusPendingForInput,
+				name:       models.HostStatusPendingDashForDashInput,
+				srcState:   models.HostStatusPendingDashForDashInput,
 				poolHost:   false,
 				validation: success,
 				mocks:      []func(string, string){mockEventsUpdateStatus},
 			},
 			{
 				name:       "disconnected-unbound",
-				srcState:   models.HostStatusDisconnectedUnbound,
+				srcState:   models.HostStatusDisconnectedDashUnbound,
 				poolHost:   true,
 				validation: success,
 				mocks:      []func(string, string){mockEventsUpdateStatus},
 			},
 			{
 				name:       "discovering-unbound",
-				srcState:   models.HostStatusDiscoveringUnbound,
+				srcState:   models.HostStatusDiscoveringDashUnbound,
 				poolHost:   true,
 				validation: success,
 				mocks:      []func(string, string){mockEventsUpdateStatus},
 			},
 			{
 				name:       "insufficient-unbound",
-				srcState:   models.HostStatusInsufficientUnbound,
+				srcState:   models.HostStatusInsufficientDashUnbound,
 				poolHost:   true,
 				validation: success,
 				mocks:      []func(string, string){mockEventsUpdateStatus},
 			},
 			{
 				name:       "known-unbound",
-				srcState:   models.HostStatusKnownUnbound,
+				srcState:   models.HostStatusKnownDashUnbound,
 				poolHost:   true,
 				validation: success,
 				mocks:      []func(string, string){mockEventsUpdateStatus},
@@ -1208,7 +1208,7 @@ var _ = Describe("Disable", func() {
 				dstState := models.HostStatusDisabled
 				if t.poolHost {
 					host.ClusterID = nil
-					dstState = models.HostStatusDisabledUnbound
+					dstState = models.HostStatusDisabledDashUnbound
 				}
 				for _, m := range t.mocks {
 					m(t.srcState, dstState)
@@ -1324,7 +1324,7 @@ var _ = Describe("Enable", func() {
 			},
 			{
 				name:       "in-progress",
-				srcState:   models.HostStatusInstallingInProgress,
+				srcState:   models.HostStatusInstallingDashInDashProgress,
 				validation: failure,
 				sendEvent:  false,
 			},
@@ -1342,7 +1342,7 @@ var _ = Describe("Enable", func() {
 			},
 			{
 				name:       "disabled-unbound",
-				srcState:   models.HostStatusDisabledUnbound,
+				srcState:   models.HostStatusDisabledDashUnbound,
 				validation: success,
 				sendEvent:  true,
 				poolHost:   true,
@@ -1360,7 +1360,7 @@ var _ = Describe("Enable", func() {
 				dstState := models.HostStatusDiscovering
 				if t.poolHost {
 					host.ClusterID = nil
-					dstState = models.HostStatusDiscoveringUnbound
+					dstState = models.HostStatusDiscoveringDashUnbound
 				}
 
 				bytes, err := json.Marshal(defaultNTPSources)
@@ -1428,7 +1428,7 @@ var _ = Describe("Unbind", func() {
 		Expect(h.InstallationDiskID).Should(BeEmpty())
 		Expect(h.InstallationDiskPath).Should(BeEmpty())
 		Expect(h.MachineConfigPoolName).Should(BeEmpty())
-		Expect(h.Role).Should(Equal(models.HostRoleAutoAssign))
+		Expect(h.Role).Should(Equal(models.HostRoleAutoDashAssign))
 		Expect(h.SuggestedRole).Should(BeEmpty())
 		bytes, err := json.Marshal(defaultNTPSources)
 		Expect(err).ShouldNot(HaveOccurred())
@@ -1440,13 +1440,13 @@ var _ = Describe("Unbind", func() {
 			StageStartedAt:         strfmt.DateTime(time.Time{}),
 			StageUpdatedAt:         strfmt.DateTime(time.Time{}),
 		}
-		Expect(h.Progress).Should(Equal(resetPogress))
+		validateEqualProgress(h.Progress, resetPogress)
 		Expect(h.ProgressStages).Should(BeNil())
 		Expect(h.LogsInfo).Should(BeEmpty())
-		Expect(h.LogsStartedAt).Should(Equal(strfmt.DateTime(time.Time{})))
-		Expect(h.LogsCollectedAt).Should(Equal(strfmt.DateTime(time.Time{})))
-		Expect(h.StageStartedAt).Should(Equal(strfmt.DateTime(time.Time{})))
-		Expect(h.StageUpdatedAt).Should(Equal(strfmt.DateTime(time.Time{})))
+		Expect(time.Time(h.LogsStartedAt).Equal(time.Time{})).Should(BeTrue())
+		Expect(time.Time(h.LogsCollectedAt).Equal(time.Time{})).Should(BeTrue())
+		Expect(time.Time(h.StageStartedAt).Equal(time.Time{})).Should(BeTrue())
+		Expect(time.Time(h.StageUpdatedAt).Equal(time.Time{})).Should(BeTrue())
 	}
 
 	failure := func(reply error, srcState string) {
@@ -1492,7 +1492,7 @@ var _ = Describe("Unbind", func() {
 		},
 		{
 			name:      "pending-for-input to binding",
-			srcState:  models.HostStatusPendingForInput,
+			srcState:  models.HostStatusPendingDashForDashInput,
 			success:   true,
 			sendEvent: true,
 		},
@@ -1516,7 +1516,7 @@ var _ = Describe("Unbind", func() {
 		},
 		{
 			name:      "added-host-to-existing-cluster to unbinding",
-			srcState:  models.HostStatusAddedToExistingCluster,
+			srcState:  models.HostStatusAddedDashToDashExistingDashCluster,
 			success:   false,
 			sendEvent: false,
 		},
@@ -1746,7 +1746,7 @@ var _ = Describe("Refresh Host", func() {
 			t := t
 			It(fmt.Sprintf("checking timeout from stage %s", t.stage), func() {
 				hostCheckInAt := strfmt.DateTime(time.Now())
-				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingInProgress)
+				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingDashInDashProgress)
 				host.Inventory = hostutil.GenerateMasterInventory()
 				host.Role = models.HostRoleMaster
 				host.CheckedInAt = hostCheckInAt
@@ -1758,7 +1758,7 @@ var _ = Describe("Refresh Host", func() {
 				}
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				cluster = hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
-				cluster.Status = swag.String(models.ClusterStatusInstallingPendingUserAction)
+				cluster.Status = swag.String(models.ClusterStatusInstallingDashPendingDashUserDashAction)
 				Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 				if t.expectTimeout {
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
@@ -1781,7 +1781,7 @@ var _ = Describe("Refresh Host", func() {
 					if funk.Contains(WrongBootOrderIgnoreTimeoutStages, t.stage) {
 						Expect(prevStageUpdatedAt).ShouldNot(Equal(currStageUpdateAt))
 					}
-					Expect(swag.StringValue(resultHost.Status)).Should(Equal(models.HostStatusInstallingInProgress))
+					Expect(swag.StringValue(resultHost.Status)).Should(Equal(models.HostStatusInstallingDashInDashProgress))
 				}
 			})
 		}
@@ -1805,7 +1805,7 @@ var _ = Describe("Refresh Host", func() {
 			name := fmt.Sprintf("installationInProgress stage %s", stage)
 			passedTime := 90 * time.Minute
 			It(name, func() {
-				srcState = models.HostStatusInstallingInProgress
+				srcState = models.HostStatusInstallingDashInDashProgress
 				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, srcState)
 				host.Inventory = hostutil.GenerateMasterInventory()
 				host.Role = models.HostRoleMaster
@@ -1897,7 +1897,7 @@ var _ = Describe("Refresh Host", func() {
 
 		passedTime := 90 * time.Minute
 		It("host disconnected & preparing for installation", func() {
-			srcState = models.HostStatusPreparingForInstallation
+			srcState = models.HostStatusPreparingDashForDashInstallation
 			host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, srcState)
 			host.Inventory = hostutil.GenerateMasterInventory()
 			host.Role = models.HostRoleMaster
@@ -2015,7 +2015,7 @@ var _ = Describe("Refresh Host", func() {
 					passedTime := passedTimeValue
 					It(name, func() {
 						hostCheckInAt := strfmt.DateTime(time.Now())
-						srcState = models.HostStatusInstallingInProgress
+						srcState = models.HostStatusInstallingDashInDashProgress
 						host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, srcState)
 						host.Inventory = hostutil.GenerateMasterInventory()
 						host.InstallationDiskPath = common.TestDiskId
@@ -2038,7 +2038,7 @@ var _ = Describe("Refresh Host", func() {
 									eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 									eventstest.WithHostIdMatcher(hostId.String()),
 									eventstest.WithInfraEnvIdMatcher(host.InfraEnvID.String()),
-									eventstest.WithSeverityMatcher(hostutil.GetEventSeverityFromHostStatus(models.HostStatusInstallingPendingUserAction))))
+									eventstest.WithSeverityMatcher(hostutil.GetEventSeverityFromHostStatus(models.HostStatusInstallingDashPendingDashUserDashAction))))
 							} else {
 								mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 									eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -2054,10 +2054,10 @@ var _ = Describe("Refresh Host", func() {
 						Expect(db.Take(&resultHost, "id = ? and cluster_id = ?", hostId.String(), clusterId.String()).Error).ToNot(HaveOccurred())
 
 						if passedTimeKind == "under_timeout" {
-							Expect(swag.StringValue(resultHost.Status)).To(Equal(models.HostStatusInstallingInProgress))
+							Expect(swag.StringValue(resultHost.Status)).To(Equal(models.HostStatusInstallingDashInDashProgress))
 						} else {
 							if stage == models.HostStageRebooting {
-								Expect(swag.StringValue(resultHost.Status)).To(Equal(models.HostStatusInstallingPendingUserAction))
+								Expect(swag.StringValue(resultHost.Status)).To(Equal(models.HostStatusInstallingDashPendingDashUserDashAction))
 								statusInfo := strings.Replace(statusRebootTimeout, "$INSTALLATION_DISK", fmt.Sprintf("(test-disk, %s)", common.TestDiskId), 1)
 								Expect(swag.StringValue(resultHost.StatusInfo)).To(Equal(statusInfo))
 							} else {
@@ -2076,7 +2076,7 @@ var _ = Describe("Refresh Host", func() {
 			Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 
 			masterID := strfmt.UUID("1")
-			master := hostutil.GenerateTestHost(masterID, infraEnvId, clusterId, models.HostStatusInstallingInProgress)
+			master := hostutil.GenerateTestHost(masterID, infraEnvId, clusterId, models.HostStatusInstallingDashInDashProgress)
 			master.Inventory = hostutil.GenerateMasterInventory()
 			master.Role = models.HostRoleMaster
 			master.CheckedInAt = strfmt.DateTime(time.Now())
@@ -2088,7 +2088,7 @@ var _ = Describe("Refresh Host", func() {
 			Expect(db.Create(&master).Error).ShouldNot(HaveOccurred())
 
 			hostId = strfmt.UUID("2")
-			host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingInProgress)
+			host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusInstallingDashInDashProgress)
 			host.Inventory = hostutil.GenerateMasterInventory()
 			host.Role = models.HostRoleWorker
 			host.CheckedInAt = strfmt.DateTime(time.Now())
@@ -2425,8 +2425,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "Preparing no change",
 				validCheckInTime:  true,
-				dstState:          models.HostStatusPreparingForInstallation,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				dstState:          models.HostStatusPreparingDashForDashInstallation,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeValueChecker(statusInfoPreparingForInstallation),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationSuccess, messagePattern: "Speed of installation disk has not yet been measured"},
@@ -2460,7 +2460,7 @@ var _ = Describe("Refresh Host", func() {
 				name:              "Disk speed check failed",
 				validCheckInTime:  true,
 				dstState:          models.HostStatusInsufficient,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeRegexChecker("Host cannot be installed due to following failing validation.*While preparing the previous installation the installation disk speed measurement failed or was found to be insufficient"),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationFailure, messagePattern: "While preparing the previous installation the installation disk speed measurement failed or was found to be insufficient"},
@@ -2472,7 +2472,7 @@ var _ = Describe("Refresh Host", func() {
 				name:              "Disk speed check failed after image availability",
 				validCheckInTime:  true,
 				dstState:          models.HostStatusInsufficient,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeRegexChecker("Host cannot be installed due to following failing validation.*While preparing the previous installation the installation disk speed measurement failed or was found to be insufficient"),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationFailure, messagePattern: "While preparing the previous installation the installation disk speed measurement failed or was found to be insufficient"},
@@ -2484,8 +2484,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "Image pull failed",
 				validCheckInTime:  true,
-				dstState:          models.HostStatusPreparingFailed,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				dstState:          models.HostStatusPreparingDashFailed,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeRegexChecker("Host failed to prepare for installation due to following failing validation.*Failed to fetch container images needed for installation from abc"),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationSuccess, messagePattern: "Speed of installation disk has not yet been measured"},
@@ -2496,7 +2496,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "Image pull failed and cluster moved to Ready",
 				validCheckInTime:  true,
-				srcState:          models.HostStatusPreparingFailed,
+				srcState:          models.HostStatusPreparingDashFailed,
 				dstState:          models.HostStatusKnown,
 				clusterState:      models.ClusterStatusReady,
 				statusInfoChecker: makeRegexChecker("Host is ready to be installed"),
@@ -2510,8 +2510,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "Disk speed check succeeded",
 				validCheckInTime:  true,
-				dstState:          models.HostStatusPreparingForInstallation,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				dstState:          models.HostStatusPreparingDashForDashInstallation,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeValueChecker(statusInfoPreparingForInstallation),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationSuccess, messagePattern: "Speed of installation disk is sufficient"},
@@ -2522,8 +2522,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "All succeeded",
 				validCheckInTime:  true,
-				dstState:          models.HostStatusPreparingSuccessful,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				dstState:          models.HostStatusPreparingDashSuccessful,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeValueChecker(statusInfoHostPreparationSuccessful),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					SufficientOrUnknownInstallationDiskSpeed:       {status: ValidationSuccess, messagePattern: "Speed of installation disk is sufficient"},
@@ -2544,7 +2544,7 @@ var _ = Describe("Refresh Host", func() {
 					// Timeout for checkin is 3 minutes so subtract 4 minutes from the current time
 					hostCheckInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
 				}
-				srcState := models.HostStatusPreparingForInstallation
+				srcState := models.HostStatusPreparingDashForDashInstallation
 				if t.srcState != "" {
 					srcState = t.srcState
 				}
@@ -2564,7 +2564,7 @@ var _ = Describe("Refresh Host", func() {
 				Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 
 				// Test definition
-				if t.dstState != models.HostStatusPreparingForInstallation {
+				if t.dstState != models.HostStatusPreparingDashForDashInstallation {
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 						eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 						eventstest.WithHostIdMatcher(host.ID.String()),
@@ -2608,8 +2608,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "Preparing no change",
 				validCheckInTime:  true,
-				dstState:          models.HostStatusPreparingSuccessful,
-				clusterState:      models.ClusterStatusPreparingForInstallation,
+				dstState:          models.HostStatusPreparingDashSuccessful,
+				clusterState:      models.ClusterStatusPreparingDashForDashInstallation,
 				statusInfoChecker: makeValueChecker(statusInfoHostPreparationSuccessful),
 			},
 			{
@@ -2631,7 +2631,7 @@ var _ = Describe("Refresh Host", func() {
 					// Timeout for checkin is 3 minutes so subtract 4 minutes from the current time
 					hostCheckInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
 				}
-				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingSuccessful)
+				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingDashSuccessful)
 				host.StatusInfo = swag.String(statusInfoHostPreparationSuccessful)
 				host.Inventory = hostutil.GenerateMasterInventoryWithHostname("master-0")
 				host.CheckedInAt = hostCheckInAt
@@ -2646,7 +2646,7 @@ var _ = Describe("Refresh Host", func() {
 				Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 
 				// Test definition
-				if t.dstState != models.HostStatusPreparingSuccessful {
+				if t.dstState != models.HostStatusPreparingDashSuccessful {
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 						eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 						eventstest.WithHostIdMatcher(hostId.String()),
@@ -2703,7 +2703,7 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:              "discovering to disconnected",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  false,
 				srcState:          models.HostStatusDiscovering,
 				dstState:          models.HostStatusDisconnected,
@@ -2729,7 +2729,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "insufficient to disconnected",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  false,
 				srcState:          models.HostStatusInsufficient,
 				dstState:          models.HostStatusDisconnected,
@@ -2755,7 +2755,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known to disconnected",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  false,
 				srcState:          models.HostStatusKnown,
 				dstState:          models.HostStatusDisconnected,
@@ -2764,9 +2764,9 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "pending to disconnected",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  false,
-				srcState:          models.HostStatusPendingForInput,
+				srcState:          models.HostStatusPendingDashForDashInput,
 				dstState:          models.HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
@@ -2790,7 +2790,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to disconnected",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  false,
 				srcState:          models.HostStatusDisconnected,
 				dstState:          models.HostStatusDisconnected,
@@ -2816,7 +2816,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to discovering",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  true,
 				srcState:          models.HostStatusDisconnected,
 				dstState:          models.HostStatusDiscovering,
@@ -2840,7 +2840,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "discovering to discovering",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  true,
 				srcState:          models.HostStatusDiscovering,
 				dstState:          models.HostStatusDiscovering,
@@ -2866,7 +2866,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "disconnected to insufficient - auto-assign casted as worker (1)",
-				role:             models.HostRoleAutoAssign,
+				role:             models.HostRoleAutoDashAssign,
 				validCheckInTime: true,
 				srcState:         models.HostStatusDisconnected,
 				dstState:         models.HostStatusInsufficient,
@@ -2898,7 +2898,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "insufficient to insufficient (1)",
-				role:             models.HostRoleAutoAssign,
+				role:             models.HostRoleAutoDashAssign,
 				validCheckInTime: true,
 				srcState:         models.HostStatusInsufficient,
 				dstState:         models.HostStatusInsufficient,
@@ -2930,7 +2930,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "discovering to insufficient - auto-assign casted as worker (1)",
-				role:             models.HostRoleAutoAssign,
+				role:             models.HostRoleAutoDashAssign,
 				validCheckInTime: true,
 				srcState:         models.HostStatusDiscovering,
 				dstState:         models.HostStatusInsufficient,
@@ -2962,17 +2962,17 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "pending to insufficient (1)",
-				role:              models.HostRoleAutoAssign,
+				role:              models.HostRoleAutoDashAssign,
 				validCheckInTime:  true,
-				srcState:          models.HostStatusPendingForInput,
-				dstState:          models.HostStatusPendingForInput,
+				srcState:          models.HostStatusPendingDashForDashInput,
+				dstState:          models.HostStatusPendingDashForDashInput,
 				statusInfoChecker: makeValueChecker(""),
 				inventory:         insufficientHWInventory(),
 				errorExpected:     true,
 			},
 			{
 				name:             "known to insufficient - auto-assign casted as worker (1)",
-				role:             models.HostRoleAutoAssign,
+				role:             models.HostRoleAutoDashAssign,
 				validCheckInTime: true,
 				srcState:         models.HostStatusKnown,
 				dstState:         models.HostStatusInsufficient,
@@ -2989,7 +2989,7 @@ var _ = Describe("Refresh Host", func() {
 				name:             "known to pending",
 				validCheckInTime: true,
 				srcState:         models.HostStatusKnown,
-				dstState:         models.HostStatusPendingForInput,
+				dstState:         models.HostStatusPendingDashForDashInput,
 				role:             models.HostRoleWorker,
 				statusInfoChecker: makeValueChecker(formatStatusInfoFailedValidation(statusInfoPendingForInput,
 					"Machine Network CIDR is undefined; the Machine Network CIDR can be defined by setting either the API or Ingress virtual IPs",
@@ -3017,8 +3017,8 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:             "pending to pending",
 				validCheckInTime: true,
-				srcState:         models.HostStatusPendingForInput,
-				dstState:         models.HostStatusPendingForInput,
+				srcState:         models.HostStatusPendingDashForDashInput,
+				dstState:         models.HostStatusPendingDashForDashInput,
 				role:             models.HostRoleWorker,
 				statusInfoChecker: makeValueChecker(formatStatusInfoFailedValidation(statusInfoPendingForInput,
 					"Machine Network CIDR is undefined; the Machine Network CIDR can be defined by setting either the API or Ingress virtual IPs",
@@ -3174,7 +3174,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:             "pending to insufficient (2)",
 				validCheckInTime: true,
-				srcState:         models.HostStatusPendingForInput,
+				srcState:         models.HostStatusPendingDashForDashInput,
 				dstState:         models.HostStatusInsufficient,
 				machineNetworks:  common.TestIPv4Networking.MachineNetworks,
 				ntpSources:       defaultNTPSources,
@@ -3532,7 +3532,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "pending to known",
 				validCheckInTime:  true,
-				srcState:          models.HostStatusPendingForInput,
+				srcState:          models.HostStatusPendingDashForDashInput,
 				dstState:          models.HostStatusKnown,
 				machineNetworks:   common.TestIPv4Networking.MachineNetworks,
 				ntpSources:        defaultNTPSources,
@@ -3560,7 +3560,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "pending to known IPv6",
 				validCheckInTime:  true,
-				srcState:          models.HostStatusPendingForInput,
+				srcState:          models.HostStatusPendingDashForDashInput,
 				dstState:          models.HostStatusKnown,
 				machineNetworks:   common.TestIPv6Networking.MachineNetworks,
 				ntpSources:        defaultNTPSources,
@@ -3744,8 +3744,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "AddedtoExistingCluster to AddedtoExistingCluster for day2 cloud",
-				srcState:          models.HostStatusAddedToExistingCluster,
-				dstState:          models.HostStatusAddedToExistingCluster,
+				srcState:          models.HostStatusAddedDashToDashExistingDashCluster,
+				dstState:          models.HostStatusAddedDashToDashExistingDashCluster,
 				kind:              models.HostKindAddToExistingClusterHost,
 				role:              models.HostRoleWorker,
 				statusInfoChecker: makeValueChecker(""),
@@ -4022,9 +4022,9 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:          "No timeout",
-				dstState:      models.HostStatusPreparingForInstallation,
+				dstState:      models.HostStatusPreparingDashForDashInstallation,
 				statusInfo:    "",
-				clusterStatus: models.ClusterStatusPreparingForInstallation,
+				clusterStatus: models.ClusterStatusPreparingDashForDashInstallation,
 			},
 			{
 				name:          "Timeout",
@@ -4036,7 +4036,7 @@ var _ = Describe("Refresh Host", func() {
 		for i := range tests {
 			t := tests[i]
 			It(t.name, func() {
-				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingForInstallation)
+				host = hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, models.HostStatusPreparingDashForDashInstallation)
 				host.Inventory = hostutil.GenerateMasterInventory()
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				cluster = hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
@@ -4525,10 +4525,10 @@ var _ = Describe("Refresh Host", func() {
 
 		for _, srcState := range []string{
 			models.HostStatusInstalling,
-			models.HostStatusInstallingInProgress,
+			models.HostStatusInstallingDashInDashProgress,
 			models.HostStatusInstalled,
-			models.HostStatusInstallingPendingUserAction,
-			models.HostStatusResettingPendingUserAction,
+			models.HostStatusInstallingDashPendingDashUserDashAction,
+			models.HostStatusResettingDashPendingDashUserDashAction,
 		} {
 			for _, installationStage := range []models.HostStage{
 				models.HostStageStartingInstallation,
@@ -4619,7 +4619,7 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:                "Nominal: Host is known with disabled validations for 'Belongs to majority group' and 'Container images available'",
-				disabledValidations: DisabledHostValidations{string(models.HostValidationIDBelongsToMajorityGroup): struct{}{}, string(models.HostValidationIDContainerImagesAvailable): struct{}{}},
+				disabledValidations: DisabledHostValidations{string(models.HostValidationIDBelongsDashToDashMajorityDashGroup): struct{}{}, string(models.HostValidationIDContainerDashImagesDashAvailable): struct{}{}},
 				dstState:            models.HostStatusKnown,
 			},
 			{
@@ -4814,7 +4814,7 @@ var _ = Describe("Refresh Host", func() {
 			}, {name: "known with IPv4 and 3 nodes in autoassign",
 				srcState:               models.HostStatusDiscovering,
 				dstState:               models.HostStatusKnown,
-				hostRole:               models.HostRoleAutoAssign,
+				hostRole:               models.HostRoleAutoDashAssign,
 				latencyInMs:            500,
 				packetLossInPercentage: 5,
 				IPAddressPool:          hostutil.GenerateIPv4Addresses(2, common.IncrementCidrIP(string(common.TestIPv4Networking.MachineNetworks[0].Cidr))),
@@ -4828,7 +4828,7 @@ var _ = Describe("Refresh Host", func() {
 			}, {name: "known with IPv4 and 3 masters with high latency and packet loss in autoassign",
 				srcState:               models.HostStatusDiscovering,
 				dstState:               models.HostStatusKnown,
-				hostRole:               models.HostRoleAutoAssign,
+				hostRole:               models.HostRoleAutoDashAssign,
 				latencyInMs:            2000,
 				packetLossInPercentage: 90,
 				IPAddressPool:          hostutil.GenerateIPv4Addresses(3, common.IncrementCidrIP(string(common.TestIPv4Networking.MachineNetworks[0].Cidr))),
@@ -5143,40 +5143,40 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:              "discovering-unbound to disconnected-unbound",
-				srcState:          models.HostStatusDiscoveringUnbound,
-				dstState:          models.HostStatusDisconnectedUnbound,
+				srcState:          models.HostStatusDiscoveringDashUnbound,
+				dstState:          models.HostStatusDisconnectedDashUnbound,
 				validCheckInTime:  false,
 				eventRaised:       true,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
 			},
 			{
 				name:              "insufficient-unbound to disconnected-unbound",
-				srcState:          models.HostStatusInsufficientUnbound,
-				dstState:          models.HostStatusDisconnectedUnbound,
+				srcState:          models.HostStatusInsufficientDashUnbound,
+				dstState:          models.HostStatusDisconnectedDashUnbound,
 				validCheckInTime:  false,
 				eventRaised:       true,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
 			},
 			{
 				name:              "known-unbound to disconnected-unbound",
-				srcState:          models.HostStatusKnownUnbound,
-				dstState:          models.HostStatusDisconnectedUnbound,
+				srcState:          models.HostStatusKnownDashUnbound,
+				dstState:          models.HostStatusDisconnectedDashUnbound,
 				validCheckInTime:  false,
 				eventRaised:       true,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
 			},
 			{
 				name:              "disconnected-unbound to disconnected-unbound",
-				srcState:          models.HostStatusDisconnectedUnbound,
-				dstState:          models.HostStatusDisconnectedUnbound,
+				srcState:          models.HostStatusDisconnectedDashUnbound,
+				dstState:          models.HostStatusDisconnectedDashUnbound,
 				validCheckInTime:  false,
 				eventRaised:       false,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
 			},
 			{
 				name:              "discovering-unbound to discovering-unbound",
-				srcState:          models.HostStatusDiscoveringUnbound,
-				dstState:          models.HostStatusDiscoveringUnbound,
+				srcState:          models.HostStatusDiscoveringDashUnbound,
+				dstState:          models.HostStatusDiscoveringDashUnbound,
 				validCheckInTime:  true,
 				inventory:         "",
 				eventRaised:       false,
@@ -5184,8 +5184,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected-unbound to discovering-unbound",
-				srcState:          models.HostStatusDisconnectedUnbound,
-				dstState:          models.HostStatusDiscoveringUnbound,
+				srcState:          models.HostStatusDisconnectedDashUnbound,
+				dstState:          models.HostStatusDiscoveringDashUnbound,
 				validCheckInTime:  true,
 				inventory:         "",
 				eventRaised:       true,
@@ -5193,8 +5193,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "disconnected-unbound to insufficient-unbound",
-				srcState:         models.HostStatusDisconnectedUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusDisconnectedDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        insufficientHWInventory(),
 				eventRaised:      true,
@@ -5206,8 +5206,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "discovering-unbound to insufficient-unbound",
-				srcState:         models.HostStatusDiscoveringUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusDiscoveringDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        insufficientHWInventory(),
 				eventRaised:      true,
@@ -5219,8 +5219,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "insufficient-unbound to insufficient-unbound",
-				srcState:         models.HostStatusInsufficientUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusInsufficientDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        insufficientHWInventory(),
 				eventRaised:      false,
@@ -5232,8 +5232,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "known-unbound to insufficient-unbound",
-				srcState:         models.HostStatusKnownUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusKnownDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        insufficientHWInventory(),
 				eventRaised:      true,
@@ -5263,8 +5263,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disabled-unbound to disabled-unbound",
-				srcState:          models.HostStatusDisabledUnbound,
-				dstState:          models.HostStatusDisabledUnbound,
+				srcState:          models.HostStatusDisabledDashUnbound,
+				dstState:          models.HostStatusDisabledDashUnbound,
 				validCheckInTime:  true,
 				inventory:         insufficientHWInventory(),
 				eventRaised:       false,
@@ -5272,8 +5272,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected-unbound to known-unbound",
-				srcState:          models.HostStatusDisconnectedUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusDisconnectedDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5283,8 +5283,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "discovering-unbound to known-unbound",
-				srcState:          models.HostStatusDiscoveringUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusDiscoveringDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5294,8 +5294,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "insufficient-unbound to known-unbound",
-				srcState:          models.HostStatusInsufficientUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusInsufficientDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5305,8 +5305,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known-unbound to known-unbound",
-				srcState:          models.HostStatusKnownUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusKnownDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventory(),
 				eventRaised:       false,
@@ -5315,8 +5315,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected-unbound to known-unbound - no NTP",
-				srcState:          models.HostStatusDisconnectedUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusDisconnectedDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5325,8 +5325,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "discovering-unbound to known-unbound - no NTP",
-				srcState:          models.HostStatusDiscoveringUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusDiscoveringDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5335,8 +5335,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "insufficient-unbound to known-unbound - no NTP",
-				srcState:          models.HostStatusInsufficientUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusInsufficientDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:          "test-hostname",
@@ -5345,8 +5345,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known-unbound to known-unbound - no NTP",
-				srcState:          models.HostStatusKnownUnbound,
-				dstState:          models.HostStatusKnownUnbound,
+				srcState:          models.HostStatusKnownDashUnbound,
+				dstState:          models.HostStatusKnownDashUnbound,
 				validCheckInTime:  true,
 				inventory:         hostutil.GenerateMasterInventory(),
 				eventRaised:       false,
@@ -5354,8 +5354,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "disconnected-unbound to insufficient-unbound un-synced NTP",
-				srcState:         models.HostStatusDisconnectedUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusDisconnectedDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:         "test-hostname",
@@ -5366,8 +5366,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "discovering-unbound to insufficient-unbound un-synced NTP",
-				srcState:         models.HostStatusDiscoveringUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusDiscoveringDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:         "test-hostname",
@@ -5378,8 +5378,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "insufficient-unbound to insufficient-unbound un-synced NTP",
-				srcState:         models.HostStatusInsufficientUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusInsufficientDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				inventory:        hostutil.GenerateMasterInventoryWithHostname("test-hostname"),
 				hostname:         "test-hostname",
@@ -5390,8 +5390,8 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:             "known-unbound to insufficient-unbound un-synced NTP",
-				srcState:         models.HostStatusKnownUnbound,
-				dstState:         models.HostStatusInsufficientUnbound,
+				srcState:         models.HostStatusKnownDashUnbound,
+				dstState:         models.HostStatusInsufficientDashUnbound,
 				validCheckInTime: true,
 				hostname:         "master-hostname",
 				inventory:        hostutil.GenerateMasterInventory(),
@@ -5551,4 +5551,16 @@ func generateMajorityGroup(machineNetworks []*models.MachineNetwork, hostId strf
 		return ""
 	}
 	return string(tmp)
+}
+
+func validateEqualProgress(p1, p2 *models.HostProgressInfo) {
+	if p1 == nil {
+		Expect(p2).To(BeNil())
+	} else {
+		Expect(p1.CurrentStage).To(Equal(p2.CurrentStage))
+		Expect(p1.InstallationPercentage).To(Equal(p2.InstallationPercentage))
+		Expect(p1.ProgressInfo).To(Equal(p2.ProgressInfo))
+		Expect(time.Time(p1.StageStartedAt).Equal(time.Time(p2.StageStartedAt))).To(BeTrue())
+		Expect(time.Time(p1.StageUpdatedAt).Equal(time.Time(p2.StageUpdatedAt))).To(BeTrue())
+	}
 }

@@ -13,7 +13,7 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 			"",
 		},
 		Condition:        th.IsUnboundHost,
-		DestinationState: stateswitch.State(models.HostStatusDiscoveringUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDiscoveringDashUnbound),
 		PostTransition:   th.PostRegisterHost,
 	})
 
@@ -21,33 +21,33 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRegisterHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
-			stateswitch.State(models.HostStatusInsufficientUnbound),
-			stateswitch.State(models.HostStatusKnownUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
+			stateswitch.State(models.HostStatusInsufficientDashUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
 			stateswitch.State(models.HostStatusUnbinding),
 		},
-		DestinationState: stateswitch.State(models.HostStatusDiscoveringUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDiscoveringDashUnbound),
 		PostTransition:   th.PostRegisterHost,
 	})
 
 	// Disabled host can register if it was booted, no change in the state.
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType:   TransitionTypeRegisterHost,
-		SourceStates:     []stateswitch.State{stateswitch.State(models.HostStatusDisabledUnbound)},
-		DestinationState: stateswitch.State(models.HostStatusDisabledUnbound),
+		SourceStates:     []stateswitch.State{stateswitch.State(models.HostStatusDisabledDashUnbound)},
+		DestinationState: stateswitch.State(models.HostStatusDisabledDashUnbound),
 	})
 
 	// Disable host
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeDisableHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
-			stateswitch.State(models.HostStatusInsufficientUnbound),
-			stateswitch.State(models.HostStatusKnownUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
+			stateswitch.State(models.HostStatusInsufficientDashUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
 		},
-		DestinationState: stateswitch.State(models.HostStatusDisabledUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDisabledDashUnbound),
 		PostTransition:   th.PostDisableHost,
 	})
 
@@ -55,9 +55,9 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeEnableHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDisabledUnbound),
+			stateswitch.State(models.HostStatusDisabledDashUnbound),
 		},
-		DestinationState: stateswitch.State(models.HostStatusDiscoveringUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDiscoveringDashUnbound),
 		PostTransition:   th.PostEnableHost,
 	})
 
@@ -65,7 +65,7 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeBindHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusKnownUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
 		},
 		DestinationState: stateswitch.State(models.HostStatusBinding),
 		PostTransition:   th.PostBindHost,
@@ -76,25 +76,25 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
-			stateswitch.State(models.HostStatusInsufficientUnbound),
-			stateswitch.State(models.HostStatusKnownUnbound),
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
+			stateswitch.State(models.HostStatusInsufficientDashUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
 			stateswitch.State(models.HostStatusUnbinding),
 		},
 		Condition:        stateswitch.Not(If(IsConnected)),
-		DestinationState: stateswitch.State(models.HostStatusDisconnectedUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDisconnectedDashUnbound),
 		PostTransition:   th.PostRefreshHost(statusInfoDisconnected),
 	})
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
 		},
 		Condition:        stateswitch.And(If(IsConnected), stateswitch.Not(If(HasInventory))),
-		DestinationState: stateswitch.State(models.HostStatusDiscoveringUnbound),
+		DestinationState: stateswitch.State(models.HostStatusDiscoveringDashUnbound),
 		PostTransition:   th.PostRefreshHost(statusInfoDiscovering),
 	})
 
@@ -106,20 +106,20 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
-			stateswitch.State(models.HostStatusInsufficientUnbound),
-			stateswitch.State(models.HostStatusKnownUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
+			stateswitch.State(models.HostStatusInsufficientDashUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
 		},
 		Condition: stateswitch.And(If(IsConnected), If(HasInventory),
 			stateswitch.Not(sufficientToBeBound)),
-		DestinationState: stateswitch.State(models.HostStatusInsufficientUnbound),
+		DestinationState: stateswitch.State(models.HostStatusInsufficientDashUnbound),
 		PostTransition:   th.PostRefreshHost(statusInfoInsufficientHardware),
 	})
 
 	// Noop transitions
 	for _, state := range []stateswitch.State{
-		stateswitch.State(models.HostStatusDisabledUnbound),
+		stateswitch.State(models.HostStatusDisabledDashUnbound),
 		stateswitch.State(models.HostStatusBinding),
 		stateswitch.State(models.HostStatusUnbinding),
 	} {
@@ -133,14 +133,14 @@ func NewPoolHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler)
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusDisconnectedUnbound),
-			stateswitch.State(models.HostStatusDiscoveringUnbound),
-			stateswitch.State(models.HostStatusInsufficientUnbound),
-			stateswitch.State(models.HostStatusKnownUnbound),
+			stateswitch.State(models.HostStatusDisconnectedDashUnbound),
+			stateswitch.State(models.HostStatusDiscoveringDashUnbound),
+			stateswitch.State(models.HostStatusInsufficientDashUnbound),
+			stateswitch.State(models.HostStatusKnownDashUnbound),
 		},
 		Condition: stateswitch.And(If(IsConnected), If(HasInventory),
 			sufficientToBeBound),
-		DestinationState: stateswitch.State(models.HostStatusKnownUnbound),
+		DestinationState: stateswitch.State(models.HostStatusKnownDashUnbound),
 		PostTransition:   th.PostRefreshHost(statusInfoHostReadyToBeBound),
 	})
 

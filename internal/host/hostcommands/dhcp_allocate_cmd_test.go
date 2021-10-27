@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("dhcpallocate", func() {
@@ -43,7 +43,7 @@ var _ = Describe("dhcpallocate", func() {
 		Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 		stepReply, stepErr = dCmd.GetSteps(ctx, &host)
 		Expect(stepReply).ToNot(BeNil())
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDhcpLeaseAllocate))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDhcpDashLeaseDashAllocate))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 		Expect(len(stepReply[0].Args)).To(BeNumerically(">", 0))
 		var req models.DhcpAllocationRequest
@@ -63,7 +63,7 @@ var _ = Describe("dhcpallocate", func() {
 		Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
 		stepReply, stepErr = dCmd.GetSteps(ctx, &host)
 		Expect(stepReply).ToNot(BeNil())
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDhcpLeaseAllocate))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDhcpDashLeaseDashAllocate))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 		Expect(len(stepReply[0].Args)).To(BeNumerically(">", 0))
 		var req models.DhcpAllocationRequest

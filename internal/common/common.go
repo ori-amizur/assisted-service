@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/models"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -100,7 +100,7 @@ func AreMastersSchedulable(cluster *Cluster) bool {
 }
 
 func GetEffectiveRole(host *models.Host) models.HostRole {
-	if host.Role == models.HostRoleAutoAssign && host.SuggestedRole != "" {
+	if host.Role == models.HostRoleAutoDashAssign && host.SuggestedRole != "" {
 		return host.SuggestedRole
 	}
 	return host.Role
@@ -115,7 +115,7 @@ func IsNtpSynced(c *Cluster) (bool, error) {
 	var max int64
 	for _, h := range c.Hosts {
 		if h.Inventory == "" || *h.Status == models.HostStatusDisconnected ||
-			*h.Status == models.HostStatusDisabled || *h.Status == models.HostStatusResettingPendingUserAction ||
+			*h.Status == models.HostStatusDisabled || *h.Status == models.HostStatusResettingDashPendingDashUserDashAction ||
 			*h.Status == models.HostStatusDiscovering {
 			continue
 		}
@@ -247,4 +247,16 @@ func GetHostNTPSources(db *gorm.DB, host *models.Host) (string, error) {
 		return "", err
 	}
 	return infraEnv.AdditionalNtpSources, nil
+}
+
+
+func HostStagePtr(h models.HostStage) *models.HostStage {
+	return &h
+}
+
+func HostStageValue(h *models.HostStage) models.HostStage {
+	if h == nil {
+		return ""
+	}
+	return *h
 }

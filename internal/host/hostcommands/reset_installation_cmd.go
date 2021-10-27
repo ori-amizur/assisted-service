@@ -34,7 +34,7 @@ func (h *resetInstallationCmd) GetSteps(ctx context.Context, host *models.Host) 
 		return nil, err
 	}
 	step := &models.Step{}
-	step.StepType = models.StepTypeResetInstallation
+	step.StepType = models.StepTypeResetDashInstallation
 	step.Command = "bash"
 	step.Args = []string{"-c", buf.String()}
 	return []*models.Step{step}, nil

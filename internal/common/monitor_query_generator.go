@@ -3,7 +3,7 @@ package common
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 /*

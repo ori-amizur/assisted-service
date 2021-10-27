@@ -10,7 +10,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
@@ -24,6 +23,7 @@ import (
 	"github.com/openshift/assisted-service/internal/versions"
 	"github.com/openshift/assisted-service/models"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const UNBOUND_SOURCE = "my-unbound-source"
@@ -104,9 +104,9 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("known", func() {
 				checkStep(models.HostStatusKnown, []models.StepType{
-					models.StepTypeConnectivityCheck, models.StepTypeFreeNetworkAddresses,
-					models.StepTypeInventory, models.StepTypeNtpSynchronizer,
-					models.StepTypeDomainResolution,
+					models.StepTypeConnectivityDashCheck, models.StepTypeFreeDashNetworkDashAddresses,
+					models.StepTypeInventory, models.StepTypeNtpDashSynchronizer,
+					models.StepTypeDomainDashResolution,
 				})
 			})
 			It("disconnected", func() {
@@ -116,16 +116,16 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("insufficient", func() {
 				checkStep(models.HostStatusInsufficient, []models.StepType{
-					models.StepTypeInventory, models.StepTypeConnectivityCheck,
-					models.StepTypeFreeNetworkAddresses, models.StepTypeNtpSynchronizer,
-					models.StepTypeDomainResolution,
+					models.StepTypeInventory, models.StepTypeConnectivityDashCheck,
+					models.StepTypeFreeDashNetworkDashAddresses, models.StepTypeNtpDashSynchronizer,
+					models.StepTypeDomainDashResolution,
 				})
 			})
 			It("pending-for-input", func() {
-				checkStep(models.HostStatusPendingForInput, []models.StepType{
-					models.StepTypeInventory, models.StepTypeConnectivityCheck,
-					models.StepTypeFreeNetworkAddresses, models.StepTypeNtpSynchronizer,
-					models.StepTypeDomainResolution,
+				checkStep(models.HostStatusPendingDashForDashInput, []models.StepType{
+					models.StepTypeInventory, models.StepTypeConnectivityDashCheck,
+					models.StepTypeFreeDashNetworkDashAddresses, models.StepTypeNtpDashSynchronizer,
+					models.StepTypeDomainDashResolution,
 				})
 			})
 			It("error", func() {
@@ -152,7 +152,7 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("reset", func() {
 				checkStep(models.HostStatusResetting, []models.StepType{
-					models.StepTypeResetInstallation,
+					models.StepTypeResetDashInstallation,
 				})
 			})
 			It("binding", func() {
@@ -193,9 +193,9 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("known", func() {
 				checkStep(models.HostStatusKnown, []models.StepType{
-					models.StepTypeConnectivityCheck, models.StepTypeFreeNetworkAddresses,
-					models.StepTypeDhcpLeaseAllocate, models.StepTypeInventory,
-					models.StepTypeNtpSynchronizer, models.StepTypeDomainResolution,
+					models.StepTypeConnectivityDashCheck, models.StepTypeFreeDashNetworkDashAddresses,
+					models.StepTypeDhcpDashLeaseDashAllocate, models.StepTypeInventory,
+					models.StepTypeNtpDashSynchronizer, models.StepTypeDomainDashResolution,
 				})
 			})
 			It("binding", func() {
@@ -208,16 +208,16 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("insufficient", func() {
 				checkStep(models.HostStatusInsufficient, []models.StepType{
-					models.StepTypeInventory, models.StepTypeConnectivityCheck,
-					models.StepTypeFreeNetworkAddresses, models.StepTypeDhcpLeaseAllocate,
-					models.StepTypeNtpSynchronizer, models.StepTypeDomainResolution,
+					models.StepTypeInventory, models.StepTypeConnectivityDashCheck,
+					models.StepTypeFreeDashNetworkDashAddresses, models.StepTypeDhcpDashLeaseDashAllocate,
+					models.StepTypeNtpDashSynchronizer, models.StepTypeDomainDashResolution,
 				})
 			})
 			It("pending-for-input", func() {
-				checkStep(models.HostStatusPendingForInput, []models.StepType{
-					models.StepTypeInventory, models.StepTypeConnectivityCheck,
-					models.StepTypeFreeNetworkAddresses, models.StepTypeDhcpLeaseAllocate,
-					models.StepTypeNtpSynchronizer, models.StepTypeDomainResolution,
+				checkStep(models.HostStatusPendingDashForDashInput, []models.StepType{
+					models.StepTypeInventory, models.StepTypeConnectivityDashCheck,
+					models.StepTypeFreeDashNetworkDashAddresses, models.StepTypeDhcpDashLeaseDashAllocate,
+					models.StepTypeNtpDashSynchronizer, models.StepTypeDomainDashResolution,
 				})
 			})
 			It("error", func() {
@@ -232,17 +232,17 @@ var _ = Describe("instruction_manager", func() {
 			})
 			It("installing", func() {
 				checkStep(models.HostStatusInstalling, []models.StepType{
-					models.StepTypeInstall, models.StepTypeDhcpLeaseAllocate,
+					models.StepTypeInstall, models.StepTypeDhcpDashLeaseDashAllocate,
 				})
 			})
 			It("installing-in-progress", func() {
-				checkStep(models.HostStatusInstallingInProgress, []models.StepType{
-					models.StepTypeInventory, models.StepTypeDhcpLeaseAllocate,
+				checkStep(models.HostStatusInstallingDashInDashProgress, []models.StepType{
+					models.StepTypeInventory, models.StepTypeDhcpDashLeaseDashAllocate,
 				})
 			})
 			It("reset", func() {
 				checkStep(models.HostStatusResetting, []models.StepType{
-					models.StepTypeResetInstallation,
+					models.StepTypeResetDashInstallation,
 				})
 			})
 		})
@@ -250,7 +250,7 @@ var _ = Describe("instruction_manager", func() {
 
 	Context("Unbound host steps", func() {
 		BeforeEach(func() {
-			Expect(db.Model(&common.Host{}).Select("cluster_id").Updates(map[string]interface{}{"cluster_id": nil}).Error).ShouldNot(HaveOccurred())
+			Expect(db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&common.Host{}).Select("cluster_id").Updates(map[string]interface{}{"cluster_id": nil}).Error).ShouldNot(HaveOccurred())
 			Expect(db.Create(&common.InfraEnv{
 				InfraEnv: models.InfraEnv{
 					ID:                   &infraEnvId,
@@ -260,26 +260,26 @@ var _ = Describe("instruction_manager", func() {
 		})
 
 		It("discovering-unbound", func() {
-			checkStep(models.HostStatusDiscoveringUnbound, []models.StepType{
-				models.StepTypeInventory, models.StepTypeNtpSynchronizer,
+			checkStep(models.HostStatusDiscoveringDashUnbound, []models.StepType{
+				models.StepTypeInventory, models.StepTypeNtpDashSynchronizer,
 			})
 		})
 
 		It("disconnected-unbound", func() {
-			checkStep(models.HostStatusDisconnectedUnbound, []models.StepType{
+			checkStep(models.HostStatusDisconnectedDashUnbound, []models.StepType{
 				models.StepTypeInventory,
 			})
 		})
 
 		It("insufficient-unbound", func() {
-			checkStep(models.HostStatusInsufficientUnbound, []models.StepType{
-				models.StepTypeInventory, models.StepTypeNtpSynchronizer,
+			checkStep(models.HostStatusInsufficientDashUnbound, []models.StepType{
+				models.StepTypeInventory, models.StepTypeNtpDashSynchronizer,
 			})
 		})
 
 		It("known-unbound", func() {
-			checkStep(models.HostStatusKnownUnbound, []models.StepType{
-				models.StepTypeInventory, models.StepTypeNtpSynchronizer,
+			checkStep(models.HostStatusKnownDashUnbound, []models.StepType{
+				models.StepTypeInventory, models.StepTypeNtpDashSynchronizer,
 			})
 		})
 
@@ -304,9 +304,9 @@ var _ = Describe("instruction_manager", func() {
 			It("Should filter out any invalid StepType from disabled steps in InstructionManager", func() {
 				disabledSteps := []models.StepType{
 					"invalid-step",
-					models.StepTypeConnectivityCheck,
-					models.StepTypeAPIVipConnectivityCheck,
-					models.StepTypeDhcpLeaseAllocate,
+					models.StepTypeConnectivityDashCheck,
+					models.StepTypeAPIDashVipDashConnectivityDashCheck,
+					models.StepTypeDhcpDashLeaseDashAllocate,
 				}
 				instMng = createInstMngWithDisabledSteps(disabledSteps)
 				Expect(len(instMng.disabledStepsMap)).Should(Equal(len(disabledSteps) - 1))
@@ -332,13 +332,13 @@ var _ = Describe("instruction_manager", func() {
 			It("Should not filter out any step when: HostState=installing DisabledSteps=execute.", func() {
 				instMng = createInstMngWithDisabledSteps([]models.StepType{models.StepTypeExecute})
 				checkStep(models.HostStatusInstalling, []models.StepType{
-					models.StepTypeInstall, models.StepTypeDhcpLeaseAllocate,
+					models.StepTypeInstall, models.StepTypeDhcpDashLeaseDashAllocate,
 				})
 			})
-			It("Should filter out StepTypeDhcpLeaseAllocate when: HostState=installing DisabledSteps=execute,dhcp-lease-allocate.", func() {
+			It("Should filter out StepTypeDhcpDashLeaseDashAllocate when: HostState=installing DisabledSteps=execute,dhcp-lease-allocate.", func() {
 				instMng = createInstMngWithDisabledSteps([]models.StepType{
 					models.StepTypeExecute,
-					models.StepTypeDhcpLeaseAllocate,
+					models.StepTypeDhcpDashLeaseDashAllocate,
 				})
 				checkStep(models.HostStatusInstalling, []models.StepType{
 					models.StepTypeInstall,
@@ -347,19 +347,19 @@ var _ = Describe("instruction_manager", func() {
 			It("Should filter out StepTypeExecute (No steps) when: HostState=error DisabledSteps=execute.", func() {
 				instMng = createInstMngWithDisabledSteps([]models.StepType{
 					models.StepTypeExecute,
-					models.StepTypeDhcpLeaseAllocate,
+					models.StepTypeDhcpDashLeaseDashAllocate,
 				})
 				checkStep(models.HostStatusError, []models.StepType{})
 			})
-			It("Should skip 'StepTypeFreeNetworkAddresses' when: HostState=insufficient DisabledSteps=StepTypeFreeNetworkAddresses", func() {
+			It("Should skip 'StepTypeFreeDashNetworkDashAddresses' when: HostState=insufficient DisabledSteps=StepTypeFreeDashNetworkDashAddresses", func() {
 				instMng = createInstMngWithDisabledSteps([]models.StepType{
-					models.StepTypeFreeNetworkAddresses,
+					models.StepTypeFreeDashNetworkDashAddresses,
 				})
 				checkStep(models.HostStatusInsufficient, []models.StepType{
 					models.StepTypeInventory,
-					models.StepTypeConnectivityCheck,
-					models.StepTypeDhcpLeaseAllocate,
-					models.StepTypeNtpSynchronizer,
+					models.StepTypeConnectivityDashCheck,
+					models.StepTypeDhcpDashLeaseDashAllocate,
+					models.StepTypeNtpDashSynchronizer,
 				})
 			})
 		})
@@ -394,7 +394,7 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, mockEvents 
 		mockRelease.EXPECT().GetMCOImage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(defaultMCOImage, nil).Times(1)
 		mockVersions.EXPECT().GetMustGatherImages(gomock.Any(), gomock.Any(), gomock.Any()).Return(defaultMustGatherVersion, nil).Times(1)
 	}
-	if funk.Contains(expectedStepTypes, models.StepTypeConnectivityCheck) {
+	if funk.Contains(expectedStepTypes, models.StepTypeConnectivityDashCheck) {
 		mockConnectivity.EXPECT().GetHostValidInterfaces(gomock.Any()).Return([]*models.Interface{
 			{
 				Name: "eth0",
@@ -406,7 +406,7 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, mockEvents 
 		}, nil).Times(1)
 	}
 
-	if funk.Contains(expectedStepTypes, models.StepTypeContainerImageAvailability) {
+	if funk.Contains(expectedStepTypes, models.StepTypeContainerDashImageDashAvailability) {
 		mockVersions.EXPECT().GetReleaseImage(gomock.Any(), gomock.Any()).Return(common.TestDefaultConfig.ReleaseImage, nil).Times(1)
 		mockVersions.EXPECT().GetMustGatherImages(gomock.Any(), gomock.Any(), gomock.Any()).Return(defaultMustGatherVersion, nil).Times(1)
 	}
@@ -428,8 +428,8 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, mockEvents 
 
 	for i, step := range stepsReply.Instructions {
 		ExpectWithOffset(1, step.StepType).Should(Equal(expectedStepTypes[i]))
-		if expectedStepTypes[i] == models.StepTypeNtpSynchronizer && funk.ContainsString([]string{models.HostStatusKnownUnbound,
-			models.HostStatusInsufficientUnbound, models.HostStatusDiscoveringUnbound}, state) {
+		if expectedStepTypes[i] == models.StepTypeNtpDashSynchronizer && funk.ContainsString([]string{models.HostStatusKnownDashUnbound,
+			models.HostStatusInsufficientDashUnbound, models.HostStatusDiscoveringDashUnbound}, state) {
 			Expect(strings.Join(step.Args, ",")).To(ContainSubstring(UNBOUND_SOURCE))
 		}
 	}

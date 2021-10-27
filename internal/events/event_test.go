@@ -9,8 +9,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -23,6 +21,8 @@ import (
 	"github.com/openshift/assisted-service/restapi"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("Events library", func() {

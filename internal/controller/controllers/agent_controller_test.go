@@ -12,7 +12,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	common_api "github.com/openshift/assisted-service/api/common"
@@ -24,6 +23,7 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -1002,7 +1002,7 @@ var _ = Describe("agent reconcile", func() {
 			Host: models.Host{
 				ID:            &hostId,
 				ClusterID:     &sId,
-				Role:          models.HostRoleAutoAssign,
+				Role:          models.HostRoleAutoDashAssign,
 				SuggestedRole: models.HostRoleMaster,
 				Status:        swag.String(models.HostStatusKnown),
 				StatusInfo:    swag.String("Some status info"),
@@ -1142,7 +1142,7 @@ var _ = Describe("TestConditions", func() {
 	}{
 		{
 			name:           "PendingForInput",
-			hostStatus:     models.HostStatusPendingForInput,
+			hostStatus:     models.HostStatusPendingDashForDashInput,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking1\",\"status\":\"failure\",\"message\":\"Host check1 is not OK\"},{\"id\":\"checking2\",\"status\":\"success\",\"message\":\"Host check2 is OK\"},{\"id\":\"checking3\",\"status\":\"failure\",\"message\":\"Host check3 is not OK\"},{\"id\":\"checking4\",\"status\":\"pending\",\"message\":\"Host check4 is pending\"}]}",
 			conditions: []conditionsv1.Condition{
@@ -1218,7 +1218,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "InsufficientUnbound",
-			hostStatus:     models.HostStatusInsufficientUnbound,
+			hostStatus:     models.HostStatusInsufficientDashUnbound,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking1\",\"status\":\"failure\",\"message\":\"Host check1 is not OK\"},{\"id\":\"checking2\",\"status\":\"success\",\"message\":\"Host check2 is OK\"},{\"id\":\"checking3\",\"status\":\"failure\",\"message\":\"Host check3 is not OK\"}]}",
 			conditions: []conditionsv1.Condition{
@@ -1295,7 +1295,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "KnownUnbound",
-			hostStatus:     models.HostStatusKnownUnbound,
+			hostStatus:     models.HostStatusKnownDashUnbound,
 			hostApproved:   true,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking\",\"status\":\"success\",\"message\":\"Host is checked\"}]}",
@@ -1525,7 +1525,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "DiscoveringUnbound",
-			hostStatus:     models.HostStatusDiscoveringUnbound,
+			hostStatus:     models.HostStatusDiscoveringDashUnbound,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking\",\"status\":\"success\",\"message\":\"Host is checked\"}]}",
 			conditions: []conditionsv1.Condition{
@@ -1677,7 +1677,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "DisconnectedUnbound",
-			hostStatus:     models.HostStatusDisconnectedUnbound,
+			hostStatus:     models.HostStatusDisconnectedDashUnbound,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking\",\"status\":\"success\",\"message\":\"Host is checked\"}]}",
 			conditions: []conditionsv1.Condition{

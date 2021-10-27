@@ -6,13 +6,13 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/hardware"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("disk_performance", func() {
@@ -37,14 +37,14 @@ var _ = Describe("disk_performance", func() {
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 		infraEnvId = strfmt.UUID(uuid.New().String())
-		host = hostutil.GenerateTestHost(id, infraEnvId, clusterId, models.HostStatusPreparingForInstallation)
+		host = hostutil.GenerateTestHost(id, infraEnvId, clusterId, models.HostStatusPreparingDashForDashInstallation)
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 	})
 
 	It("happy flow", func() {
 		stepReply, stepErr = dCmd.GetSteps(ctx, &host)
 		Expect(stepReply).ToNot(BeNil())
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeInstallationDiskSpeedCheck))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeInstallationDashDiskDashSpeedDashCheck))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 	})
 

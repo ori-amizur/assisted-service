@@ -17,7 +17,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/jinzhu/gorm"
 	"github.com/kennygrant/sanitize"
 	"github.com/openshift/assisted-service/internal/common"
 	eventgen "github.com/openshift/assisted-service/internal/common/events"
@@ -39,6 +38,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -432,7 +432,7 @@ func (m *Manager) tryAssignMachineCidrNonDHCPMode(cluster *common.Cluster) error
 }
 
 func (m *Manager) autoAssignMachineNetworkCidr(c *common.Cluster) error {
-	if !funk.ContainsString([]string{models.ClusterStatusPendingForInput, models.ClusterStatusInsufficient}, swag.StringValue(c.Status)) {
+	if !funk.ContainsString([]string{models.ClusterStatusPendingDashForDashInput, models.ClusterStatusInsufficient}, swag.StringValue(c.Status)) {
 		return nil
 	}
 	/*
@@ -572,9 +572,9 @@ func CanDownloadFiles(c *common.Cluster) (err error) {
 		models.ClusterStatusFinalizing,
 		models.ClusterStatusInstalled,
 		models.ClusterStatusError,
-		models.ClusterStatusAddingHosts,
+		models.ClusterStatusAddingDashHosts,
 		models.ClusterStatusCancelled,
-		models.ClusterStatusInstallingPendingUserAction,
+		models.ClusterStatusInstallingDashPendingDashUserDashAction,
 	}
 	if !funk.Contains(allowedStatuses, clusterStatus) {
 		err = errors.Errorf("cluster %s is in %s state, files can be downloaded only when status is one of: %s",
@@ -625,7 +625,7 @@ func (m *Manager) UploadIngressCert(c *common.Cluster) (err error) {
 
 func (m *Manager) AcceptRegistration(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
-	allowedStatuses := []string{models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingForInput, models.ClusterStatusAddingHosts}
+	allowedStatuses := []string{models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingDashForDashInput, models.ClusterStatusAddingDashHosts}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
 		if clusterStatus == models.ClusterStatusInstalled {
 			err = errors.Errorf("Cannot add host to a cluster that is already installed, please use the day2 cluster option")
@@ -638,7 +638,7 @@ func (m *Manager) AcceptRegistration(c *common.Cluster) (err error) {
 
 func (m *Manager) VerifyClusterUpdatability(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
-	allowedStatuses := []string{models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingForInput, models.ClusterStatusAddingHosts}
+	allowedStatuses := []string{models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingDashForDashInput, models.ClusterStatusAddingDashHosts}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
 		err = errors.Errorf("Cluster %s is in %s state, cluster can be updated only in one of %s", c.ID, clusterStatus, allowedStatuses)
 	}
@@ -650,7 +650,7 @@ func (m *Manager) CancelInstallation(ctx context.Context, c *common.Cluster, rea
 	isFailed := false
 	var err error
 	installationStates := []string{
-		models.ClusterStatusPreparingForInstallation, models.ClusterStatusInstalling, models.ClusterStatusFinalizing}
+		models.ClusterStatusPreparingDashForDashInstallation, models.ClusterStatusInstalling, models.ClusterStatusFinalizing}
 	defer func() {
 		if !isFailed {
 			eventgen.SendClusterCancelInstallationEvent(ctx, m.eventsHandler, *c.ID)
@@ -799,7 +799,7 @@ func (m *Manager) PrepareForInstallation(ctx context.Context, c *common.Cluster,
 func (m *Manager) HandlePreInstallError(ctx context.Context, c *common.Cluster, installErr error) {
 	log := logutil.FromContext(ctx, m.log)
 	log.WithError(installErr).Warnf("Failed to prepare installation of cluster %s", c.ID.String())
-	err := m.db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).Update(&common.Cluster{
+	err := m.db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).Updates(&common.Cluster{
 		InstallationPreparationCompletionStatus: common.InstallationPreparationFailed,
 	}).Error
 	if err != nil {
@@ -812,7 +812,7 @@ func (m *Manager) HandlePreInstallError(ctx context.Context, c *common.Cluster, 
 
 func (m *Manager) HandlePreInstallSuccess(ctx context.Context, c *common.Cluster) {
 	log := logutil.FromContext(ctx, m.log)
-	err := m.db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).Update(&common.Cluster{
+	err := m.db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).Updates(&common.Cluster{
 		InstallationPreparationCompletionStatus: common.InstallationPreparationSucceeded,
 	}).Error
 	if err != nil {
@@ -843,7 +843,7 @@ func (m *Manager) SetVipsData(ctx context.Context, c *common.Cluster, apiVip, in
 		return nil
 	}
 	switch swag.StringValue(c.Status) {
-	case models.ClusterStatusPendingForInput, models.ClusterStatusInsufficient, models.ClusterStatusReady:
+	case models.ClusterStatusPendingDashForDashInput, models.ClusterStatusInsufficient, models.ClusterStatusReady:
 		if err = db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).
 			Updates(map[string]interface{}{
 				"api_vip":           apiVip,
@@ -861,7 +861,7 @@ func (m *Manager) SetVipsData(ctx context.Context, c *common.Cluster, apiVip, in
 			eventgen.SendApiIngressVipUpdateEvent(ctx, m.eventsHandler, *c.ID, apiVip, ingressVip)
 		}
 
-	case models.ClusterStatusInstalling, models.ClusterStatusPreparingForInstallation, models.ClusterStatusFinalizing:
+	case models.ClusterStatusInstalling, models.ClusterStatusPreparingDashForDashInstallation, models.ClusterStatusFinalizing:
 		if c.APIVip != apiVip || c.IngressVip != ingressVip {
 			err = vipMismatchError(apiVip, ingressVip, c)
 			log.WithError(err).Error("VIPs changed during installation")
@@ -936,7 +936,7 @@ func (m *Manager) setConnectivityMajorityGroupsForClusterInternal(cluster *commo
 	}
 	// We want to calculate majority groups only when in pre-install states since it is needed for pre-install validations
 	allowedStates := []string{
-		models.ClusterStatusPendingForInput,
+		models.ClusterStatusPendingDashForDashInput,
 		models.ClusterStatusInsufficient,
 		models.ClusterStatusReady,
 	}
@@ -977,7 +977,7 @@ func (m *Manager) setConnectivityMajorityGroupsForClusterInternal(cluster *commo
 
 	marshalledMajorityGroups := string(b)
 	if marshalledMajorityGroups != cluster.ConnectivityMajorityGroups {
-		err = db.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Update(&common.Cluster{
+		err = db.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Updates(&common.Cluster{
 			Cluster: models.Cluster{
 				ConnectivityMajorityGroups: marshalledMajorityGroups,
 			},
@@ -997,7 +997,7 @@ func (m *Manager) SetConnectivityMajorityGroupsForCluster(clusterID strfmt.UUID,
 	cluster, err := common.GetClusterFromDBWithoutDisabledHosts(db, clusterID)
 	if err != nil {
 		var statusCode int32 = http.StatusInternalServerError
-		if gorm.IsRecordNotFoundError(err) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			statusCode = http.StatusNotFound
 		}
 		return common.NewApiError(statusCode, errors.Wrapf(err, "Getting cluster %s", clusterID.String()))
@@ -1072,12 +1072,10 @@ func (m Manager) DeregisterInactiveCluster(ctx context.Context, maxDeregisterPer
 
 func (m Manager) PermanentClustersDeletion(ctx context.Context, olderThan strfmt.DateTime, objectHandler s3wrapper.API) error {
 	var clusters []*common.Cluster
-	db := m.db.Unscoped()
-	if reply := db.Where("deleted_at < ?", olderThan).Find(&clusters); reply.Error != nil {
+	if reply := m.db.Unscoped().Where("deleted_at < ?", olderThan).Find(&clusters); reply.Error != nil {
 		return reply.Error
 	}
 	for i := range clusters {
-
 		c := clusters[i]
 		m.log.Infof("Permanently deleting cluster %s that was de-registered before %s", c.ID.String(), olderThan)
 
@@ -1101,15 +1099,7 @@ func (m Manager) PermanentClustersDeletion(ctx context.Context, olderThan strfmt
 		if !deleteFromDB {
 			continue
 		}
-
-		cluster := c // Avoid passing loop variable by ref
-		if reply := db.Delete(&cluster); reply.Error != nil {
-			m.log.WithError(reply.Error).Warnf("Failed deleting cluster from db %s", c.ID.String())
-		} else if reply.RowsAffected > 0 {
-			m.log.Debugf("Deleted %s cluster from db", reply.RowsAffected)
-		}
-
-		if err := common.DeleteRecordsByClusterID(db, *c.ID, []interface{}{
+		if err := common.DeleteRecordsByClusterID(m.db, *c.ID, []interface{}{
 			&models.Event{},
 			&models.MonitoredOperator{},
 			&models.ClusterNetwork{},
@@ -1117,6 +1107,12 @@ func (m Manager) PermanentClustersDeletion(ctx context.Context, olderThan strfmt
 			&models.MachineNetwork{},
 		}); err != nil {
 			m.log.WithError(err).Warnf("Failed deleting cluster records from db for cluster %s", c.ID.String())
+		}
+
+		if reply := m.db.Unscoped().Delete(&common.Cluster{}, "id = ?", c.ID.String()); reply.Error != nil {
+			m.log.WithError(reply.Error).Warnf("Failed deleting cluster from db %s", c.ID.String())
+		} else if reply.RowsAffected > 0 {
+			m.log.Debugf("Deleted %s cluster from db", reply.RowsAffected)
 		}
 	}
 	return nil
@@ -1224,7 +1220,7 @@ func (m *Manager) TransformClusterToDay2(ctx context.Context, cluster *common.Cl
 	apiVipDnsname := fmt.Sprintf("api.%s.%s", cluster.Name, cluster.BaseDNSDomain)
 	dbReply := db.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).
 		Updates(map[string]interface{}{
-			"status":           swag.String(models.ClusterStatusAddingHosts),
+			"status":           swag.String(models.ClusterStatusAddingDashHosts),
 			"kind":             swag.String(models.ClusterKindAddHostsCluster),
 			"api_vip_dns_name": swag.String(apiVipDnsname),
 		})

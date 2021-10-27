@@ -6091,11 +6091,11 @@ definitions:
         type: string
         format: uuid
         description: The cluster that this operator is associated with.
-        x-go-custom-tag: gorm:"primary_key;foreignkey:Cluster"
+        x-go-custom-tag: gorm:"primaryKey"
       name:
         type: string
         description: Unique name of the operator.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
       namespace:
         type: string
         description: Namespace where to deploy an operator. Only some operators require a namespace.
@@ -6474,7 +6474,7 @@ definitions:
         type: string
         format: uuid
         description: Unique identifier of the object.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
       href:
         type: string
         description: Self link.
@@ -6487,7 +6487,7 @@ definitions:
       infra_env_id:
         type: string
         format: uuid
-        x-go-custom-tag: gorm:"primary_key;foreignkey:InfraEnvID"
+        x-go-custom-tag: gorm:"primaryKey;foreignkey:InfraEnvID"
         description: The InfraEnv that this host is associated with.
       status:
         type: string
@@ -6535,7 +6535,7 @@ definitions:
         description: The last time that the host status was updated.
       progress:
         $ref: '#/definitions/host-progress-info'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:progress_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:progress_"
       stage_started_at:
         type: string
         format: date-time
@@ -6596,12 +6596,20 @@ definitions:
         type: string
         description: Contains the inventory disk id to install on.
       updated_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
       created_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
       checked_in_at:
         type: string
@@ -6614,12 +6622,6 @@ definitions:
         type: string
       user_name:
         type: string
-      deleted_at:
-        type: string
-        format: date-time
-        description: The time that the host was deleted.
-        x-go-custom-tag: gorm:"type:timestamp with time zone"
-        x-nullable: true
       ignition_config_overrides:
         x-go-custom-tag: gorm:"type:text"
         type: string
@@ -7271,7 +7273,7 @@ definitions:
         type: string
         format: uuid
         description: Unique identifier of the object.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
       href:
         type: string
         description: Self link.
@@ -7296,10 +7298,10 @@ definitions:
         description: Cluster ID on OCP system.
       image_info:
         $ref: '#/definitions/image_info'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:image_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:image_"
       platform:
         $ref: '#/definitions/platform'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:platform_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:platform_"
       base_dns_domain:
         type: string
         description: Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.
@@ -7375,15 +7377,15 @@ definitions:
         description: The last time that the cluster status was updated.
       progress:
         $ref: '#/definitions/cluster-progress-info'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:progress_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:progress_"
         description: Installation progress percentages of the cluster.
       disk_encryption:
         type: object
         $ref: '#/definitions/disk-encryption'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:disk_encryption_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:disk_encryption_"
         description: Information regarding hosts' installation disks encryption.
       hosts:
-        x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
+        x-go-custom-tag: gorm:"foreignkey:ClusterID;references:ID"
         type: array
         description: Hosts that are associated with this cluster.
         items:
@@ -7410,13 +7412,21 @@ definitions:
         default: false
 
       updated_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
         description: The last time that this cluster was updated.
       created_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
         description: The time that this cluster was created.
       install_started_at:
@@ -7472,12 +7482,6 @@ definitions:
         type: string
         description: Json formatted string containing the majority groups for connectivity checks.
         x-go-custom-tag: gorm:"type:text"
-      deleted_at:
-        type: string
-        format: date-time
-        description: The time that the cluster was deleted.
-        x-go-custom-tag: gorm:"type:timestamp with time zone"
-        x-nullable: true
       user_managed_networking:
         type: boolean
         x-nullable: true
@@ -7486,7 +7490,7 @@ definitions:
         type: string
         description: A comma-separated list of NTP sources (name or IP) going to be added to all the hosts.
       monitored_operators:
-        x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
+        x-go-custom-tag: gorm:"foreignkey:ClusterID;references:ID"
         type: array
         description: Operators that are associated with this cluster.
         items:
@@ -7510,21 +7514,21 @@ definitions:
         enum: ['OpenShiftSDN', 'OVNKubernetes']
         x-nullable: true
       cluster_networks:
-        x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
+        x-go-custom-tag: gorm:"foreignkey:ClusterID;references:ID"
         type: array
         description: Cluster networks that are associated with this cluster.
         items:
           type: object
           $ref: '#/definitions/cluster_network'
       service_networks:
-        x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
+        x-go-custom-tag: gorm:"foreignkey:ClusterID;references:ID"
         type: array
         description: Service networks that are associated with this cluster.
         items:
           type: object
           $ref: '#/definitions/service_network'
       machine_networks:
-        x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
+        x-go-custom-tag: gorm:"foreignkey:ClusterID;references:ID"
         type: array
         description: Machine networks that are associated with this cluster.
         items:
@@ -7547,7 +7551,7 @@ definitions:
       vsphere:
         type: object
         $ref: '#/definitions/vsphere_platform'
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:vsphere_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:vsphere_"
         x-nullable: true
 
   image_info:
@@ -7565,8 +7569,12 @@ definitions:
         type: string
         description: Image generator version.
       created_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
       expires_at:
         type: string
@@ -8676,7 +8684,7 @@ definitions:
         type: string
         format: uuid
         description: Unique identifier of the object.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
       href:
         type: string
         description: Self link.
@@ -8694,7 +8702,7 @@ definitions:
         type: string
       proxy:
         $ref: "#/definitions/proxy"
-        x-go-custom-tag: gorm:"embedded;embedded_prefix:proxy_"
+        x-go-custom-tag: gorm:"embedded;embeddedPrefix:proxy_"
       additional_ntp_sources:
         type: string
         description: A comma-separated list of NTP sources (name or IP) going to be added to all the hosts.
@@ -8725,13 +8733,21 @@ definitions:
         type: string
         description: Image generator version.
       updated_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
         description: The last time that this infraenv was updated.
       created_at:
-        type: string
-        format: date-time
+        x-go-type:
+          type: Time
+          import:
+            package: time
+          hints:
+            noValidation: true
         x-go-custom-tag: gorm:"type:timestamp with time zone"
       expires_at:
         type: string
@@ -8853,11 +8869,11 @@ definitions:
         type: string
         format: uuid
         description: The cluster that this network is associated with.
-        x-go-custom-tag: gorm:"primary_key;foreignkey:Cluster"
+        x-go-custom-tag: gorm:"primaryKey"
       cidr:
         $ref: '#/definitions/subnet'
         description: The IP block address pool.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
       host_prefix:
         type: integer
         description: The prefix size to allocate to each node from the CIDR. For example, 24 would allocate 2^8=256 adresses to each node.
@@ -8872,11 +8888,11 @@ definitions:
         type: string
         format: uuid
         description: The cluster that this network is associated with.
-        x-go-custom-tag: gorm:"primary_key;foreignkey:Cluster"
+        x-go-custom-tag: gorm:"primaryKey"
       cidr:
         $ref: '#/definitions/subnet'
         description: The IP block address pool for machines within the cluster.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
 
   service_network:
     type: object
@@ -8886,11 +8902,11 @@ definitions:
         type: string
         format: uuid
         description: The cluster that this network is associated with.
-        x-go-custom-tag: gorm:"primary_key;foreignkey:Cluster"
+        x-go-custom-tag: gorm:"primaryKey"
       cidr:
         $ref: '#/definitions/subnet'
         description: The IP block address pool.
-        x-go-custom-tag: gorm:"primary_key"
+        x-go-custom-tag: gorm:"primaryKey"
 
   bind-host-params:
     required:

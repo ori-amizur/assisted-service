@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func NewRegistrar(log logrus.FieldLogger, db *gorm.DB) *registrar {
@@ -30,7 +30,7 @@ func (r *registrar) RegisterCluster(ctx context.Context, cluster *common.Cluster
 }
 
 func (r *registrar) RegisterAddHostsCluster(ctx context.Context, cluster *common.Cluster, v1Flag bool, v1ISOType models.ImageType) error {
-	return r.registerCluster(ctx, cluster, models.ClusterStatusAddingHosts, statusInfoAddingHosts, time.Now(), v1Flag, v1ISOType)
+	return r.registerCluster(ctx, cluster, models.ClusterStatusAddingDashHosts, statusInfoAddingHosts, time.Now(), v1Flag, v1ISOType)
 }
 
 func (r *registrar) registerCluster(ctx context.Context, cluster *common.Cluster, status, statusInfo string, registerTime time.Time, v1Flag bool, v1ISOType models.ImageType) error {
@@ -49,14 +49,18 @@ func (r *registrar) registerCluster(ctx context.Context, cluster *common.Cluster
 		r.log.WithError(tx.Error).Error("failed to start transaction")
 	}
 
-	queryParams := []string{"id = ?", cluster.ID.String()}
-	if err := tx.First(&cluster, queryParams).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	queryParams := []interface{}{"id = ?", cluster.ID.String()}
+	var (
+		queriedCluster common.Cluster
+		err            error
+	)
+	if err = tx.First(&queriedCluster, queryParams...).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		r.log.WithError(err).Errorf("Error registering cluster %s", cluster.Name)
 		return err
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		// Delete any previews record of the cluster if it was soft deleted in the past,
 		// no error will be returned it wasn't existed.
-		if err := tx.Unscoped().Delete(&cluster, queryParams).Error; err != nil {
+		if err := tx.Unscoped().Delete(&common.Cluster{}, queryParams...).Error; err != nil {
 			r.log.WithError(err).Errorf("Error registering cluster %s", cluster.Name)
 			return errors.Wrapf(
 				err,
@@ -65,24 +69,20 @@ func (r *registrar) registerCluster(ctx context.Context, cluster *common.Cluster
 		}
 	}
 
-	for _, tableName := range common.ClusterSubTables {
-		tx = common.LoadTableFromDB(tx, tableName)
-	}
-
-	if err := tx.Create(cluster).Error; err != nil {
+	if err = tx.Create(cluster).Error; err != nil {
 		r.log.Errorf("Error registering cluster %s", cluster.Name)
 		return err
 	}
 
 	if v1Flag {
-		err := common.CreateInfraEnvForCluster(tx, cluster, v1ISOType)
+		err = common.CreateInfraEnvForCluster(tx, cluster, v1ISOType)
 		if err != nil {
 			r.log.WithError(err).Errorf("Failed to create Infra Env along the cluster %s", cluster.ID)
 			return err
 		}
 	}
 
-	if err := tx.Commit().Error; err != nil {
+	if err = tx.Commit().Error; err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func (r *registrar) registerCluster(ctx context.Context, cluster *common.Cluster
 }
 
 func (r *registrar) RegisterAddHostsOCPCluster(c *common.Cluster, db *gorm.DB) error {
-	c.Status = swag.String(models.ClusterStatusAddingHosts)
+	c.Status = swag.String(models.ClusterStatusAddingDashHosts)
 	c.StatusInfo = swag.String(StatusInfoReady)
 	err := db.Create(c).Error
 	if err != nil {
@@ -117,7 +117,7 @@ func (r *registrar) DeregisterCluster(ctx context.Context, cluster *common.Clust
 	}
 
 	if txErr = common.DeleteRecordsByClusterID(tx, *cluster.ID, []interface{}{
-		&models.Host{},
+		&common.Host{},
 		&models.MonitoredOperator{},
 		&models.ClusterNetwork{},
 		&models.ServiceNetwork{},

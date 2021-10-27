@@ -1,34 +1,30 @@
 package migrations
 
 import (
+	gormigrate "github.com/go-gormigrate/gormigrate/v2"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
-	gormigrate "gopkg.in/gormigrate.v1"
+	"gorm.io/gorm"
 )
 
 func populateInfraEnv() *gormigrate.Migration {
 	migrate := func(tx *gorm.DB) error {
 
-		if tx.HasTable(&common.Host{}) {
+		if tx.Migrator().HasTable(&common.Host{}) && !tx.Migrator().HasColumn(&common.Host{}, "infra_env_id") {
 			// Generate the infra_env_id column
 			if err := tx.Exec("ALTER TABLE hosts ADD COLUMN IF NOT EXISTS infra_env_id text NULL;").Error; err != nil {
 				return err
 			}
-			// Populate the infra_env_id column
-			if err := tx.Exec("UPDATE hosts SET infra_env_id=cluster_id;").Error; err != nil {
-				return err
-			}
 		}
 
-		if tx.HasTable(&common.Cluster{}) {
+		if tx.Migrator().HasTable(&common.Cluster{}) {
 			// Generate the InfraEnv table
-			if err := tx.AutoMigrate(&common.InfraEnv{}).Error; err != nil {
+			if err := tx.AutoMigrate(&common.InfraEnv{}); err != nil {
 				return err
 			}
 
-			if err := tx.AutoMigrate(&common.Cluster{}).Error; err != nil {
+			if err := tx.AutoMigrate(&common.Cluster{}); err != nil {
 				return err
 			}
 
@@ -75,6 +71,10 @@ func populateInfraEnv() *gormigrate.Migration {
 			}
 		}
 
+		// Populate the infra_env_id column
+		if err := tx.Exec("UPDATE hosts SET infra_env_id=cluster_id where infra_env_id is null or infra_env_id = '';").Error; err != nil {
+			return err
+		}
 		return nil
 	}
 

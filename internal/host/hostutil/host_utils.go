@@ -7,12 +7,12 @@ import (
 	"regexp"
 
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 const (
@@ -44,7 +44,7 @@ func GetEventSeverityFromHostStatus(status string) string {
 	switch status {
 	case models.HostStatusDisconnected:
 		return models.EventSeverityWarning
-	case models.HostStatusInstallingPendingUserAction:
+	case models.HostStatusInstallingDashPendingDashUserDashAction:
 		return models.EventSeverityWarning
 	case models.HostStatusInsufficient:
 		return models.EventSeverityWarning

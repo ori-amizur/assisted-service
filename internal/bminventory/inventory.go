@@ -26,7 +26,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
-	"github.com/jinzhu/gorm"
 	"github.com/kennygrant/sanitize"
 	clusterPkg "github.com/openshift/assisted-service/internal/cluster"
 	"github.com/openshift/assisted-service/internal/cluster/validations"
@@ -68,6 +67,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -3787,7 +3787,7 @@ func (b *bareMetalInventory) UpdateHostInstallerArgs(ctx context.Context, params
 
 func shouldHandle(params installer.V2PostStepReplyParams) bool {
 	switch params.Reply.StepType {
-	case models.StepTypeInstallationDiskSpeedCheck, models.StepTypeContainerImageAvailability:
+	case models.StepTypeInstallationDashDiskDashSpeedDashCheck, models.StepTypeContainerDashImageDashAvailability:
 		/*
 		   In case that the command sent 0 length output is should not be handled.  When disk speed check takes a long time,
 		   we don't want to run 2 such commands concurrently.  The prior running disk-speed-check, there is a verification
@@ -3816,13 +3816,13 @@ func (b *bareMetalInventory) handleReplyError(params installer.V2PostStepReplyPa
 		}
 		//if it's install step - need to move host to error
 		return b.hostApi.HandleInstallationFailure(ctx, h)
-	case models.StepTypeContainerImageAvailability:
+	case models.StepTypeContainerDashImageDashAvailability:
 		stepReply, err := filterReplyByType(params)
 		if err != nil {
 			return err
 		}
 		return b.processImageAvailabilityResponse(ctx, h, stepReply)
-	case models.StepTypeInstallationDiskSpeedCheck:
+	case models.StepTypeInstallationDashDiskDashSpeedDashCheck:
 		stepReply, err := filterReplyByType(params)
 		if err != nil {
 			return err
@@ -4028,21 +4028,21 @@ func handleReplyByType(params installer.V2PostStepReplyParams, b *bareMetalInven
 	switch params.Reply.StepType {
 	case models.StepTypeInventory:
 		err = b.hostApi.UpdateInventory(ctx, &host, stepReply)
-	case models.StepTypeConnectivityCheck:
+	case models.StepTypeConnectivityDashCheck:
 		err = b.hostApi.UpdateConnectivityReport(ctx, &host, stepReply)
-	case models.StepTypeAPIVipConnectivityCheck:
+	case models.StepTypeAPIDashVipDashConnectivityDashCheck:
 		err = b.hostApi.UpdateApiVipConnectivityReport(ctx, &host, stepReply)
-	case models.StepTypeFreeNetworkAddresses:
+	case models.StepTypeFreeDashNetworkDashAddresses:
 		err = b.updateFreeAddressesReport(ctx, &host, stepReply)
-	case models.StepTypeDhcpLeaseAllocate:
+	case models.StepTypeDhcpDashLeaseDashAllocate:
 		err = b.processDhcpAllocationResponse(ctx, &host, stepReply)
-	case models.StepTypeNtpSynchronizer:
+	case models.StepTypeNtpDashSynchronizer:
 		err = b.processNtpSynchronizerResponse(ctx, &host, stepReply)
-	case models.StepTypeContainerImageAvailability:
+	case models.StepTypeContainerDashImageDashAvailability:
 		err = b.processImageAvailabilityResponse(ctx, &host, stepReply)
-	case models.StepTypeInstallationDiskSpeedCheck:
+	case models.StepTypeInstallationDashDiskDashSpeedDashCheck:
 		err = b.processDiskSpeedCheckResponse(ctx, &host, stepReply, 0)
-	case models.StepTypeDomainResolution:
+	case models.StepTypeDomainDashResolution:
 		err = b.updateDomainNameResolutionResponse(ctx, &host, stepReply)
 	}
 	return err
@@ -4062,7 +4062,7 @@ func logReplyReceived(params installer.V2PostStepReplyParams, log logrus.FieldLo
 		return
 	}
 
-	if params.Reply.StepType == models.StepTypeFreeNetworkAddresses {
+	if params.Reply.StepType == models.StepTypeFreeDashNetworkDashAddresses {
 		log.Info(message)
 	} else {
 		log.Info(messageWithOutput)
@@ -4088,21 +4088,21 @@ func filterReplyByType(params installer.V2PostStepReplyParams) (string, error) {
 	switch params.Reply.StepType {
 	case models.StepTypeInventory:
 		stepReply, err = filterReply(&models.Inventory{}, params.Reply.Output)
-	case models.StepTypeConnectivityCheck:
+	case models.StepTypeConnectivityDashCheck:
 		stepReply, err = filterReply(&models.ConnectivityReport{}, params.Reply.Output)
-	case models.StepTypeAPIVipConnectivityCheck:
+	case models.StepTypeAPIDashVipDashConnectivityDashCheck:
 		stepReply, err = filterReply(&models.APIVipConnectivityResponse{}, params.Reply.Output)
-	case models.StepTypeFreeNetworkAddresses:
+	case models.StepTypeFreeDashNetworkDashAddresses:
 		stepReply, err = filterReply(&models.FreeNetworksAddresses{}, params.Reply.Output)
-	case models.StepTypeDhcpLeaseAllocate:
+	case models.StepTypeDhcpDashLeaseDashAllocate:
 		stepReply, err = filterReply(&models.DhcpAllocationResponse{}, params.Reply.Output)
-	case models.StepTypeNtpSynchronizer:
+	case models.StepTypeNtpDashSynchronizer:
 		stepReply, err = filterReply(&models.NtpSynchronizationResponse{}, params.Reply.Output)
-	case models.StepTypeContainerImageAvailability:
+	case models.StepTypeContainerDashImageDashAvailability:
 		stepReply, err = filterReply(&models.ContainerImageAvailabilityResponse{}, params.Reply.Output)
-	case models.StepTypeInstallationDiskSpeedCheck:
+	case models.StepTypeInstallationDashDiskDashSpeedDashCheck:
 		stepReply, err = filterReply(&models.DiskSpeedCheckResponse{}, params.Reply.Output)
-	case models.StepTypeDomainResolution:
+	case models.StepTypeDomainDashResolution:
 		stepReply, err = filterReply(&models.DomainResolutionResponse{}, params.Reply.Output)
 	}
 
@@ -6113,7 +6113,7 @@ func (b *bareMetalInventory) V2RegisterHost(ctx context.Context, params installe
 	// which has less strict hardware requirements. This early role assignment results in clearer, more early
 	// errors for the user in case of insufficient hardware. In the future, single-node clusters might support
 	// extra nodes (as workers). In that case, this line might need to be removed.
-	defaultRole := models.HostRoleAutoAssign
+	defaultRole := models.HostRoleAutoDashAssign
 
 	host := &models.Host{
 		ID:                    params.NewHostParams.HostID,

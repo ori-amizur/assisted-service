@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	common_api "github.com/openshift/assisted-service/api/common"
@@ -31,6 +30,7 @@ import (
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/openshift/hive/apis/hive/v1/aws"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -250,7 +250,7 @@ var _ = Describe("cluster reconcile", func() {
 				id := strfmt.UUID(uuid.New().String())
 				clusterReply = &common.Cluster{
 					Cluster: models.Cluster{
-						Status:     swag.String(models.ClusterStatusPendingForInput),
+						Status:     swag.String(models.ClusterStatusPendingDashForDashInput),
 						StatusInfo: swag.String("User input required"),
 						ID:         &id,
 					},
@@ -958,7 +958,7 @@ var _ = Describe("cluster reconcile", func() {
 			installClusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:         backEndCluster.ID,
-					Status:     swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:     swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusInfo: swag.String("Waiting for control plane"),
 				},
 			}
@@ -987,7 +987,7 @@ var _ = Describe("cluster reconcile", func() {
 			installClusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:         backEndCluster.ID,
-					Status:     swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:     swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusInfo: swag.String("Waiting for control plane"),
 				},
 			}
@@ -1123,7 +1123,7 @@ var _ = Describe("cluster reconcile", func() {
 					ID:               backEndCluster.ID,
 					Name:             clusterName,
 					OpenshiftVersion: "4.8",
-					Status:           swag.String(models.ClusterStatusAddingHosts),
+					Status:           swag.String(models.ClusterStatusAddingDashHosts),
 					APIVip:           backEndCluster.APIVip,
 					BaseDNSDomain:    backEndCluster.BaseDNSDomain,
 					Kind:             swag.String(models.ClusterKindAddHostsCluster),
@@ -1136,7 +1136,7 @@ var _ = Describe("cluster reconcile", func() {
 			Expect(err).To(BeNil())
 			Expect(result).To(Equal(ctrl.Result{}))
 			aci = getTestClusterInstall()
-			Expect(aci.Status.DebugInfo.State).To(Equal(models.ClusterStatusAddingHosts))
+			Expect(aci.Status.DebugInfo.State).To(Equal(models.ClusterStatusAddingDashHosts))
 		})
 
 		It("update kubeconfig ingress", func() {
@@ -1264,7 +1264,7 @@ var _ = Describe("cluster reconcile", func() {
 			clusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:     &id,
-					Status: swag.String(models.ClusterStatusAddingHosts),
+					Status: swag.String(models.ClusterStatusAddingDashHosts),
 				},
 			}
 			mockInstallerInternal.EXPECT().RegisterAddHostsClusterInternal(gomock.Any(), gomock.Any(), gomock.Any(), true).Return(clusterReply, nil)
@@ -1365,7 +1365,7 @@ var _ = Describe("cluster reconcile", func() {
 		})
 
 		It("not ready for installation", func() {
-			backEndCluster.Status = swag.String(models.ClusterStatusPendingForInput)
+			backEndCluster.Status = swag.String(models.ClusterStatusPendingDashForDashInput)
 			mockClusterApi.EXPECT().IsReadyForInstallation(gomock.Any()).Return(false, "").Times(1)
 			Expect(c.Update(ctx, cluster)).Should(BeNil())
 			mockInstallerInternal.EXPECT().GetClusterByKubeKey(gomock.Any()).Return(backEndCluster, nil)
@@ -1383,7 +1383,7 @@ var _ = Describe("cluster reconcile", func() {
 		})
 
 		It("not ready for installation - hosts not approved", func() {
-			backEndCluster.Status = swag.String(models.ClusterStatusPendingForInput)
+			backEndCluster.Status = swag.String(models.ClusterStatusPendingDashForDashInput)
 			mockClusterApi.EXPECT().IsReadyForInstallation(gomock.Any()).Return(true, "").Times(1)
 			mockHostApi.EXPECT().IsInstallable(gomock.Any()).Return(true).Times(5)
 			mockInstallerInternal.EXPECT().GetCommonHostInternal(gomock.Any(), gomock.Any(), gomock.Any()).Return(&common.Host{Approved: false}, nil).Times(10)
@@ -1503,7 +1503,7 @@ var _ = Describe("cluster reconcile", func() {
 			backEndCluster.Status = swag.String(models.ClusterStatusInstalled)
 			backEndCluster.OpenshiftClusterID = openshiftID
 			backEndCluster.Kind = swag.String(models.ClusterKindAddHostsCluster)
-			backEndCluster.Status = swag.String(models.ClusterStatusAddingHosts)
+			backEndCluster.Status = swag.String(models.ClusterStatusAddingDashHosts)
 			id := strfmt.UUID(uuid.New().String())
 			h := &models.Host{
 				ID:     &id,
@@ -1537,7 +1537,7 @@ var _ = Describe("cluster reconcile", func() {
 			backEndCluster.Status = swag.String(models.ClusterStatusInstalled)
 			backEndCluster.OpenshiftClusterID = openshiftID
 			backEndCluster.Kind = swag.String(models.ClusterKindAddHostsCluster)
-			backEndCluster.Status = swag.String(models.ClusterStatusAddingHosts)
+			backEndCluster.Status = swag.String(models.ClusterStatusAddingDashHosts)
 			id := strfmt.UUID(uuid.New().String())
 			h := &models.Host{
 				ID:     &id,
@@ -1680,7 +1680,7 @@ var _ = Describe("cluster reconcile", func() {
 			installClusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:         backEndCluster.ID,
-					Status:     swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:     swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusInfo: swag.String("Waiting for control plane"),
 				},
 			}
@@ -1706,7 +1706,7 @@ var _ = Describe("cluster reconcile", func() {
 			installClusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:         backEndCluster.ID,
-					Status:     swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:     swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusInfo: swag.String("Waiting for control plane"),
 				},
 			}
@@ -1741,7 +1741,7 @@ var _ = Describe("cluster reconcile", func() {
 			installClusterReply := &common.Cluster{
 				Cluster: models.Cluster{
 					ID:         backEndCluster.ID,
-					Status:     swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:     swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusInfo: swag.String("Waiting for control plane"),
 				},
 			}
@@ -1828,7 +1828,7 @@ var _ = Describe("cluster reconcile", func() {
 						HostPrefix: int64(defaultAgentClusterInstallSpec.Networking.ClusterNetwork[0].HostPrefix),
 					}},
 					NetworkType: swag.String(models.ClusterNetworkTypeOpenShiftSDN),
-					Status:      swag.String(models.ClusterStatusPendingForInput),
+					Status:      swag.String(models.ClusterStatusPendingDashForDashInput),
 				},
 				PullSecret: "different-pull-secret",
 			}
@@ -2005,7 +2005,7 @@ var _ = Describe("cluster reconcile", func() {
 					ClusterNetworks:  clusterNetworksEntriesToArray(defaultAgentClusterInstallSpec.Networking.ClusterNetwork),
 					ServiceNetworks:  serviceNetworksEntriesToArray(defaultAgentClusterInstallSpec.Networking.ServiceNetwork),
 					NetworkType:      swag.String(models.ClusterNetworkTypeOpenShiftSDN),
-					Status:           swag.String(models.ClusterStatusPendingForInput),
+					Status:           swag.String(models.ClusterStatusPendingDashForDashInput),
 				},
 				PullSecret: "different-pull-secret",
 			}
@@ -2409,7 +2409,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "PendingForInput",
-			clusterStatus:  models.ClusterStatusPendingForInput,
+			clusterStatus:  models.ClusterStatusPendingDashForDashInput,
 			statusInfo:     "",
 			validationInfo: "{\"some-check\":[{\"id\":\"checking1\",\"status\":\"failure\",\"message\":\"Check1 is not OK\"},{\"id\":\"checking2\",\"status\":\"success\",\"message\":\"Check2 is OK\"},{\"id\":\"checking3\",\"status\":\"failure\",\"message\":\"Check3 is not OK\"},{\"id\":\"checking4\",\"status\":\"pending\",\"message\":\"Check4 is pending\"}]}",
 			conditions: []hivev1.ClusterInstallCondition{
@@ -2447,7 +2447,7 @@ var _ = Describe("TestConditions", func() {
 		},
 		{
 			name:           "AddingHosts",
-			clusterStatus:  models.ClusterStatusAddingHosts,
+			clusterStatus:  models.ClusterStatusAddingDashHosts,
 			statusInfo:     "Done",
 			validationInfo: "",
 			conditions: []hivev1.ClusterInstallCondition{

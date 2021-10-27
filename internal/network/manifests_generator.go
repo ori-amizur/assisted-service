@@ -298,7 +298,7 @@ func (m *ManifestsGenerator) createDiskEncryptionManifest(ctx context.Context, l
 
 func (m *ManifestsGenerator) AddDiskEncryptionManifest(ctx context.Context, log logrus.FieldLogger, c *common.Cluster) error {
 
-	if reflect.DeepEqual(c.DiskEncryption, &models.DiskEncryption{}) {
+	if c.DiskEncryption == nil || reflect.DeepEqual(c.DiskEncryption, &models.DiskEncryption{}) {
 		return nil
 	}
 

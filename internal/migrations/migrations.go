@@ -3,8 +3,8 @@ package migrations
 import (
 	"sort"
 
-	"github.com/jinzhu/gorm"
-	gormigrate "gopkg.in/gormigrate.v1"
+	gormigrate "github.com/go-gormigrate/gormigrate/v2"
+	"gorm.io/gorm"
 )
 
 func MigratePre(db *gorm.DB) error {

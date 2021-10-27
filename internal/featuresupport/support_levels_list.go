@@ -16,7 +16,7 @@ var SupportLevelsList = models.FeatureSupportLevels{
 			// Tech-Preview features
 			{
 				FeatureID:    usageNameToID(usage.VipDhcpAllocationUsage),
-				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechPreview,
+				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechDashPreview,
 			},
 			// Unsupported features
 			{
@@ -39,12 +39,12 @@ var SupportLevelsList = models.FeatureSupportLevels{
 			// Tech-Preview features
 			{
 				FeatureID:    usageNameToID(usage.VipDhcpAllocationUsage),
-				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechPreview,
+				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechDashPreview,
 			},
 			// Dev-Preview features
 			{
 				FeatureID:    usageNameToID(usage.HighAvailabilityModeUsage),
-				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelDevPreview,
+				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelDevDashPreview,
 			},
 
 			// Unsupported features
@@ -69,7 +69,7 @@ var SupportLevelsList = models.FeatureSupportLevels{
 			// Tech-Preview features
 			{
 				FeatureID:    usageNameToID(usage.VipDhcpAllocationUsage),
-				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechPreview,
+				SupportLevel: models.FeatureSupportLevelFeaturesItems0SupportLevelTechDashPreview,
 			},
 			// Unsupported features
 			{

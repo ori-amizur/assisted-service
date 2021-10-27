@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -18,13 +19,18 @@ import (
 // swagger:model image_type
 type ImageType string
 
+func NewImageType(value ImageType) *ImageType {
+	v := value
+	return &v
+}
+
 const (
 
-	// ImageTypeFullIso captures enum value "full-iso"
-	ImageTypeFullIso ImageType = "full-iso"
+	// ImageTypeFullDashIso captures enum value "full-iso"
+	ImageTypeFullDashIso ImageType = "full-iso"
 
-	// ImageTypeMinimalIso captures enum value "minimal-iso"
-	ImageTypeMinimalIso ImageType = "minimal-iso"
+	// ImageTypeMinimalDashIso captures enum value "minimal-iso"
+	ImageTypeMinimalDashIso ImageType = "minimal-iso"
 )
 
 // for schema
@@ -59,5 +65,10 @@ func (m ImageType) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// ContextValidate validates this image type based on context it is used
+func (m ImageType) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

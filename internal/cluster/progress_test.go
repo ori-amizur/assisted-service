@@ -8,7 +8,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
@@ -21,6 +20,7 @@ import (
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/api"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("Progress bar test", func() {
@@ -251,26 +251,26 @@ var _ = Describe("Progress bar test", func() {
 			c = common.Cluster{
 				Cluster: models.Cluster{
 					ID:              &clusterId,
-					Status:          swag.String(models.ClusterStatusPreparingForInstallation),
+					Status:          swag.String(models.ClusterStatusPreparingDashForDashInstallation),
 					StatusUpdatedAt: strfmt.DateTime(time.Now()),
 					Hosts: []*models.Host{
 						{
 							ID:         &hid1,
 							ClusterID:  &clusterId,
 							InfraEnvID: clusterId,
-							Status:     swag.String(models.HostStatusPreparingSuccessful),
+							Status:     swag.String(models.HostStatusPreparingDashSuccessful),
 						},
 						{
 							ID:         &hid2,
 							ClusterID:  &clusterId,
 							InfraEnvID: clusterId,
-							Status:     swag.String(models.HostStatusPreparingSuccessful),
+							Status:     swag.String(models.HostStatusPreparingDashSuccessful),
 						},
 						{
 							ID:         &hid3,
 							ClusterID:  &clusterId,
 							InfraEnvID: clusterId,
-							Status:     swag.String(models.HostStatusPreparingSuccessful),
+							Status:     swag.String(models.HostStatusPreparingDashSuccessful),
 						},
 					},
 				},

@@ -5,12 +5,12 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("domainNameResolution", func() {
@@ -32,7 +32,7 @@ var _ = Describe("domainNameResolution", func() {
 		id = strfmt.UUID(uuid.New().String())
 		clusterID = strfmt.UUID(uuid.New().String())
 		infraEnvID = strfmt.UUID(uuid.New().String())
-		host = hostutil.GenerateTestHost(id, infraEnvID, clusterID, models.HostStatusPreparingForInstallation)
+		host = hostutil.GenerateTestHost(id, infraEnvID, clusterID, models.HostStatusPreparingDashForDashInstallation)
 		host.Inventory = hostutil.GenerateMasterInventory()
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 		name = "example"
@@ -44,7 +44,7 @@ var _ = Describe("domainNameResolution", func() {
 		Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 		stepReply, stepErr = dCmd.GetSteps(ctx, &host)
 		Expect(stepReply).ToNot(BeNil())
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDomainResolution))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeDomainDashResolution))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 	})
 

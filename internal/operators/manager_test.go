@@ -154,9 +154,9 @@ var _ = Describe("Operators manager", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(HaveLen(3))
 			Expect(results).To(ContainElements(
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied), Reasons: []string{"lso is disabled"}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied), Reasons: []string{"ocs is disabled"}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied), Reasons: []string{"cnv is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied), Reasons: []string{"lso is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied), Reasons: []string{"ocs is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied), Reasons: []string{"cnv is disabled"}},
 			))
 		})
 
@@ -171,10 +171,10 @@ var _ = Describe("Operators manager", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(HaveLen(3))
 			Expect(results).To(ContainElements(
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoRequirementsSatisfied), Reasons: []string{}},
-				api.ValidationResult{Status: api.Failure, ValidationId: string(models.ClusterValidationIDOcsRequirementsSatisfied),
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied), Reasons: []string{}},
+				api.ValidationResult{Status: api.Failure, ValidationId: string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied),
 					Reasons: []string{"A minimum of 3 hosts is required to deploy OCS."}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvRequirementsSatisfied), Reasons: []string{"cnv is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied), Reasons: []string{"cnv is disabled"}},
 			))
 		})
 	})
@@ -188,9 +188,9 @@ var _ = Describe("Operators manager", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(results).To(HaveLen(3))
 			Expect(results).To(ContainElements(
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied), Reasons: []string{"lso is disabled"}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied), Reasons: []string{"ocs is disabled"}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied), Reasons: []string{"cnv is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied), Reasons: []string{"lso is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied), Reasons: []string{"ocs is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied), Reasons: []string{"cnv is disabled"}},
 			))
 		})
 
@@ -205,9 +205,9 @@ var _ = Describe("Operators manager", func() {
 			Expect(results).To(HaveLen(3))
 
 			Expect(results).To(ContainElements(
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied), Reasons: []string{}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied), Reasons: []string{}},
-				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied), Reasons: []string{"cnv is disabled"}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied), Reasons: []string{}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied), Reasons: []string{}},
+				api.ValidationResult{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied), Reasons: []string{"cnv is disabled"}},
 			))
 		})
 	})

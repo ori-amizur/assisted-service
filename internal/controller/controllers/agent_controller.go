@@ -26,7 +26,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	. "github.com/openshift/assisted-service/api/common"
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
 	restclient "github.com/openshift/assisted-service/client"
@@ -43,6 +42,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -281,7 +281,7 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 	if h != nil && h.Status != nil {
 		agent.Status.Bootstrap = h.Bootstrap
 		agent.Status.Role = h.Role
-		if h.SuggestedRole != "" && h.Role == models.HostRoleAutoAssign {
+		if h.SuggestedRole != "" && h.Role == models.HostRoleAutoDashAssign {
 			agent.Status.Role = h.SuggestedRole
 		}
 		agent.Status.DebugInfo.State = swag.StringValue(h.Status)
@@ -464,7 +464,7 @@ func installed(agent *aiv1beta1.Agent, status, statusInfo string) {
 	var reason string
 	var msg string
 	switch status {
-	case models.HostStatusInstalled, models.HostStatusAddedToExistingCluster:
+	case models.HostStatusInstalled, models.HostStatusAddedDashToDashExistingDashCluster:
 		condStatus = corev1.ConditionTrue
 		reason = aiv1beta1.InstalledReason
 		msg = fmt.Sprintf("%s %s", aiv1beta1.InstalledMsg, statusInfo)
@@ -472,17 +472,17 @@ func installed(agent *aiv1beta1.Agent, status, statusInfo string) {
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.InstallationFailedReason
 		msg = fmt.Sprintf("%s %s", aiv1beta1.InstallationFailedMsg, statusInfo)
-	case models.HostStatusInsufficient, models.HostStatusInsufficientUnbound,
-		models.HostStatusDisconnected, models.HostStatusDisconnectedUnbound,
-		models.HostStatusDiscovering, models.HostStatusDiscoveringUnbound,
-		models.HostStatusKnown, models.HostStatusKnownUnbound,
-		models.HostStatusPendingForInput:
+	case models.HostStatusInsufficient, models.HostStatusInsufficientDashUnbound,
+		models.HostStatusDisconnected, models.HostStatusDisconnectedDashUnbound,
+		models.HostStatusDiscovering, models.HostStatusDiscoveringDashUnbound,
+		models.HostStatusKnown, models.HostStatusKnownDashUnbound,
+		models.HostStatusPendingDashForDashInput:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.InstallationNotStartedReason
 		msg = aiv1beta1.InstallationNotStartedMsg
-	case models.HostStatusPreparingForInstallation, models.HostStatusPreparingSuccessful,
-		models.HostStatusInstalling, models.HostStatusInstallingInProgress,
-		models.HostStatusInstallingPendingUserAction:
+	case models.HostStatusPreparingDashForDashInstallation, models.HostStatusPreparingDashSuccessful,
+		models.HostStatusInstalling, models.HostStatusInstallingDashInDashProgress,
+		models.HostStatusInstallingDashPendingDashUserDashAction:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.InstallationInProgressReason
 		msg = fmt.Sprintf("%s %s", aiv1beta1.InstallationInProgressMsg, statusInfo)
@@ -533,11 +533,11 @@ func validated(agent *aiv1beta1.Agent, status string, h *models.Host) {
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.UnbindingReason
 		msg = aiv1beta1.UnbindingMsg
-	case models.HostStatusInsufficient == status || models.HostStatusInsufficientUnbound == status:
+	case models.HostStatusInsufficient == status || models.HostStatusInsufficientDashUnbound == status:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.ValidationsFailingReason
 		msg = fmt.Sprintf("%s %s", aiv1beta1.AgentValidationsFailingMsg, failedValidationInfo)
-	case models.HostStatusPendingForInput == status:
+	case models.HostStatusPendingDashForDashInput == status:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.ValidationsUserPendingReason
 		msg = fmt.Sprintf("%s %s", aiv1beta1.AgentValidationsUserPendingMsg, failedValidationInfo)
@@ -563,7 +563,7 @@ func connected(agent *aiv1beta1.Agent, status string) {
 	var reason string
 	var msg string
 	switch status {
-	case models.HostStatusDisconnectedUnbound, models.HostStatusDisconnected:
+	case models.HostStatusDisconnectedDashUnbound, models.HostStatusDisconnected:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.AgentDisconnectedReason
 		msg = aiv1beta1.AgentDisonnectedMsg
@@ -585,7 +585,7 @@ func requirementsMet(agent *aiv1beta1.Agent, status string) {
 	var reason string
 	var msg string
 	switch status {
-	case models.HostStatusKnown, models.HostStatusKnownUnbound:
+	case models.HostStatusKnown, models.HostStatusKnownDashUnbound:
 		if agent.Spec.Approved {
 			condStatus = corev1.ConditionTrue
 			reason = aiv1beta1.AgentReadyReason
@@ -596,14 +596,14 @@ func requirementsMet(agent *aiv1beta1.Agent, status string) {
 			msg = aiv1beta1.AgentIsNotApprovedMsg
 		}
 	case models.HostStatusInsufficient, models.HostStatusDisconnected,
-		models.HostStatusInsufficientUnbound, models.HostStatusDisconnectedUnbound,
-		models.HostStatusDiscoveringUnbound, models.HostStatusDiscovering,
-		models.HostStatusPendingForInput:
+		models.HostStatusInsufficientDashUnbound, models.HostStatusDisconnectedDashUnbound,
+		models.HostStatusDiscoveringDashUnbound, models.HostStatusDiscovering,
+		models.HostStatusPendingDashForDashInput:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.AgentNotReadyReason
 		msg = aiv1beta1.AgentNotReadyMsg
-	case models.HostStatusPreparingForInstallation, models.HostStatusPreparingSuccessful, models.HostStatusInstalling,
-		models.HostStatusInstallingInProgress, models.HostStatusInstallingPendingUserAction:
+	case models.HostStatusPreparingDashForDashInstallation, models.HostStatusPreparingDashSuccessful, models.HostStatusInstalling,
+		models.HostStatusInstallingDashInDashProgress, models.HostStatusInstallingDashPendingDashUserDashAction:
 		condStatus = corev1.ConditionTrue
 		reason = aiv1beta1.AgentAlreadyInstallingReason
 		msg = aiv1beta1.AgentAlreadyInstallingMsg
@@ -645,8 +645,8 @@ func bound(agent *aiv1beta1.Agent, status string, h *models.Host) {
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.UnbindingReason
 		msg = aiv1beta1.UnbindingMsg
-	case models.HostStatusDisconnectedUnbound, models.HostStatusKnownUnbound, models.HostStatusInsufficientUnbound,
-		models.HostStatusDisabledUnbound, models.HostStatusDiscoveringUnbound:
+	case models.HostStatusDisconnectedDashUnbound, models.HostStatusKnownDashUnbound, models.HostStatusInsufficientDashUnbound,
+		models.HostStatusDisabledDashUnbound, models.HostStatusDiscoveringDashUnbound:
 		condStatus = corev1.ConditionFalse
 		reason = aiv1beta1.UnboundReason
 		msg = aiv1beta1.UnboundMsg

@@ -37,12 +37,12 @@ func (l *lsOperator) GetDependencies() []string {
 
 // GetClusterValidationID returns cluster validation ID for the Operator
 func (l *lsOperator) GetClusterValidationID() string {
-	return string(models.ClusterValidationIDLsoRequirementsSatisfied)
+	return string(models.ClusterValidationIDLsoDashRequirementsDashSatisfied)
 }
 
 // GetHostValidationID returns host validation ID for the Operator
 func (l *lsOperator) GetHostValidationID() string {
-	return string(models.HostValidationIDLsoRequirementsSatisfied)
+	return string(models.HostValidationIDLsoDashRequirementsDashSatisfied)
 }
 
 // ValidateCluster always return "valid" result

@@ -9,11 +9,11 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/conversions"
+	"gorm.io/gorm"
 )
 
 func GetHostFromDB(hostId, infraEnvId strfmt.UUID, db *gorm.DB) *common.Host {
@@ -22,12 +22,16 @@ func GetHostFromDB(hostId, infraEnvId strfmt.UUID, db *gorm.DB) *common.Host {
 	return &host
 }
 
+func PlatformTypePtr(p models.PlatformType) *models.PlatformType {
+	return &p
+}
+
 func GenerateTestCluster(clusterID strfmt.UUID, machineNetworks []*models.MachineNetwork) common.Cluster {
 	return common.Cluster{
 		Cluster: models.Cluster{
 			ID:              &clusterID,
 			MachineNetworks: machineNetworks,
-			Platform:        &models.Platform{Type: models.PlatformTypeBaremetal},
+			Platform:        &models.Platform{Type: PlatformTypePtr(models.PlatformTypeBaremetal)},
 			Kind:            swag.String(models.ClusterKindCluster),
 		},
 	}

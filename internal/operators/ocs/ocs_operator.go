@@ -60,12 +60,12 @@ func (o *operator) GetDependencies() []string {
 
 // GetClusterValidationID returns cluster validation ID for the Operator
 func (o *operator) GetClusterValidationID() string {
-	return string(models.ClusterValidationIDOcsRequirementsSatisfied)
+	return string(models.ClusterValidationIDOcsDashRequirementsDashSatisfied)
 }
 
 // GetHostValidationID returns host validation ID for the Operator
 func (o *operator) GetHostValidationID() string {
-	return string(models.HostValidationIDOcsRequirementsSatisfied)
+	return string(models.HostValidationIDOcsDashRequirementsDashSatisfied)
 }
 
 // ValidateCluster verifies whether this operator is valid for given cluster
@@ -95,7 +95,7 @@ func (o *operator) ValidateHost(_ context.Context, cluster *common.Cluster, host
 
 	// compact mode
 	if numOfHosts <= 3 {
-		if host.Role == models.HostRoleMaster || host.Role == models.HostRoleAutoAssign {
+		if host.Role == models.HostRoleMaster || host.Role == models.HostRoleAutoDashAssign {
 			if diskCount == 0 {
 				return api.ValidationResult{Status: api.Failure, ValidationId: o.GetHostValidationID(), Reasons: []string{"Insufficient disks, OCS requires at least one non-bootable disk on each host in compact mode."}}, nil
 			}
@@ -106,7 +106,7 @@ func (o *operator) ValidateHost(_ context.Context, cluster *common.Cluster, host
 
 	// Standard mode
 	// If the Role is set to Auto-assign for a host, it is not possible to determine whether the node will end up as a master or worker node.
-	if host.Role == models.HostRoleAutoAssign {
+	if host.Role == models.HostRoleAutoDashAssign {
 		status := "For OCS Standard Mode, host role must be assigned to master or worker."
 		return api.ValidationResult{Status: api.Failure, ValidationId: o.GetHostValidationID(), Reasons: []string{status}}, nil
 	}
@@ -152,7 +152,7 @@ func (o *operator) GetHostRequirements(_ context.Context, cluster *common.Cluste
 			reqDisks = diskCount
 		}
 		// for each disk ocs requires 2 CPUs and 5 GiB RAM
-		if role == models.HostRoleMaster || role == models.HostRoleAutoAssign {
+		if role == models.HostRoleMaster || role == models.HostRoleAutoDashAssign {
 			return &models.ClusterHostRequirementsDetails{
 				CPUCores: o.config.OCSPerHostCPUCompactMode + (reqDisks * o.config.OCSPerDiskCPUCount),
 				RAMMib:   conversions.GibToMib(o.config.OCSPerHostMemoryGiBCompactMode + (reqDisks * o.config.OCSPerDiskRAMGiB)),

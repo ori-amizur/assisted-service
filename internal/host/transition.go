@@ -11,7 +11,6 @@ import (
 	"github.com/filanov/stateswitch"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
@@ -20,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 type transitionHandler struct {
@@ -35,7 +35,7 @@ var restFieldsOnUnbind = []interface{}{"cluster_id", nil, "kind", swag.String(mo
 	"free_addresses", "", "images_status", "", "installation_disk_id", "", "installation_disk_path", "", "machine_config_pool_name", "",
 	"role", "auto-assign", "api_vip_connectivity", "", "suggested_role", "", "progress_current_stage", "", "progress_installation_percentage", 0,
 	"progress_progress_info", "", "progress_stage_started_at", strfmt.DateTime(time.Time{}), "progress_stage_updated_at", strfmt.DateTime(time.Time{}),
-	"progress_stages", nil, "stage_started_at", strfmt.DateTime(time.Time{}), "stage_updated_at", strfmt.DateTime(time.Time{})}
+	"stage_started_at", strfmt.DateTime(time.Time{}), "stage_updated_at", strfmt.DateTime(time.Time{})}
 
 ////////////////////////////////////////////////////////////////////////////
 // RegisterHost
@@ -129,7 +129,7 @@ func (th *transitionHandler) PostRegisterDuringReboot(sw stateswitch.StateSwitch
 	host := sHost.host
 	hostInstallationPath := hostutil.GetHostInstallationPath(host)
 
-	if swag.StringValue(&sHost.srcState) == models.HostStatusInstallingPendingUserAction {
+	if swag.StringValue(&sHost.srcState) == models.HostStatusInstallingDashPendingDashUserDashAction {
 		return common.NewApiError(http.StatusForbidden, errors.Errorf("Host is required to be booted from disk %s", hostInstallationPath))
 	}
 	params, ok := args.(*TransitionArgsRegisterHost)
@@ -257,7 +257,7 @@ func (th *transitionHandler) PostResetHost(sw stateswitch.StateSwitch, args stat
 		return errors.New("PostResetHost invalid argument")
 	}
 
-	extra := append(append(make([]interface{}, 0), "StatusUpdatedAt", strfmt.DateTime(time.Now())), resetLogsField...)
+	extra := append(make([]interface{}, 0), resetLogsField...)
 	return th.updateTransitionHost(params.ctx, logutil.FromContext(params.ctx, th.log), params.db, sHost,
 		params.reason, extra...)
 }
@@ -395,7 +395,7 @@ func (th *transitionHandler) PostPreparingForInstallationHost(sw stateswitch.Sta
 	}
 
 	var extra []interface{}
-	if validationFailed(params, string(models.HostValidationIDContainerImagesAvailable)) {
+	if validationFailed(params, string(models.HostValidationIDContainerDashImagesDashAvailable)) {
 		extra = append(extra, "images_status", "")
 	}
 
@@ -437,7 +437,7 @@ func (th *transitionHandler) PostResettingPendingUserAction(sw stateswitch.State
 	}
 
 	return th.updateTransitionHost(params.ctx, logutil.FromContext(params.ctx, th.log), params.db, sHost,
-		statusInfoResettingPendingUserAction, "StatusUpdatedAt", strfmt.DateTime(time.Now()))
+		statusInfoResettingPendingUserAction)
 }
 
 ////////////////////////////////////////////////////////////////////////////

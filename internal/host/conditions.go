@@ -40,7 +40,7 @@ func (v *validator) isClusterPreparingForInstallation(c *validationContext) bool
 	if c.infraEnv != nil {
 		return false
 	}
-	return swag.StringValue(c.cluster.Status) == models.ClusterStatusPreparingForInstallation
+	return swag.StringValue(c.cluster.Status) == models.ClusterStatusPreparingDashForDashInstallation
 }
 
 func (v *validator) isClusterInstalling(c *validationContext) bool {
@@ -61,7 +61,7 @@ func (v *validator) isClusterPendingUserAction(c *validationContext) bool {
 	if c.infraEnv != nil {
 		return false
 	}
-	return swag.StringValue(c.cluster.Status) == models.ClusterStatusInstallingPendingUserAction
+	return swag.StringValue(c.cluster.Status) == models.ClusterStatusInstallingDashPendingDashUserDashAction
 }
 
 func (v *validator) isValidRoleForInstallation(c *validationContext) bool {

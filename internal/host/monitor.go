@@ -27,15 +27,15 @@ func (m *Manager) initMonitoringQueryGenerator() {
 			models.HostStatusKnown,
 			models.HostStatusDisconnected,
 			models.HostStatusInsufficient,
-			models.HostStatusPendingForInput,
-			models.HostStatusPreparingForInstallation,
-			models.HostStatusPreparingFailed,
-			models.HostStatusPreparingSuccessful,
+			models.HostStatusPendingDashForDashInput,
+			models.HostStatusPreparingDashForDashInstallation,
+			models.HostStatusPreparingDashFailed,
+			models.HostStatusPreparingDashSuccessful,
 			models.HostStatusInstalling,
-			models.HostStatusInstallingInProgress,
+			models.HostStatusInstallingDashInDashProgress,
 			models.HostStatusInstalled,
-			models.HostStatusInstallingPendingUserAction,
-			models.HostStatusResettingPendingUserAction,
+			models.HostStatusInstallingDashPendingDashUserDashAction,
+			models.HostStatusResettingDashPendingDashUserDashAction,
 			models.HostStatusCancelled, // for limited time, until log collection finished or timed-out
 			models.HostStatusError,     // for limited time, until log collection finished or timed-out
 		}
@@ -160,10 +160,10 @@ func (m *Manager) infraEnvHostMonitoring() int64 {
 	)
 	monitorStates := []string{
 		models.HostStatusBinding,
-		models.HostStatusDisconnectedUnbound,
-		models.HostStatusDiscoveringUnbound,
-		models.HostStatusInsufficientUnbound,
-		models.HostStatusKnownUnbound,
+		models.HostStatusDisconnectedDashUnbound,
+		models.HostStatusDiscoveringDashUnbound,
+		models.HostStatusInsufficientDashUnbound,
+		models.HostStatusKnownDashUnbound,
 	}
 
 	query := m.monitorInfraEnvQueryGenerator.NewInfraEnvQuery()

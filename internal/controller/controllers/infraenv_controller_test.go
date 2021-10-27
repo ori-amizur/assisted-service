@@ -10,7 +10,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
@@ -20,6 +19,7 @@ import (
 	"github.com/openshift/assisted-service/restapi/operations/installer"
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -592,7 +592,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		// Reconcile and verify only Bound Host is deleted
 		mockInstallerInternal.EXPECT().GetInfraEnvByKubeKey(gomock.Any()).Return(backendInfraEnv, nil)
 		hostId := strfmt.UUID(uuid.New().String())
-		host := &common.Host{Host: models.Host{ID: &hostId, Status: swag.String(models.HostStatusKnownUnbound)}}
+		host := &common.Host{Host: models.Host{ID: &hostId, Status: swag.String(models.HostStatusKnownDashUnbound)}}
 		mockInstallerInternal.EXPECT().GetInfraEnvHostsInternal(gomock.Any(), gomock.Any()).Return([]*common.Host{host}, nil)
 		mockInstallerInternal.EXPECT().V2DeregisterHostInternal(gomock.Any(), gomock.Any()).Return(nil)
 		mockInstallerInternal.EXPECT().DeregisterInfraEnvInternal(gomock.Any(), gomock.Any()).Return(nil)
@@ -639,7 +639,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().GetInfraEnvByKubeKey(gomock.Any()).Return(backendInfraEnv, nil)
 		hostUnboundId := strfmt.UUID(uuid.New().String())
 		hostBoundId := strfmt.UUID(uuid.New().String())
-		hostUnbound := &common.Host{Host: models.Host{ID: &hostUnboundId, Status: swag.String(models.HostStatusKnownUnbound)}}
+		hostUnbound := &common.Host{Host: models.Host{ID: &hostUnboundId, Status: swag.String(models.HostStatusKnownDashUnbound)}}
 		hostBound := &common.Host{Host: models.Host{ID: &hostBoundId, Status: swag.String(models.HostStatusKnown)}}
 		mockInstallerInternal.EXPECT().GetInfraEnvHostsInternal(gomock.Any(), gomock.Any()).Return([]*common.Host{hostUnbound, hostBound}, nil)
 		mockInstallerInternal.EXPECT().V2DeregisterHostInternal(gomock.Any(), installer.V2DeregisterHostParams{

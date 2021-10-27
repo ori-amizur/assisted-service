@@ -32,7 +32,7 @@ func (v *clusterValidator) isVipDhcpAllocationSet(c *clusterPreprocessContext) b
 
 func (v *clusterValidator) areAllHostsPreparedSuccessfully(c *clusterPreprocessContext) bool {
 	for _, h := range c.cluster.Hosts {
-		if swag.StringValue(h.Status) != models.HostStatusPreparingSuccessful {
+		if swag.StringValue(h.Status) != models.HostStatusPreparingDashSuccessful {
 			return false
 		}
 	}
@@ -41,10 +41,10 @@ func (v *clusterValidator) areAllHostsPreparedSuccessfully(c *clusterPreprocessC
 
 func (v *clusterValidator) isUnPreparingHostsExist(c *clusterPreprocessContext) bool {
 	validStates := []string{
-		models.HostStatusPreparingForInstallation,
-		models.HostStatusPreparingSuccessful,
+		models.HostStatusPreparingDashForDashInstallation,
+		models.HostStatusPreparingDashSuccessful,
 		models.HostStatusDisabled,
-		models.HostStatusPreparingFailed,
+		models.HostStatusPreparingDashFailed,
 		models.HostStatusKnown,
 	}
 	for _, h := range c.cluster.Hosts {
@@ -57,7 +57,7 @@ func (v *clusterValidator) isUnPreparingHostsExist(c *clusterPreprocessContext) 
 
 func (v *clusterValidator) isFailedPreparingHostExist(c *clusterPreprocessContext) bool {
 	for _, h := range c.cluster.Hosts {
-		if models.HostStatusPreparingFailed == swag.StringValue(h.Status) {
+		if models.HostStatusPreparingDashFailed == swag.StringValue(h.Status) {
 			return true
 		}
 	}

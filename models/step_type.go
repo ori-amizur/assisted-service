@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -18,10 +19,15 @@ import (
 // swagger:model step-type
 type StepType string
 
+func NewStepType(value StepType) *StepType {
+	v := value
+	return &v
+}
+
 const (
 
-	// StepTypeConnectivityCheck captures enum value "connectivity-check"
-	StepTypeConnectivityCheck StepType = "connectivity-check"
+	// StepTypeConnectivityDashCheck captures enum value "connectivity-check"
+	StepTypeConnectivityDashCheck StepType = "connectivity-check"
 
 	// StepTypeExecute captures enum value "execute"
 	StepTypeExecute StepType = "execute"
@@ -32,29 +38,29 @@ const (
 	// StepTypeInstall captures enum value "install"
 	StepTypeInstall StepType = "install"
 
-	// StepTypeFreeNetworkAddresses captures enum value "free-network-addresses"
-	StepTypeFreeNetworkAddresses StepType = "free-network-addresses"
+	// StepTypeFreeDashNetworkDashAddresses captures enum value "free-network-addresses"
+	StepTypeFreeDashNetworkDashAddresses StepType = "free-network-addresses"
 
-	// StepTypeResetInstallation captures enum value "reset-installation"
-	StepTypeResetInstallation StepType = "reset-installation"
+	// StepTypeResetDashInstallation captures enum value "reset-installation"
+	StepTypeResetDashInstallation StepType = "reset-installation"
 
-	// StepTypeDhcpLeaseAllocate captures enum value "dhcp-lease-allocate"
-	StepTypeDhcpLeaseAllocate StepType = "dhcp-lease-allocate"
+	// StepTypeDhcpDashLeaseDashAllocate captures enum value "dhcp-lease-allocate"
+	StepTypeDhcpDashLeaseDashAllocate StepType = "dhcp-lease-allocate"
 
-	// StepTypeAPIVipConnectivityCheck captures enum value "api-vip-connectivity-check"
-	StepTypeAPIVipConnectivityCheck StepType = "api-vip-connectivity-check"
+	// StepTypeAPIDashVipDashConnectivityDashCheck captures enum value "api-vip-connectivity-check"
+	StepTypeAPIDashVipDashConnectivityDashCheck StepType = "api-vip-connectivity-check"
 
-	// StepTypeNtpSynchronizer captures enum value "ntp-synchronizer"
-	StepTypeNtpSynchronizer StepType = "ntp-synchronizer"
+	// StepTypeNtpDashSynchronizer captures enum value "ntp-synchronizer"
+	StepTypeNtpDashSynchronizer StepType = "ntp-synchronizer"
 
-	// StepTypeInstallationDiskSpeedCheck captures enum value "installation-disk-speed-check"
-	StepTypeInstallationDiskSpeedCheck StepType = "installation-disk-speed-check"
+	// StepTypeInstallationDashDiskDashSpeedDashCheck captures enum value "installation-disk-speed-check"
+	StepTypeInstallationDashDiskDashSpeedDashCheck StepType = "installation-disk-speed-check"
 
-	// StepTypeContainerImageAvailability captures enum value "container-image-availability"
-	StepTypeContainerImageAvailability StepType = "container-image-availability"
+	// StepTypeContainerDashImageDashAvailability captures enum value "container-image-availability"
+	StepTypeContainerDashImageDashAvailability StepType = "container-image-availability"
 
-	// StepTypeDomainResolution captures enum value "domain-resolution"
-	StepTypeDomainResolution StepType = "domain-resolution"
+	// StepTypeDomainDashResolution captures enum value "domain-resolution"
+	StepTypeDomainDashResolution StepType = "domain-resolution"
 )
 
 // for schema
@@ -89,5 +95,10 @@ func (m StepType) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// ContextValidate validates this step type based on context it is used
+func (m StepType) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

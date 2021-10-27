@@ -42,9 +42,9 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusKnown),
 			stateswitch.State(models.HostStatusDisconnected),
 			stateswitch.State(models.HostStatusInsufficient),
-			stateswitch.State(models.HostStatusResettingPendingUserAction),
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusResettingDashPendingDashUserDashAction),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 			stateswitch.State(models.HostStatusBinding),
 		},
 		DestinationState: stateswitch.State(models.HostStatusDiscovering),
@@ -85,11 +85,11 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		TransitionType: TransitionTypeRegisterHost,
 		Condition:      stateswitch.Or(th.IsHostInReboot, stateswitch.And(th.IsDay2Host, th.IsHostInDone)),
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingInProgress),
-			stateswitch.State(models.HostStatusInstallingPendingUserAction),
-			stateswitch.State(models.HostStatusAddedToExistingCluster),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
+			stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
+			stateswitch.State(models.HostStatusAddedDashToDashExistingDashCluster),
 		},
-		DestinationState: stateswitch.State(models.HostStatusInstallingPendingUserAction),
+		DestinationState: stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 		PostTransition:   th.PostRegisterDuringReboot,
 	})
 
@@ -98,7 +98,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		TransitionType: TransitionTypeRegisterHost,
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 		},
 		DestinationState: stateswitch.State(models.HostStatusError),
 		PostTransition:   th.PostRegisterDuringInstallation,
@@ -130,7 +130,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		TransitionType: TransitionTypeHostInstallationFailed,
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 		},
 		DestinationState: stateswitch.State(models.HostStatusError),
 		PostTransition:   th.PostHostInstallationFailed,
@@ -149,9 +149,9 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeCancelInstallation,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingPendingUserAction),
+			stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 			stateswitch.State(models.HostStatusInstalled),
 			stateswitch.State(models.HostStatusError),
 		},
@@ -162,8 +162,8 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeCancelInstallation,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		DestinationState: stateswitch.State(models.HostStatusKnown),
 		PostTransition:   th.PostCancelInstallation,
@@ -190,13 +190,13 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeResetHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingPendingUserAction),
+			stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 			stateswitch.State(models.HostStatusInstalled),
 			stateswitch.State(models.HostStatusError),
 			stateswitch.State(models.HostStatusCancelled),
-			stateswitch.State(models.HostStatusAddedToExistingCluster),
+			stateswitch.State(models.HostStatusAddedDashToDashExistingDashCluster),
 		},
 		DestinationState: stateswitch.State(models.HostStatusResetting),
 		PostTransition:   th.PostResetHost,
@@ -205,8 +205,8 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeResetHost,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		DestinationState: stateswitch.State(models.HostStatusKnown),
 		PostTransition:   th.PostResetHost,
@@ -250,7 +250,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusDiscovering),
 			stateswitch.State(models.HostStatusInsufficient),
 			stateswitch.State(models.HostStatusKnown),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 		},
 		DestinationState: stateswitch.State(models.HostStatusDisabled),
 		PostTransition:   th.PostDisableHost,
@@ -273,17 +273,17 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusResetting),
 			stateswitch.State(models.HostStatusDiscovering),
 			stateswitch.State(models.HostStatusKnown),
-			stateswitch.State(models.HostStatusInstallingPendingUserAction),
+			stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingSuccessful),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 			stateswitch.State(models.HostStatusInstalled),
 			stateswitch.State(models.HostStatusError),
 			stateswitch.State(models.HostStatusCancelled),
-			stateswitch.State(models.HostStatusAddedToExistingCluster),
+			stateswitch.State(models.HostStatusAddedDashToDashExistingDashCluster),
 		},
-		DestinationState: stateswitch.State(models.HostStatusResettingPendingUserAction),
+		DestinationState: stateswitch.State(models.HostStatusResettingDashPendingDashUserDashAction),
 		PostTransition:   th.PostResettingPendingUserAction,
 	})
 
@@ -304,7 +304,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusDisconnected),
 			stateswitch.State(models.HostStatusInsufficient),
 			stateswitch.State(models.HostStatusDisabled),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 			stateswitch.State(models.HostStatusError),
 			stateswitch.State(models.HostStatusCancelled),
 		},
@@ -321,7 +321,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusKnown),
 		},
-		DestinationState: stateswitch.State(models.HostStatusPreparingForInstallation),
+		DestinationState: stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 		PostTransition:   th.PostPreparingForInstallationHost,
 	})
 
@@ -341,27 +341,27 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 		},
 		Condition:        stateswitch.And(If(IsConnected), allConditionsSuccessful, If(ClusterPreparingForInstallation)),
-		DestinationState: stateswitch.State(models.HostStatusPreparingSuccessful),
+		DestinationState: stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		PostTransition:   th.PostRefreshHost(statusInfoHostPreparationSuccessful),
 	})
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		Condition:        stateswitch.And(If(IsConnected), If(ClusterPreparingForInstallation)),
-		DestinationState: stateswitch.State(models.HostStatusPreparingSuccessful),
+		DestinationState: stateswitch.State(models.HostStatusPreparingDashSuccessful),
 	})
 
 	// Install host
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		Condition:        stateswitch.And(If(IsConnected), If(ClusterInstalling)),
 		DestinationState: stateswitch.State(models.HostStatusInstalling),
@@ -371,7 +371,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 		},
 		Condition:        stateswitch.And(If(IsConnected), allConditionsSuccessfulOrUnknown, stateswitch.Not(If(ClusterPreparingForInstallation))),
 		DestinationState: stateswitch.State(models.HostStatusKnown),
@@ -381,8 +381,8 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingFailed),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashFailed),
 			stateswitch.State(models.HostStatusKnown),
 		},
 		Condition:        stateswitch.And(If(IsConnected), stateswitch.Not(If(SufficientOrUnknownInstallationDiskSpeed))),
@@ -393,26 +393,26 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 		},
 		Condition:        stateswitch.And(If(IsConnected), stateswitch.Not(If(SucessfullOrUnknownContainerImagesAvailability))),
-		DestinationState: stateswitch.State(models.HostStatusPreparingFailed),
+		DestinationState: stateswitch.State(models.HostStatusPreparingDashFailed),
 		PostTransition:   th.PostRefreshHost(statusInfoHostPreparationFailure),
 	})
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 		},
 		Condition:        stateswitch.And(If(IsConnected), atLeastOneConditionUnknown, If(ClusterPreparingForInstallation)),
-		DestinationState: stateswitch.State(models.HostStatusPreparingForInstallation),
+		DestinationState: stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
 	})
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingFailed),
+			stateswitch.State(models.HostStatusPreparingDashFailed),
 		},
 		Condition:        stateswitch.And(If(IsConnected), stateswitch.Not(If(ClusterPreparingForInstallation))),
 		DestinationState: stateswitch.State(models.HostStatusKnown),
@@ -422,7 +422,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		Condition:        stateswitch.And(If(IsConnected), stateswitch.Not(stateswitch.Or(If(ClusterPreparingForInstallation), If(ClusterInstalling)))),
 		DestinationState: stateswitch.State(models.HostStatusKnown),
@@ -435,9 +435,9 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusDiscovering),
 			stateswitch.State(models.HostStatusInsufficient),
 			stateswitch.State(models.HostStatusKnown),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 			stateswitch.State(models.HostStatusDisconnected),
-			stateswitch.State(models.HostStatusPreparingFailed),
+			stateswitch.State(models.HostStatusPreparingDashFailed),
 		},
 		Condition:        stateswitch.Not(If(IsConnected)),
 		DestinationState: stateswitch.State(models.HostStatusDisconnected),
@@ -449,10 +449,10 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 			stateswitch.State(models.HostStatusInstalled),
-			stateswitch.State(models.HostStatusResettingPendingUserAction),
-			stateswitch.State(models.HostStatusInstallingPendingUserAction),
+			stateswitch.State(models.HostStatusResettingDashPendingDashUserDashAction),
+			stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 		},
 		Condition:        stateswitch.And(If(ClusterInError), stateswitch.Not(th.IsDay2Host)),
 		DestinationState: stateswitch.State(models.HostStatusError),
@@ -483,8 +483,8 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusPreparingForInstallation),
-			stateswitch.State(models.HostStatusPreparingSuccessful),
+			stateswitch.State(models.HostStatusPreparingDashForDashInstallation),
+			stateswitch.State(models.HostStatusPreparingDashSuccessful),
 		},
 		Condition:        stateswitch.Not(If(IsConnected)),
 		DestinationState: stateswitch.State(models.HostStatusDisconnected),
@@ -496,7 +496,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusInstalling),
-			stateswitch.State(models.HostStatusInstallingInProgress),
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 		},
 		Condition:        th.HostNotResponsiveWhileInstallation,
 		DestinationState: stateswitch.State(models.HostStatusError),
@@ -507,9 +507,9 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingInProgress)},
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress)},
 		Condition:        shouldIgnoreInstallationProgressTimeout,
-		DestinationState: stateswitch.State(models.HostStatusInstallingInProgress),
+		DestinationState: stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 		PostTransition:   th.PostRefreshHostRefreshStageUpdateTime,
 	})
 
@@ -517,7 +517,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingInProgress)},
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress)},
 		Condition: stateswitch.And(
 			th.HasInstallationInProgressTimedOut,
 			stateswitch.Not(th.IsHostInReboot),
@@ -530,21 +530,21 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusInstallingInProgress)},
+			stateswitch.State(models.HostStatusInstallingDashInDashProgress)},
 		Condition: stateswitch.And(
 			th.HasInstallationInProgressTimedOut,
 			th.IsHostInReboot),
-		DestinationState: stateswitch.State(models.HostStatusInstallingPendingUserAction),
+		DestinationState: stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
 		PostTransition:   th.PostRefreshHost(statusRebootTimeout),
 	})
 
 	// Noop transitions for cluster error
 	for _, state := range []stateswitch.State{
 		stateswitch.State(models.HostStatusInstalling),
-		stateswitch.State(models.HostStatusInstallingInProgress),
+		stateswitch.State(models.HostStatusInstallingDashInDashProgress),
 		stateswitch.State(models.HostStatusInstalled),
-		stateswitch.State(models.HostStatusInstallingPendingUserAction),
-		stateswitch.State(models.HostStatusResettingPendingUserAction),
+		stateswitch.State(models.HostStatusInstallingDashPendingDashUserDashAction),
+		stateswitch.State(models.HostStatusResettingDashPendingDashUserDashAction),
 	} {
 		sm.AddTransition(stateswitch.TransitionRule{
 			TransitionType:   TransitionTypeRefresh,
@@ -599,12 +599,12 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 			stateswitch.State(models.HostStatusDiscovering),
 			stateswitch.State(models.HostStatusInsufficient),
 			stateswitch.State(models.HostStatusKnown),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 		},
 		Condition: stateswitch.And(If(IsConnected), If(HasInventory),
 			hasMinRequiredHardware,
 			stateswitch.Not(requiredInputFieldsExist)),
-		DestinationState: stateswitch.State(models.HostStatusPendingForInput),
+		DestinationState: stateswitch.State(models.HostStatusPendingDashForDashInput),
 		PostTransition:   th.PostRefreshHost(statusInfoPendingForInput),
 	})
 
@@ -616,7 +616,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusDisconnected),
 			stateswitch.State(models.HostStatusInsufficient),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 			stateswitch.State(models.HostStatusDiscovering),
 			stateswitch.State(models.HostStatusKnown),
 		},
@@ -634,7 +634,7 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.HostStatusDisconnected),
 			stateswitch.State(models.HostStatusInsufficient),
-			stateswitch.State(models.HostStatusPendingForInput),
+			stateswitch.State(models.HostStatusPendingDashForDashInput),
 			stateswitch.State(models.HostStatusDiscovering),
 		},
 		Condition: stateswitch.And(If(IsConnected), If(HasInventory),
@@ -690,10 +690,10 @@ func NewHostStateMachine(sm stateswitch.StateMachine, th *transitionHandler) sta
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefresh,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.HostStatusAddedToExistingCluster),
+			stateswitch.State(models.HostStatusAddedDashToDashExistingDashCluster),
 		},
 		Condition:        th.IsDay2Host,
-		DestinationState: stateswitch.State(models.HostStatusAddedToExistingCluster),
+		DestinationState: stateswitch.State(models.HostStatusAddedDashToDashExistingDashCluster),
 	})
 
 	return sm

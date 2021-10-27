@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/go-openapi/errors"
@@ -18,94 +19,99 @@ import (
 // swagger:model host-validation-id
 type HostValidationID string
 
+func NewHostValidationID(value HostValidationID) *HostValidationID {
+	v := value
+	return &v
+}
+
 const (
 
 	// HostValidationIDConnected captures enum value "connected"
 	HostValidationIDConnected HostValidationID = "connected"
 
-	// HostValidationIDHasInventory captures enum value "has-inventory"
-	HostValidationIDHasInventory HostValidationID = "has-inventory"
+	// HostValidationIDHasDashInventory captures enum value "has-inventory"
+	HostValidationIDHasDashInventory HostValidationID = "has-inventory"
 
-	// HostValidationIDHasMinCPUCores captures enum value "has-min-cpu-cores"
-	HostValidationIDHasMinCPUCores HostValidationID = "has-min-cpu-cores"
+	// HostValidationIDHasDashMinDashCPUDashCores captures enum value "has-min-cpu-cores"
+	HostValidationIDHasDashMinDashCPUDashCores HostValidationID = "has-min-cpu-cores"
 
-	// HostValidationIDHasMinValidDisks captures enum value "has-min-valid-disks"
-	HostValidationIDHasMinValidDisks HostValidationID = "has-min-valid-disks"
+	// HostValidationIDHasDashMinDashValidDashDisks captures enum value "has-min-valid-disks"
+	HostValidationIDHasDashMinDashValidDashDisks HostValidationID = "has-min-valid-disks"
 
-	// HostValidationIDHasMinMemory captures enum value "has-min-memory"
-	HostValidationIDHasMinMemory HostValidationID = "has-min-memory"
+	// HostValidationIDHasDashMinDashMemory captures enum value "has-min-memory"
+	HostValidationIDHasDashMinDashMemory HostValidationID = "has-min-memory"
 
-	// HostValidationIDMachineCidrDefined captures enum value "machine-cidr-defined"
-	HostValidationIDMachineCidrDefined HostValidationID = "machine-cidr-defined"
+	// HostValidationIDMachineDashCidrDashDefined captures enum value "machine-cidr-defined"
+	HostValidationIDMachineDashCidrDashDefined HostValidationID = "machine-cidr-defined"
 
-	// HostValidationIDHasCPUCoresForRole captures enum value "has-cpu-cores-for-role"
-	HostValidationIDHasCPUCoresForRole HostValidationID = "has-cpu-cores-for-role"
+	// HostValidationIDHasDashCPUDashCoresDashForDashRole captures enum value "has-cpu-cores-for-role"
+	HostValidationIDHasDashCPUDashCoresDashForDashRole HostValidationID = "has-cpu-cores-for-role"
 
-	// HostValidationIDHasMemoryForRole captures enum value "has-memory-for-role"
-	HostValidationIDHasMemoryForRole HostValidationID = "has-memory-for-role"
+	// HostValidationIDHasDashMemoryDashForDashRole captures enum value "has-memory-for-role"
+	HostValidationIDHasDashMemoryDashForDashRole HostValidationID = "has-memory-for-role"
 
-	// HostValidationIDHostnameUnique captures enum value "hostname-unique"
-	HostValidationIDHostnameUnique HostValidationID = "hostname-unique"
+	// HostValidationIDHostnameDashUnique captures enum value "hostname-unique"
+	HostValidationIDHostnameDashUnique HostValidationID = "hostname-unique"
 
-	// HostValidationIDHostnameValid captures enum value "hostname-valid"
-	HostValidationIDHostnameValid HostValidationID = "hostname-valid"
+	// HostValidationIDHostnameDashValid captures enum value "hostname-valid"
+	HostValidationIDHostnameDashValid HostValidationID = "hostname-valid"
 
-	// HostValidationIDBelongsToMachineCidr captures enum value "belongs-to-machine-cidr"
-	HostValidationIDBelongsToMachineCidr HostValidationID = "belongs-to-machine-cidr"
+	// HostValidationIDBelongsDashToDashMachineDashCidr captures enum value "belongs-to-machine-cidr"
+	HostValidationIDBelongsDashToDashMachineDashCidr HostValidationID = "belongs-to-machine-cidr"
 
-	// HostValidationIDAPIVipConnected captures enum value "api-vip-connected"
-	HostValidationIDAPIVipConnected HostValidationID = "api-vip-connected"
+	// HostValidationIDAPIDashVipDashConnected captures enum value "api-vip-connected"
+	HostValidationIDAPIDashVipDashConnected HostValidationID = "api-vip-connected"
 
-	// HostValidationIDBelongsToMajorityGroup captures enum value "belongs-to-majority-group"
-	HostValidationIDBelongsToMajorityGroup HostValidationID = "belongs-to-majority-group"
+	// HostValidationIDBelongsDashToDashMajorityDashGroup captures enum value "belongs-to-majority-group"
+	HostValidationIDBelongsDashToDashMajorityDashGroup HostValidationID = "belongs-to-majority-group"
 
-	// HostValidationIDValidPlatformNetworkSettings captures enum value "valid-platform-network-settings"
-	HostValidationIDValidPlatformNetworkSettings HostValidationID = "valid-platform-network-settings"
+	// HostValidationIDValidDashPlatformDashNetworkDashSettings captures enum value "valid-platform-network-settings"
+	HostValidationIDValidDashPlatformDashNetworkDashSettings HostValidationID = "valid-platform-network-settings"
 
-	// HostValidationIDNtpSynced captures enum value "ntp-synced"
-	HostValidationIDNtpSynced HostValidationID = "ntp-synced"
+	// HostValidationIDNtpDashSynced captures enum value "ntp-synced"
+	HostValidationIDNtpDashSynced HostValidationID = "ntp-synced"
 
-	// HostValidationIDContainerImagesAvailable captures enum value "container-images-available"
-	HostValidationIDContainerImagesAvailable HostValidationID = "container-images-available"
+	// HostValidationIDContainerDashImagesDashAvailable captures enum value "container-images-available"
+	HostValidationIDContainerDashImagesDashAvailable HostValidationID = "container-images-available"
 
-	// HostValidationIDLsoRequirementsSatisfied captures enum value "lso-requirements-satisfied"
-	HostValidationIDLsoRequirementsSatisfied HostValidationID = "lso-requirements-satisfied"
+	// HostValidationIDLsoDashRequirementsDashSatisfied captures enum value "lso-requirements-satisfied"
+	HostValidationIDLsoDashRequirementsDashSatisfied HostValidationID = "lso-requirements-satisfied"
 
-	// HostValidationIDOcsRequirementsSatisfied captures enum value "ocs-requirements-satisfied"
-	HostValidationIDOcsRequirementsSatisfied HostValidationID = "ocs-requirements-satisfied"
+	// HostValidationIDOcsDashRequirementsDashSatisfied captures enum value "ocs-requirements-satisfied"
+	HostValidationIDOcsDashRequirementsDashSatisfied HostValidationID = "ocs-requirements-satisfied"
 
-	// HostValidationIDSufficientInstallationDiskSpeed captures enum value "sufficient-installation-disk-speed"
-	HostValidationIDSufficientInstallationDiskSpeed HostValidationID = "sufficient-installation-disk-speed"
+	// HostValidationIDSufficientDashInstallationDashDiskDashSpeed captures enum value "sufficient-installation-disk-speed"
+	HostValidationIDSufficientDashInstallationDashDiskDashSpeed HostValidationID = "sufficient-installation-disk-speed"
 
-	// HostValidationIDCnvRequirementsSatisfied captures enum value "cnv-requirements-satisfied"
-	HostValidationIDCnvRequirementsSatisfied HostValidationID = "cnv-requirements-satisfied"
+	// HostValidationIDCnvDashRequirementsDashSatisfied captures enum value "cnv-requirements-satisfied"
+	HostValidationIDCnvDashRequirementsDashSatisfied HostValidationID = "cnv-requirements-satisfied"
 
-	// HostValidationIDSufficientNetworkLatencyRequirementForRole captures enum value "sufficient-network-latency-requirement-for-role"
-	HostValidationIDSufficientNetworkLatencyRequirementForRole HostValidationID = "sufficient-network-latency-requirement-for-role"
+	// HostValidationIDSufficientDashNetworkDashLatencyDashRequirementDashForDashRole captures enum value "sufficient-network-latency-requirement-for-role"
+	HostValidationIDSufficientDashNetworkDashLatencyDashRequirementDashForDashRole HostValidationID = "sufficient-network-latency-requirement-for-role"
 
-	// HostValidationIDSufficientPacketLossRequirementForRole captures enum value "sufficient-packet-loss-requirement-for-role"
-	HostValidationIDSufficientPacketLossRequirementForRole HostValidationID = "sufficient-packet-loss-requirement-for-role"
+	// HostValidationIDSufficientDashPacketDashLossDashRequirementDashForDashRole captures enum value "sufficient-packet-loss-requirement-for-role"
+	HostValidationIDSufficientDashPacketDashLossDashRequirementDashForDashRole HostValidationID = "sufficient-packet-loss-requirement-for-role"
 
-	// HostValidationIDHasDefaultRoute captures enum value "has-default-route"
-	HostValidationIDHasDefaultRoute HostValidationID = "has-default-route"
+	// HostValidationIDHasDashDefaultDashRoute captures enum value "has-default-route"
+	HostValidationIDHasDashDefaultDashRoute HostValidationID = "has-default-route"
 
-	// HostValidationIDAPIDomainNameResolvedCorrectly captures enum value "api-domain-name-resolved-correctly"
-	HostValidationIDAPIDomainNameResolvedCorrectly HostValidationID = "api-domain-name-resolved-correctly"
+	// HostValidationIDAPIDashDomainDashNameDashResolvedDashCorrectly captures enum value "api-domain-name-resolved-correctly"
+	HostValidationIDAPIDashDomainDashNameDashResolvedDashCorrectly HostValidationID = "api-domain-name-resolved-correctly"
 
-	// HostValidationIDAPIIntDomainNameResolvedCorrectly captures enum value "api-int-domain-name-resolved-correctly"
-	HostValidationIDAPIIntDomainNameResolvedCorrectly HostValidationID = "api-int-domain-name-resolved-correctly"
+	// HostValidationIDAPIDashIntDashDomainDashNameDashResolvedDashCorrectly captures enum value "api-int-domain-name-resolved-correctly"
+	HostValidationIDAPIDashIntDashDomainDashNameDashResolvedDashCorrectly HostValidationID = "api-int-domain-name-resolved-correctly"
 
-	// HostValidationIDAppsDomainNameResolvedCorrectly captures enum value "apps-domain-name-resolved-correctly"
-	HostValidationIDAppsDomainNameResolvedCorrectly HostValidationID = "apps-domain-name-resolved-correctly"
+	// HostValidationIDAppsDashDomainDashNameDashResolvedDashCorrectly captures enum value "apps-domain-name-resolved-correctly"
+	HostValidationIDAppsDashDomainDashNameDashResolvedDashCorrectly HostValidationID = "apps-domain-name-resolved-correctly"
 
-	// HostValidationIDCompatibleWithClusterPlatform captures enum value "compatible-with-cluster-platform"
-	HostValidationIDCompatibleWithClusterPlatform HostValidationID = "compatible-with-cluster-platform"
+	// HostValidationIDCompatibleDashWithDashClusterDashPlatform captures enum value "compatible-with-cluster-platform"
+	HostValidationIDCompatibleDashWithDashClusterDashPlatform HostValidationID = "compatible-with-cluster-platform"
 
-	// HostValidationIDDNSWildcardNotConfigured captures enum value "dns-wildcard-not-configured"
-	HostValidationIDDNSWildcardNotConfigured HostValidationID = "dns-wildcard-not-configured"
+	// HostValidationIDDNSDashWildcardDashNotDashConfigured captures enum value "dns-wildcard-not-configured"
+	HostValidationIDDNSDashWildcardDashNotDashConfigured HostValidationID = "dns-wildcard-not-configured"
 
-	// HostValidationIDDiskEncryptionRequirementsSatisfied captures enum value "disk-encryption-requirements-satisfied"
-	HostValidationIDDiskEncryptionRequirementsSatisfied HostValidationID = "disk-encryption-requirements-satisfied"
+	// HostValidationIDDiskDashEncryptionDashRequirementsDashSatisfied captures enum value "disk-encryption-requirements-satisfied"
+	HostValidationIDDiskDashEncryptionDashRequirementsDashSatisfied HostValidationID = "disk-encryption-requirements-satisfied"
 )
 
 // for schema
@@ -140,5 +146,10 @@ func (m HostValidationID) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+// ContextValidate validates this host validation id based on context it is used
+func (m HostValidationID) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }

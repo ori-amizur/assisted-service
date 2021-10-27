@@ -8,8 +8,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/kelseyhightower/envconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -25,6 +23,8 @@ import (
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/leader"
+	_ "gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("monitor_disconnection", func() {
@@ -79,9 +79,9 @@ var _ = Describe("monitor_disconnection", func() {
 		mockMetricApi.EXPECT().Duration("HostMonitoring", gomock.Any()).Times(1)
 		mockMetricApi.EXPECT().MonitoredHostsCount(gomock.Any()).Times(1)
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 		mockHwValidator.EXPECT().GetHostInstallationPath(gomock.Any()).Return("abc").AnyTimes()
 	})
@@ -141,7 +141,7 @@ var _ = Describe("monitor_disconnection", func() {
 
 	AfterEach(func() {
 		ctrl.Finish()
-		db.Close()
+		common.CloseDB(db)
 	})
 })
 
@@ -192,9 +192,9 @@ var _ = Describe("TestHostMonitoring - with cluster", func() {
 
 		mockMetricApi.EXPECT().Duration("HostMonitoring", gomock.Any()).Times(1)
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 		mockHwValidator.EXPECT().GetHostInstallationPath(gomock.Any()).Return("abc").AnyTimes()
 	})
@@ -219,10 +219,10 @@ var _ = Describe("TestHostMonitoring - with cluster", func() {
 				db.Save(&host)
 			}
 			state.HostMonitoring()
-			var count int
+			var count int64
 			Expect(db.Model(&models.Host{}).Where("status = ?", models.HostStatusDisconnected).Count(&count).Error).
 				ShouldNot(HaveOccurred())
-			Expect(count).Should(Equal(nHosts))
+			Expect(count).Should(Equal(int64(nHosts)))
 		}
 
 		It("5 hosts all disconnected", func() {
@@ -285,9 +285,9 @@ var _ = Describe("TestHostMonitoring - with infra-env", func() {
 
 		mockMetricApi.EXPECT().Duration("HostMonitoring", gomock.Any()).Times(1)
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil)
 		mockHwValidator.EXPECT().GetHostInstallationPath(gomock.Any()).Return("abc").AnyTimes()
 	})
@@ -305,17 +305,17 @@ var _ = Describe("TestHostMonitoring - with infra-env", func() {
 					infraEnv := hostutil.GenerateTestInfraEnv(infraEnvID)
 					Expect(db.Save(infraEnv).Error).ToNot(HaveOccurred())
 				}
-				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDiscoveringUnbound, models.HostRoleWorker)
+				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDiscoveringDashUnbound, models.HostRoleWorker)
 				host.Inventory = workerInventory()
 				Expect(state.RegisterHost(ctx, &host, db)).ShouldNot(HaveOccurred())
 				host.CheckedInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
 				db.Save(&host)
 			}
 			state.HostMonitoring()
-			var count int
-			Expect(db.Model(&models.Host{}).Where("status = ?", models.HostStatusDisconnectedUnbound).Count(&count).Error).
+			var count int64
+			Expect(db.Model(&models.Host{}).Where("status = ?", models.HostStatusDisconnectedDashUnbound).Count(&count).Error).
 				ShouldNot(HaveOccurred())
-			Expect(count).Should(Equal(nHosts))
+			Expect(count).Should(Equal(int64(nHosts)))
 		}
 
 		registerAndValidateDisconnectedAndDisabled := func(nDisconnected, nDisabled int) {
@@ -325,7 +325,7 @@ var _ = Describe("TestHostMonitoring - with infra-env", func() {
 					infraEnv := hostutil.GenerateTestInfraEnv(infraEnvID)
 					Expect(db.Save(infraEnv).Error).ToNot(HaveOccurred())
 				}
-				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDiscoveringUnbound, models.HostRoleWorker)
+				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDiscoveringDashUnbound, models.HostRoleWorker)
 				host.Inventory = workerInventory()
 				Expect(state.RegisterHost(ctx, &host, db)).ShouldNot(HaveOccurred())
 				host.CheckedInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
@@ -337,17 +337,17 @@ var _ = Describe("TestHostMonitoring - with infra-env", func() {
 					infraEnv := hostutil.GenerateTestInfraEnv(infraEnvID)
 					Expect(db.Save(infraEnv).Error).ToNot(HaveOccurred())
 				}
-				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDisabledUnbound, models.HostRoleWorker)
+				host = hostutil.GenerateTestHostWithInfraEnv(strfmt.UUID(uuid.New().String()), infraEnvID, models.HostStatusDisabledDashUnbound, models.HostRoleWorker)
 				host.Inventory = workerInventory()
 				Expect(state.RegisterHost(ctx, &host, db)).ShouldNot(HaveOccurred())
 				host.CheckedInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
 				db.Save(&host)
 			}
 			state.HostMonitoring()
-			var count int
-			Expect(db.Model(&models.Host{}).Where("status = ?", models.HostStatusDisconnectedUnbound).Count(&count).Error).
+			var count int64
+			Expect(db.Model(&models.Host{}).Where("status = ?", models.HostStatusDisconnectedDashUnbound).Count(&count).Error).
 				ShouldNot(HaveOccurred())
-			Expect(count).Should(Equal(nDisconnected))
+			Expect(count).Should(Equal(int64(nDisconnected)))
 		}
 
 		It("5 hosts all disconnected", func() {

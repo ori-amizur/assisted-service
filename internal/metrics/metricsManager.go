@@ -416,7 +416,7 @@ func (m *MetricsManager) ImagePullStatus(hostID strfmt.UUID, imageName, resultSt
 func (m *MetricsManager) ReportHostInstallationMetrics(ctx context.Context, clusterVersion string, clusterID strfmt.UUID, emailDomain string, boot *models.Disk,
 	h *models.Host, previousProgress *models.HostProgressInfo, currentStage models.HostStage) {
 	log := logutil.FromContext(ctx, logrus.New())
-	if previousProgress != nil && previousProgress.CurrentStage != currentStage {
+	if previousProgress != nil && previousProgress.CurrentStage != nil && *previousProgress.CurrentStage != currentStage {
 		roleStr := string(h.Role)
 		if h.Bootstrap {
 			roleStr = "bootstrap"
@@ -442,18 +442,18 @@ func (m *MetricsManager) ReportHostInstallationMetrics(ctx context.Context, clus
 			m.reportHostMetricsOnInstallationComplete(ctx, clusterVersion, clusterID, emailDomain, roleStr, hwVendor, hwProduct, diskType, installationStageStr, h)
 		}
 		//report the installation phase duration
-		if previousProgress.CurrentStage != "" {
+		if previousProgress.CurrentStage != nil && *previousProgress.CurrentStage != "" {
 			duration := time.Since(time.Time(previousProgress.StageStartedAt)).Seconds()
 			phaseResult := models.HostStageDone
 			if currentStage == models.HostStageFailed {
 				phaseResult = models.HostStageFailed
 			}
 			log.Infof("service Logic Host Installation Phase Seconds phase %s, vendor %s product %s disk %s result %s, duration %f",
-				string(previousProgress.CurrentStage), hwVendor, hwProduct, diskType, string(phaseResult), duration)
+				string(*previousProgress.CurrentStage), hwVendor, hwProduct, diskType, string(phaseResult), duration)
 			m.handler.AddMetricsEvent(ctx, clusterID, h.ID, models.EventSeverityInfo, "host.stage.duration", time.Now(),
-				"result", string(phaseResult), "duration", duration, "host_stage", string(previousProgress.CurrentStage), "vendor", hwVendor, "product", hwProduct, "disk_type", diskType, "host_role", roleStr)
+				"result", string(phaseResult), "duration", duration, "host_stage", string(*previousProgress.CurrentStage), "vendor", hwVendor, "product", hwProduct, "disk_type", diskType, "host_role", roleStr)
 
-			m.serviceLogicHostInstallationPhaseSeconds.WithLabelValues(string(previousProgress.CurrentStage),
+			m.serviceLogicHostInstallationPhaseSeconds.WithLabelValues(string(*previousProgress.CurrentStage),
 				string(phaseResult), clusterVersion, emailDomain, h.DiscoveryAgentVersion, hwVendor, hwProduct, diskType).Observe(duration)
 		}
 	}

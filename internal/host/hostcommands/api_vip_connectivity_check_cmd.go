@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type apivipConnectivityCheckCmd struct {
@@ -49,7 +49,7 @@ func (c *apivipConnectivityCheckCmd) GetSteps(ctx context.Context, host *models.
 	}
 
 	step := &models.Step{
-		StepType: models.StepTypeAPIVipConnectivityCheck,
+		StepType: models.StepTypeAPIDashVipDashConnectivityDashCheck,
 		Command:  "podman",
 		Args: []string{
 			"run", "--privileged", "--net=host", "--rm", "--quiet",

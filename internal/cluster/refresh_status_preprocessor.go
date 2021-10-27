@@ -51,7 +51,7 @@ func (r *refreshPreprocessor) preprocess(ctx context.Context, c *clusterPreproce
 	stateMachineInput := make(map[string]bool)
 	validationsOutput := make(map[string][]ValidationResult)
 	checkValidationsInStatuses := []string{
-		models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingForInput, models.ClusterStatusPreparingForInstallation,
+		models.ClusterStatusInsufficient, models.ClusterStatusReady, models.ClusterStatusPendingDashForDashInput, models.ClusterStatusPreparingDashForDashInstallation,
 	}
 	//if the cluster is not on discovery stages - skip the validations check
 	if !funk.ContainsString(checkValidationsInStatuses, swag.StringValue(c.cluster.Status)) {

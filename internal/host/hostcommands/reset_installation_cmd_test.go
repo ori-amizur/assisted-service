@@ -5,12 +5,12 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("reset", func() {
@@ -36,7 +36,7 @@ var _ = Describe("reset", func() {
 
 	It("get_step", func() {
 		stepReply, stepErr = rstCmd.GetSteps(ctx, &host)
-		Expect(stepReply[0].StepType).To(Equal(models.StepTypeResetInstallation))
+		Expect(stepReply[0].StepType).To(Equal(models.StepTypeResetDashInstallation))
 		Expect(stepErr).ShouldNot(HaveOccurred())
 	})
 

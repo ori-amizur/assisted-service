@@ -84,7 +84,7 @@ func (f *freeAddressesCmd) GetSteps(ctx context.Context, host *models.Host) ([]*
 	checkAlreadyRunningCmd := fmt.Sprintf("podman ps --format '{{.Names}}' | grep -q '^%s$'", containerName)
 
 	step := &models.Step{
-		StepType: models.StepTypeFreeNetworkAddresses,
+		StepType: models.StepTypeFreeDashNetworkDashAddresses,
 		Command:  "sh",
 		Args: []string{
 			"-c",

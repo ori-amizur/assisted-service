@@ -6,9 +6,12 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"context"
+
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // HostProgress host progress
@@ -18,7 +21,7 @@ type HostProgress struct {
 
 	// current stage
 	// Required: true
-	CurrentStage HostStage `json:"current_stage"`
+	CurrentStage *HostStage `json:"current_stage"`
 
 	// progress info
 	ProgressInfo string `json:"progress_info,omitempty" gorm:"type:varchar(2048)"`
@@ -40,11 +43,53 @@ func (m *HostProgress) Validate(formats strfmt.Registry) error {
 
 func (m *HostProgress) validateCurrentStage(formats strfmt.Registry) error {
 
-	if err := m.CurrentStage.Validate(formats); err != nil {
-		if ve, ok := err.(*errors.Validation); ok {
-			return ve.ValidateName("current_stage")
-		}
+	if err := validate.Required("current_stage", "body", m.CurrentStage); err != nil {
 		return err
+	}
+
+	if err := validate.Required("current_stage", "body", m.CurrentStage); err != nil {
+		return err
+	}
+
+	if m.CurrentStage != nil {
+		if err := m.CurrentStage.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("current_stage")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("current_stage")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this host progress based on the context it is used
+func (m *HostProgress) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCurrentStage(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *HostProgress) contextValidateCurrentStage(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CurrentStage != nil {
+		if err := m.CurrentStage.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("current_stage")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("current_stage")
+			}
+			return err
+		}
 	}
 
 	return nil

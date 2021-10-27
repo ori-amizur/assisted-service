@@ -61,12 +61,12 @@ func (o *operator) GetDependencies() []string {
 
 // GetClusterValidationID returns cluster validation ID for the Operator
 func (o *operator) GetClusterValidationID() string {
-	return string(models.ClusterValidationIDCnvRequirementsSatisfied)
+	return string(models.ClusterValidationIDCnvDashRequirementsDashSatisfied)
 }
 
 // GetHostValidationID returns host validation ID for the Operator
 func (o *operator) GetHostValidationID() string {
-	return string(models.HostValidationIDCnvRequirementsSatisfied)
+	return string(models.HostValidationIDCnvDashRequirementsDashSatisfied)
 }
 
 // ValidateCluster verifies whether this operator is valid for given cluster
@@ -103,7 +103,7 @@ func (o *operator) ValidateHost(ctx context.Context, cluster *common.Cluster, ho
 	role := common.GetEffectiveRole(host)
 
 	// If the Role is set to Auto-assign for a host, it is not possible to determine whether the node will end up as a master or worker node.
-	if role == models.HostRoleAutoAssign {
+	if role == models.HostRoleAutoDashAssign {
 		return api.ValidationResult{Status: api.Failure, ValidationId: o.GetHostValidationID(), Reasons: []string{"All host roles must be assigned to enable CNV"}}, nil
 	}
 	requirements, err := o.GetHostRequirements(ctx, cluster, host)
@@ -173,7 +173,7 @@ func (o *operator) GetHostRequirements(ctx context.Context, cluster *common.Clus
 	switch role {
 	case models.HostRoleMaster:
 		return masterRequirements, nil
-	case models.HostRoleWorker, models.HostRoleAutoAssign:
+	case models.HostRoleWorker, models.HostRoleAutoDashAssign:
 		return o.getWorkerRequirements(ctx, cluster, host, preflightRequirements)
 	}
 	return nil, fmt.Errorf("unsupported role: %s", role)

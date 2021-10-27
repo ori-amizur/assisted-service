@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/constants"
 	"github.com/openshift/assisted-service/internal/hardware"
@@ -25,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 type ValidationStatus string
@@ -122,7 +122,7 @@ func (v *validator) getBootDeviceInfo(host *models.Host) (*models.DiskInfo, erro
 
 func (c *validationContext) validateRole() error {
 	switch common.GetEffectiveRole(c.host) {
-	case models.HostRoleMaster, models.HostRoleWorker, models.HostRoleAutoAssign:
+	case models.HostRoleMaster, models.HostRoleWorker, models.HostRoleAutoDashAssign:
 		return nil
 	default:
 		return errors.Errorf("Illegal role defined: %s", common.GetEffectiveRole(c.host))
@@ -369,7 +369,7 @@ func (v *validator) diskEncryptionRequirementsSatisfied(c *validationContext) Va
 	}
 
 	role := common.GetEffectiveRole(c.host)
-	if role == models.HostRoleAutoAssign {
+	if role == models.HostRoleAutoDashAssign {
 		return ValidationPending
 	}
 
@@ -769,11 +769,11 @@ func (v *validator) printBelongsToMajorityGroup(c *validationContext, status Val
 
 func (v *validator) missingNTPSyncResult(db *gorm.DB, host *models.Host) ValidationStatus {
 	unboundStatuses := []string{
-		models.HostStatusInsufficientUnbound,
-		models.HostStatusDisconnectedUnbound,
-		models.HostStatusDiscoveringUnbound,
-		models.HostStatusKnownUnbound,
-		models.HostStatusDisabledUnbound,
+		models.HostStatusInsufficientDashUnbound,
+		models.HostStatusDisconnectedDashUnbound,
+		models.HostStatusDiscoveringDashUnbound,
+		models.HostStatusKnownDashUnbound,
+		models.HostStatusDisabledDashUnbound,
 	}
 	if funk.ContainsString(unboundStatuses, swag.StringValue(host.Status)) {
 		sources, err := common.GetHostNTPSources(db, host)
@@ -919,7 +919,7 @@ func (v *validator) hasSufficientNetworkLatencyRequirementForRole(c *validationC
 		return ValidationSuccessSuppressOutput
 	}
 
-	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.NetworkLatencyThresholdMs == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
+	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.NetworkLatencyThresholdMs == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoDashAssign || hostutil.IsDay2Host(c.host) {
 		// Single Node use case || no requirements defined || role is auto assign
 		return ValidationSuccess
 	}
@@ -999,7 +999,7 @@ func (v *validator) hasSufficientPacketLossRequirementForRole(c *validationConte
 		return ValidationSuccessSuppressOutput
 	}
 
-	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.PacketLossPercentage == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
+	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.PacketLossPercentage == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoDashAssign || hostutil.IsDay2Host(c.host) {
 		// Single Node use case || no requirements defined || role is auto assign
 		return ValidationSuccess
 	}

@@ -77,7 +77,7 @@ func (o *operator) computeResourcesAllNodes(cluster *models.Cluster, ocsClusterR
 		*/
 		role := common.GetEffectiveRole(host)
 		if !compactMode {
-			if role == models.HostRoleAutoAssign {
+			if role == models.HostRoleAutoDashAssign {
 				status = "For OCS Standard Mode, all host roles must be assigned to master or worker."
 				err = errors.New("Role is set to auto-assign for host ")
 				return status, err

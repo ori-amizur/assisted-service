@@ -8,7 +8,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	"github.com/kelseyhightower/envconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,6 +20,7 @@ import (
 	"github.com/openshift/assisted-service/internal/operators/ocs"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/conversions"
+	"gorm.io/gorm"
 )
 
 type statusInfoChecker interface {
@@ -602,7 +602,7 @@ var _ = Describe("Ocs Operator use-cases", func() {
 		},
 		{
 			name:          "ocs enabled, 6 nodes, with role of one as auto-assign (ocs validation failure)",
-			srcState:      models.ClusterStatusPendingForInput,
+			srcState:      models.ClusterStatusPendingDashForDashInput,
 			dstState:      models.ClusterStatusInsufficient,
 			pullSecretSet: true,
 			hosts: []models.Host{
@@ -610,7 +610,7 @@ var _ = Describe("Ocs Operator use-cases", func() {
 					Inventory: ocs.Inventory(&ocs.InventoryResources{Cpus: 16, Ram: 64 * conversions.GiB, Disks: []*models.Disk{
 						{SizeBytes: 25 * conversions.GB},
 						{SizeBytes: 40 * conversions.GB}}}),
-					Role: models.HostRoleAutoAssign, InstallationDiskID: diskID1},
+					Role: models.HostRoleAutoDashAssign, InstallationDiskID: diskID1},
 				{ID: &hid2, Status: swag.String(models.HostStatusKnown),
 					Inventory: ocs.Inventory(&ocs.InventoryResources{Cpus: 16, Ram: 64 * conversions.GiB, Disks: []*models.Disk{
 						{SizeBytes: 25 * conversions.GB},
@@ -655,7 +655,7 @@ var _ = Describe("Ocs Operator use-cases", func() {
 		},
 		{
 			name:          "ocs enabled, 3 nodes, with role of one as auto-assign (ocs validation success)",
-			srcState:      models.ClusterStatusPendingForInput,
+			srcState:      models.ClusterStatusPendingDashForDashInput,
 			dstState:      models.ClusterStatusReady,
 			pullSecretSet: true,
 			hosts: []models.Host{
@@ -663,7 +663,7 @@ var _ = Describe("Ocs Operator use-cases", func() {
 					Inventory: ocs.Inventory(&ocs.InventoryResources{Cpus: 16, Ram: 64 * conversions.GiB, Disks: []*models.Disk{
 						{SizeBytes: 20 * conversions.GB, DriveType: "HDD", ID: diskID1},
 						{SizeBytes: 40 * conversions.GB, DriveType: "HDD", ID: diskID2}}}),
-					Role: models.HostRoleAutoAssign, InstallationDiskID: diskID1},
+					Role: models.HostRoleAutoDashAssign, InstallationDiskID: diskID1},
 				{ID: &hid2, Status: swag.String(models.HostStatusKnown),
 					Inventory: ocs.Inventory(&ocs.InventoryResources{Cpus: 16, Ram: 64 * conversions.GiB, Disks: []*models.Disk{
 						{SizeBytes: 20 * conversions.GB, DriveType: "HDD", ID: diskID1},
@@ -811,6 +811,12 @@ var _ = Describe("Ocs Operator use-cases", func() {
 			}
 
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+			infraEnv := common.InfraEnv{
+				InfraEnv: models.InfraEnv{
+					ID: &clusterId,
+				},
+			}
+			Expect(db.Create(&infraEnv).Error).ToNot(HaveOccurred())
 			mockIsValidMasterCandidate()
 			for i := range t.hosts {
 				t.hosts[i].ClusterID = &clusterId

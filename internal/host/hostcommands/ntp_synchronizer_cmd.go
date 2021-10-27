@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type ntpSynchronizerCmd struct {
@@ -47,7 +47,7 @@ func (f *ntpSynchronizerCmd) GetSteps(ctx context.Context, host *models.Host) ([
 		return nil, err
 	}
 	step := &models.Step{
-		StepType: models.StepTypeNtpSynchronizer,
+		StepType: models.StepTypeNtpDashSynchronizer,
 		Command:  "podman",
 		Args: []string{
 			"run", "--privileged", "--net=host", "--rm",

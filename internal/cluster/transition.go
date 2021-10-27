@@ -10,7 +10,6 @@ import (
 	"github.com/filanov/stateswitch"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	eventgen "github.com/openshift/assisted-service/internal/common/events"
 	"github.com/openshift/assisted-service/internal/constants"
@@ -27,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	"gorm.io/gorm"
 )
 
 var resetLogsField = []interface{}{"logs_info", "", "controller_logs_started_at", strfmt.DateTime(time.Time{}), "controller_logs_collected_at", strfmt.DateTime(time.Time{})}
@@ -321,8 +321,8 @@ func (th *transitionHandler) IsFinalizing(sw stateswitch.StateSwitch, args state
 //check if we should stay in installing state
 func (th *transitionHandler) IsInstalling(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) (bool, error) {
 	sCluster, _ := sw.(*stateCluster)
-	installingStatuses := []string{models.HostStatusInstalling, models.HostStatusInstallingInProgress,
-		models.HostStatusInstalled, models.HostStatusInstallingPendingUserAction, models.HostStatusPreparingSuccessful}
+	installingStatuses := []string{models.HostStatusInstalling, models.HostStatusInstallingDashInDashProgress,
+		models.HostStatusInstalled, models.HostStatusInstallingDashPendingDashUserDashAction, models.HostStatusPreparingDashSuccessful}
 	return th.enoughMastersAndWorkers(sCluster, installingStatuses), nil
 }
 
@@ -333,7 +333,7 @@ func (th *transitionHandler) IsInstallingPendingUserAction(
 ) (bool, error) {
 	sCluster, _ := sw.(*stateCluster)
 	for _, h := range sCluster.cluster.Hosts {
-		if swag.StringValue(h.Status) == models.HostStatusInstallingPendingUserAction {
+		if swag.StringValue(h.Status) == models.HostStatusInstallingDashPendingDashUserDashAction {
 			return true, nil
 		}
 	}
@@ -470,7 +470,7 @@ func (th *transitionHandler) PostPreparingTimedOut(sw stateswitch.StateSwitch, a
 			reason, params.eventHandler)
 	}
 
-	//update hosts status to models.HostStatusResettingPendingUserAction if needed
+	//update hosts status to models.HostStatusResettingDashPendingDashUserDashAction if needed
 	cluster := sCluster.cluster
 	if updatedCluster != nil {
 		cluster = updatedCluster
@@ -514,7 +514,7 @@ func (th *transitionHandler) PostRefreshCluster(reason string) stateswitch.PostT
 				reason, params.eventHandler, extra...)
 		}
 
-		//update hosts status to models.HostStatusResettingPendingUserAction if needed
+		//update hosts status to models.HostStatusResettingDashPendingDashUserDashAction if needed
 		cluster := sCluster.cluster
 		if updatedCluster != nil {
 			cluster = updatedCluster
@@ -529,8 +529,8 @@ func (th *transitionHandler) PostRefreshCluster(reason string) stateswitch.PostT
 		//report cluster install duration metrics in case of an installation halt. Cancel and Installed cases are
 		//treated separately in CancelInstallation and CompleteInstallation respectively
 		if sCluster.srcState != swag.StringValue(sCluster.cluster.Status) &&
-			sCluster.srcState != models.ClusterStatusInstallingPendingUserAction &&
-			funk.ContainsString([]string{models.ClusterStatusError, models.ClusterStatusInstallingPendingUserAction}, swag.StringValue(sCluster.cluster.Status)) {
+			sCluster.srcState != models.ClusterStatusInstallingDashPendingDashUserDashAction &&
+			funk.ContainsString([]string{models.ClusterStatusError, models.ClusterStatusInstallingDashPendingDashUserDashAction}, swag.StringValue(sCluster.cluster.Status)) {
 
 			params.metricApi.ClusterInstallationFinished(params.ctx, *sCluster.cluster.Status, sCluster.srcState,
 				sCluster.cluster.OpenshiftVersion, *sCluster.cluster.ID, sCluster.cluster.EmailDomain,
@@ -607,10 +607,10 @@ func setPendingUserResetIfNeeded(ctx context.Context, log logrus.FieldLogger, db
 	if swag.StringValue(c.Status) == models.ClusterStatusInsufficient {
 		if isPendingUserResetRequired(hostApi, c) {
 			log.Infof("Setting cluster: %s hosts to status: %s",
-				c.ID, models.HostStatusInstallingPendingUserAction)
+				c.ID, models.HostStatusInstallingDashPendingDashUserDashAction)
 			if err := setPendingUserReset(ctx, c, db, hostApi); err != nil {
 				log.Errorf("failed setting cluster: %s hosts to status: %s",
-					c.ID, models.HostStatusInstallingPendingUserAction)
+					c.ID, models.HostStatusInstallingDashPendingDashUserDashAction)
 			}
 		}
 	}

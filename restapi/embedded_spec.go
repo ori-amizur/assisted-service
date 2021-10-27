@@ -9314,7 +9314,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "connectivity_majority_groups": {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
@@ -9339,21 +9339,21 @@ func init() {
         },
         "created_at": {
           "description": "The time that this cluster was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "deleted_at": {
-          "description": "The time that the cluster was deleted.",
-          "type": "string",
-          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
-          "x-nullable": true
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "disk_encryption": {
           "description": "Information regarding hosts' installation disks encryption.",
           "type": "object",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:disk_encryption_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:disk_encryption_\"",
           "$ref": "#/definitions/disk-encryption"
         },
         "email_domain": {
@@ -9394,7 +9394,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/host"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "href": {
           "description": "Self link.",
@@ -9423,7 +9423,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_overrides": {
           "description": "Json formatted string containing the user overrides for the initial ignition config",
@@ -9432,7 +9432,7 @@ func init() {
           "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
         },
         "image_info": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:image_\"",
           "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
@@ -9483,7 +9483,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/machine_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "monitored_operators": {
           "description": "Operators that are associated with this cluster.",
@@ -9492,7 +9492,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/monitored-operator"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "name": {
           "description": "Name of the OpenShift cluster.",
@@ -9528,12 +9528,12 @@ func init() {
           "type": "string"
         },
         "platform": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:platform_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:platform_\"",
           "$ref": "#/definitions/platform"
         },
         "progress": {
           "description": "Installation progress percentages of the cluster.",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:progress_\"",
           "$ref": "#/definitions/cluster-progress-info"
         },
         "pull_secret_set": {
@@ -9563,7 +9563,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/service_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
@@ -9605,9 +9605,16 @@ func init() {
         },
         "updated_at": {
           "description": "The last time that this cluster was updated.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_managed_networking": {
           "description": "Indicate if the networking is managed by the user.",
@@ -10189,14 +10196,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "host_prefix": {
           "description": "The prefix size to allocate to each node from the CIDR. For example, 24 would allocate 2^8=256 adresses to each node.",
@@ -10976,16 +10983,16 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "deleted_at": {
-          "description": "The time that the host was deleted.",
-          "type": "string",
-          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
-          "x-nullable": true
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "discovery_agent_version": {
           "type": "string"
@@ -11012,7 +11019,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_overrides": {
           "description": "Json formatted string containing the user overrides for the host's pointer ignition",
@@ -11029,7 +11036,7 @@ func init() {
           "description": "The InfraEnv that this host is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:InfraEnvID\""
+          "x-go-custom-tag": "gorm:\"primaryKey;foreignkey:InfraEnvID\""
         },
         "installation_disk_id": {
           "description": "Contains the inventory disk id to install on.",
@@ -11083,7 +11090,7 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "progress": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:progress_\"",
           "$ref": "#/definitions/host-progress-info"
         },
         "progress_stages": {
@@ -11155,9 +11162,16 @@ func init() {
           "$ref": "#/definitions/host-role"
         },
         "updated_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_name": {
           "type": "string"
@@ -11451,9 +11465,16 @@ func init() {
       "type": "object",
       "properties": {
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "download_url": {
           "type": "string"
@@ -11518,9 +11539,16 @@ func init() {
           "x-nullable": false
         },
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "download_url": {
           "type": "string"
@@ -11545,7 +11573,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_override": {
           "description": "Json formatted string containing the user overrides for the initial ignition config.",
@@ -11570,7 +11598,7 @@ func init() {
           "type": "string"
         },
         "proxy": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:proxy_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:proxy_\"",
           "$ref": "#/definitions/proxy"
         },
         "pull_secret_set": {
@@ -11593,9 +11621,16 @@ func init() {
         },
         "updated_at": {
           "description": "The last time that this infraenv was updated.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_name": {
           "type": "string"
@@ -11987,14 +12022,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool for machines within the cluster.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         }
       }
     },
@@ -12059,12 +12094,12 @@ func init() {
           "description": "The cluster that this operator is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "name": {
           "description": "Unique name of the operator.",
           "type": "string",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "namespace": {
           "description": "Namespace where to deploy an operator. Only some operators require a namespace.",
@@ -12371,7 +12406,7 @@ func init() {
         },
         "vsphere": {
           "type": "object",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:vsphere_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:vsphere_\"",
           "x-nullable": true,
           "$ref": "#/definitions/vsphere_platform"
         }
@@ -12509,14 +12544,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         }
       }
     },
@@ -22423,7 +22458,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/cluster_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "connectivity_majority_groups": {
           "description": "Json formatted string containing the majority groups for connectivity checks.",
@@ -22448,21 +22483,21 @@ func init() {
         },
         "created_at": {
           "description": "The time that this cluster was created.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "deleted_at": {
-          "description": "The time that the cluster was deleted.",
-          "type": "string",
-          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
-          "x-nullable": true
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "disk_encryption": {
           "description": "Information regarding hosts' installation disks encryption.",
           "type": "object",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:disk_encryption_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:disk_encryption_\"",
           "$ref": "#/definitions/disk-encryption"
         },
         "email_domain": {
@@ -22503,7 +22538,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/host"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "href": {
           "description": "Self link.",
@@ -22532,7 +22567,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_overrides": {
           "description": "Json formatted string containing the user overrides for the initial ignition config",
@@ -22541,7 +22576,7 @@ func init() {
           "example": "{\"ignition\": {\"version\": \"3.1.0\"}, \"storage\": {\"files\": [{\"path\": \"/tmp/example\", \"contents\": {\"source\": \"data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj\"}}]}}"
         },
         "image_info": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:image_\"",
           "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
@@ -22592,7 +22627,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/machine_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "monitored_operators": {
           "description": "Operators that are associated with this cluster.",
@@ -22601,7 +22636,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/monitored-operator"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "name": {
           "description": "Name of the OpenShift cluster.",
@@ -22637,12 +22672,12 @@ func init() {
           "type": "string"
         },
         "platform": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:platform_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:platform_\"",
           "$ref": "#/definitions/platform"
         },
         "progress": {
           "description": "Installation progress percentages of the cluster.",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:progress_\"",
           "$ref": "#/definitions/cluster-progress-info"
         },
         "pull_secret_set": {
@@ -22672,7 +22707,7 @@ func init() {
             "type": "object",
             "$ref": "#/definitions/service_network"
           },
-          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;association_foreignkey:ID\""
+          "x-go-custom-tag": "gorm:\"foreignkey:ClusterID;references:ID\""
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
@@ -22714,9 +22749,16 @@ func init() {
         },
         "updated_at": {
           "description": "The last time that this cluster was updated.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_managed_networking": {
           "description": "Indicate if the networking is managed by the user.",
@@ -23258,14 +23300,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "host_prefix": {
           "description": "The prefix size to allocate to each node from the CIDR. For example, 24 would allocate 2^8=256 adresses to each node.",
@@ -23994,16 +24036,16 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
-        },
-        "deleted_at": {
-          "description": "The time that the host was deleted.",
-          "type": "string",
-          "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
-          "x-nullable": true
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "discovery_agent_version": {
           "type": "string"
@@ -24030,7 +24072,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_overrides": {
           "description": "Json formatted string containing the user overrides for the host's pointer ignition",
@@ -24047,7 +24089,7 @@ func init() {
           "description": "The InfraEnv that this host is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:InfraEnvID\""
+          "x-go-custom-tag": "gorm:\"primaryKey;foreignkey:InfraEnvID\""
         },
         "installation_disk_id": {
           "description": "Contains the inventory disk id to install on.",
@@ -24101,7 +24143,7 @@ func init() {
           "x-go-custom-tag": "gorm:\"type:text\""
         },
         "progress": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:progress_\"",
           "$ref": "#/definitions/host-progress-info"
         },
         "progress_stages": {
@@ -24173,9 +24215,16 @@ func init() {
           "$ref": "#/definitions/host-role"
         },
         "updated_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_name": {
           "type": "string"
@@ -24469,9 +24518,16 @@ func init() {
       "type": "object",
       "properties": {
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "download_url": {
           "type": "string"
@@ -24537,9 +24593,16 @@ func init() {
           "x-nullable": false
         },
         "created_at": {
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "download_url": {
           "type": "string"
@@ -24564,7 +24627,7 @@ func init() {
           "description": "Unique identifier of the object.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "ignition_config_override": {
           "description": "Json formatted string containing the user overrides for the initial ignition config.",
@@ -24589,7 +24652,7 @@ func init() {
           "type": "string"
         },
         "proxy": {
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:proxy_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:proxy_\"",
           "$ref": "#/definitions/proxy"
         },
         "pull_secret_set": {
@@ -24613,9 +24676,16 @@ func init() {
         },
         "updated_at": {
           "description": "The last time that this infraenv was updated.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\"",
+          "x-go-type": {
+            "hints": {
+              "noValidation": true
+            },
+            "import": {
+              "package": "time"
+            },
+            "type": "Time"
+          }
         },
         "user_name": {
           "type": "string"
@@ -24996,14 +25066,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool for machines within the cluster.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         }
       }
     },
@@ -25068,12 +25138,12 @@ func init() {
           "description": "The cluster that this operator is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "name": {
           "description": "Unique name of the operator.",
           "type": "string",
-          "x-go-custom-tag": "gorm:\"primary_key\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         },
         "namespace": {
           "description": "Namespace where to deploy an operator. Only some operators require a namespace.",
@@ -25380,7 +25450,7 @@ func init() {
         },
         "vsphere": {
           "type": "object",
-          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:vsphere_\"",
+          "x-go-custom-tag": "gorm:\"embedded;embeddedPrefix:vsphere_\"",
           "x-nullable": true,
           "$ref": "#/definitions/vsphere_platform"
         }
@@ -25518,14 +25588,14 @@ func init() {
       "properties": {
         "cidr": {
           "description": "The IP block address pool.",
-          "x-go-custom-tag": "gorm:\"primary_key\"",
+          "x-go-custom-tag": "gorm:\"primaryKey\"",
           "$ref": "#/definitions/subnet"
         },
         "cluster_id": {
           "description": "The cluster that this network is associated with.",
           "type": "string",
           "format": "uuid",
-          "x-go-custom-tag": "gorm:\"primary_key;foreignkey:Cluster\""
+          "x-go-custom-tag": "gorm:\"primaryKey\""
         }
       }
     },

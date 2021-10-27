@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jinzhu/gorm"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/constants"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type domainNameResolutionCmd struct {
@@ -86,7 +86,7 @@ func (f *domainNameResolutionCmd) GetSteps(ctx context.Context, host *models.Hos
 	}
 
 	step := &models.Step{
-		StepType: models.StepTypeDomainResolution,
+		StepType: models.StepTypeDomainDashResolution,
 		Command:  "podman",
 		Args: []string{
 			"run", "--privileged", "--net=host", "--rm", "--quiet",

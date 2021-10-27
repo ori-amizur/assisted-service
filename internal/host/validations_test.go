@@ -9,7 +9,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/openshift/assisted-service/internal/common"
@@ -23,6 +22,7 @@ import (
 	"github.com/openshift/assisted-service/internal/operators/api"
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/models"
+	"gorm.io/gorm"
 )
 
 var _ = Describe("Validations test", func() {
@@ -67,9 +67,9 @@ var _ = Describe("Validations test", func() {
 		mockHwValidator.EXPECT().ListEligibleDisks(gomock.Any()).Return([]*models.Disk{}).AnyTimes()
 		mockHwValidator.EXPECT().GetHostInstallationPath(gomock.Any()).Return("/dev/sda").AnyTimes()
 		mockOperators.EXPECT().ValidateHost(gomock.Any(), gomock.Any(), gomock.Any()).Return([]api.ValidationResult{
-			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoRequirementsSatisfied)},
-			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvRequirementsSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDOcsDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDLsoDashRequirementsDashSatisfied)},
+			{Status: api.Success, ValidationId: string(models.HostValidationIDCnvDashRequirementsDashSatisfied)},
 		}, nil).AnyTimes()
 
 		err := m.RefreshStatus(ctx, h, db)
@@ -95,7 +95,7 @@ var _ = Describe("Validations test", func() {
 
 			for _, vl := range validationsRes {
 				for _, v := range vl {
-					if v.ID == validationID(models.HostValidationIDDiskEncryptionRequirementsSatisfied) {
+					if v.ID == validationID(models.HostValidationIDDiskDashEncryptionDashRequirementsDashSatisfied) {
 						return v.Status, v.Message, true
 					}
 				}
@@ -148,7 +148,7 @@ var _ = Describe("Validations test", func() {
 			}
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
-			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleAutoAssign)
+			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleAutoDashAssign)
 			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr20)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 

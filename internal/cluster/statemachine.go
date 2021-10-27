@@ -20,7 +20,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 		TransitionType: TransitionTypeCancelInstallation,
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.ClusterStatusInstalling),
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 			stateswitch.State(models.ClusterStatusError),
 			stateswitch.State(models.ClusterStatusFinalizing),
 		},
@@ -31,7 +31,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeCancelInstallation,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPreparingForInstallation),
+			stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation),
 		},
 		DestinationState: stateswitch.State(models.ClusterStatusReady),
 		PostTransition:   th.PostCancelInstallation,
@@ -40,9 +40,9 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeResetCluster,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPreparingForInstallation),
+			stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation),
 			stateswitch.State(models.ClusterStatusInstalling),
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 			stateswitch.State(models.ClusterStatusError),
 			stateswitch.State(models.ClusterStatusCancelled),
 			stateswitch.State(models.ClusterStatusFinalizing),
@@ -56,7 +56,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 		SourceStates: []stateswitch.State{
 			stateswitch.State(models.ClusterStatusReady),
 		},
-		DestinationState: stateswitch.State(models.ClusterStatusPreparingForInstallation),
+		DestinationState: stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation),
 		PostTransition:   th.PostPrepareForInstallation,
 	})
 
@@ -81,12 +81,12 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPendingForInput),
+			stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 			stateswitch.State(models.ClusterStatusReady),
 			stateswitch.State(models.ClusterStatusInsufficient),
 		},
 		Condition:        stateswitch.And(stateswitch.Not(If(VipDhcpAllocationSet)), stateswitch.Not(requiredInputFieldsExistNonDhcp)),
-		DestinationState: stateswitch.State(models.ClusterStatusPendingForInput),
+		DestinationState: stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 		PostTransition:   th.PostRefreshCluster(statusInfoPendingForInput),
 	})
 
@@ -96,7 +96,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPendingForInput),
+			stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 			stateswitch.State(models.ClusterStatusReady),
 			stateswitch.State(models.ClusterStatusInsufficient),
 		},
@@ -112,12 +112,12 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPendingForInput),
+			stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 			stateswitch.State(models.ClusterStatusReady),
 			stateswitch.State(models.ClusterStatusInsufficient),
 		},
 		Condition:        stateswitch.And(If(VipDhcpAllocationSet), stateswitch.Not(pendingConditions)),
-		DestinationState: stateswitch.State(models.ClusterStatusPendingForInput),
+		DestinationState: stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 		PostTransition:   th.PostRefreshCluster(statusInfoPendingForInput),
 	})
 
@@ -127,7 +127,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPendingForInput),
+			stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 			stateswitch.State(models.ClusterStatusReady),
 			stateswitch.State(models.ClusterStatusInsufficient),
 		},
@@ -140,7 +140,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusPendingForInput),
+			stateswitch.State(models.ClusterStatusPendingDashForDashInput),
 			stateswitch.State(models.ClusterStatusReady),
 			stateswitch.State(models.ClusterStatusInsufficient),
 		},
@@ -152,7 +152,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	// This transition is fired when the preparing installation reach the timeout
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType:   TransitionTypeRefreshStatus,
-		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingForInstallation)},
+		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation)},
 		Condition:        th.IsPreparingTimedOut,
 		DestinationState: stateswitch.State(models.ClusterStatusReady),
 		PostTransition:   th.PostPreparingTimedOut,
@@ -160,7 +160,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType:   TransitionTypeRefreshStatus,
-		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingForInstallation)},
+		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation)},
 		Condition:        stateswitch.And(If(AllHostsPreparedSuccessfully), If(ClusterPreparationSucceeded)),
 		DestinationState: stateswitch.State(models.ClusterStatusInstalling),
 		Transition:       th.InstallCluster,
@@ -169,7 +169,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType:   TransitionTypeRefreshStatus,
-		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingForInstallation)},
+		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation)},
 		Condition:        If(UnPreparingtHostsExist),
 		DestinationState: stateswitch.State(models.ClusterStatusInsufficient),
 		PostTransition:   th.PostRefreshCluster(statusInfoUnpreparingHostExists),
@@ -177,7 +177,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType:   TransitionTypeRefreshStatus,
-		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingForInstallation)},
+		SourceStates:     []stateswitch.State{stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation)},
 		Condition:        stateswitch.Or(If(FailedPreparingtHostsExist), stateswitch.And(stateswitch.Not(If(UnPreparingtHostsExist)), If(ClusterPreparationFailed))),
 		DestinationState: stateswitch.State(models.ClusterStatusReady),
 		PostTransition:   th.PostRefreshCluster(statusInfoClusterFailedToPrepare),
@@ -186,7 +186,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 		},
 		Condition:        stateswitch.Not(th.IsInstalling),
 		DestinationState: stateswitch.State(models.ClusterStatusError),
@@ -197,7 +197,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 		},
 		Condition:        th.IsInstallationTimedOut,
 		DestinationState: stateswitch.State(models.ClusterStatusError),
@@ -218,18 +218,18 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 		},
 		Condition: stateswitch.And(
 			th.IsInstallingPendingUserAction,
 			th.IsInstalling),
-		DestinationState: stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+		DestinationState: stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 	})
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRefreshStatus,
 		SourceStates: []stateswitch.State{
-			stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+			stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 		},
 		Condition: stateswitch.And(
 			stateswitch.Not(th.IsInstallingPendingUserAction),
@@ -246,7 +246,7 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 		Condition: stateswitch.And(
 			th.IsInstalling,
 			th.IsInstallingPendingUserAction),
-		DestinationState: stateswitch.State(models.ClusterStatusInstallingPendingUserAction),
+		DestinationState: stateswitch.State(models.ClusterStatusInstallingDashPendingDashUserDashAction),
 		PostTransition:   th.PostRefreshCluster(statusInfoInstallingPendingUserAction),
 	})
 
@@ -324,12 +324,12 @@ func NewClusterStateMachine(th *transitionHandler) stateswitch.StateMachine {
 
 	// Noop transitions
 	for _, state := range []stateswitch.State{
-		stateswitch.State(models.ClusterStatusPreparingForInstallation),
+		stateswitch.State(models.ClusterStatusPreparingDashForDashInstallation),
 		stateswitch.State(models.ClusterStatusFinalizing),
 		stateswitch.State(models.ClusterStatusInstalled),
 		stateswitch.State(models.ClusterStatusError),
 		stateswitch.State(models.ClusterStatusCancelled),
-		stateswitch.State(models.ClusterStatusAddingHosts)} {
+		stateswitch.State(models.ClusterStatusAddingDashHosts)} {
 		sm.AddTransition(stateswitch.TransitionRule{
 			TransitionType:   TransitionTypeRefreshStatus,
 			SourceStates:     []stateswitch.State{state},
