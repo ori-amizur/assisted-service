@@ -33,6 +33,7 @@ type InfraEnv struct {
 
 	// created at
 	// Required: true
+	// Format: date-time
 	CreatedAt *timeext.Time `json:"created_at" gorm:"type:timestamp with time zone"`
 
 	// download url
@@ -76,7 +77,7 @@ type InfraEnv struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// proxy
-	Proxy *Proxy `json:"proxy,omitempty"`
+	Proxy *Proxy `json:"proxy,omitempty" gorm:"embedded;embeddedPrefix:proxy_"`
 
 	// True if the pull secret has been added to the cluster.
 	PullSecretSet bool `json:"pull_secret_set,omitempty"`
@@ -97,6 +98,7 @@ type InfraEnv struct {
 
 	// The last time that this infraenv was updated.
 	// Required: true
+	// Format: date-time
 	UpdatedAt *timeext.Time `json:"updated_at" gorm:"type:timestamp with time zone"`
 
 	// user name
@@ -171,8 +173,12 @@ func (m *InfraEnv) validateClusterID(formats strfmt.Registry) error {
 
 func (m *InfraEnv) validateCreatedAt(formats strfmt.Registry) error {
 
-	if m.CreatedAt == nil {
-		return errors.Required("created_at", "body", m.CreatedAt)
+	if err := validate.Required("created_at", "body", m.CreatedAt); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
 	}
 
 	return nil
@@ -318,8 +324,12 @@ func (m *InfraEnv) validateType(formats strfmt.Registry) error {
 
 func (m *InfraEnv) validateUpdatedAt(formats strfmt.Registry) error {
 
-	if m.UpdatedAt == nil {
-		return errors.Required("updated_at", "body", m.UpdatedAt)
+	if err := validate.Required("updated_at", "body", m.UpdatedAt); err != nil {
+		return err
+	}
+
+	if err := validate.FormatOf("updated_at", "body", "date-time", m.UpdatedAt.String(), formats); err != nil {
+		return err
 	}
 
 	return nil

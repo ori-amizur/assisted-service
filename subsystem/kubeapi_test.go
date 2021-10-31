@@ -1399,7 +1399,7 @@ var _ = Describe("[kube-api]cluster installation", func() {
 		By("Validate additional NTP settings.")
 		Expect(infraEnv.AdditionalNtpSources).Should(ContainSubstring("192.168.1.4"))
 		By("InfraEnv image type defaults to minimal-iso.")
-		Expect(infraEnv.Type).Should(Equal(models.ImageTypeMinimalIso))
+		Expect(infraEnv.Type).Should(Equal(models.ImageTypeMinimalDashIso))
 	})
 
 	It("deploy clusterDeployment and infraEnv with ignition override", func() {
@@ -1819,7 +1819,7 @@ var _ = Describe("[kube-api]cluster installation", func() {
 		By("Wait for Agent to be Known Unbound")
 		Eventually(func() bool {
 			agent := getAgentCRD(ctx, kubeClient, hostKey)
-			return agent.Status.DebugInfo.State == models.HostStatusKnownUnbound
+			return agent.Status.DebugInfo.State == models.HostStatusKnownDashUnbound
 		}, "1m", "10s").Should(BeTrue())
 
 		By("Bind Agent to invalid CD")
@@ -2183,7 +2183,7 @@ var _ = Describe("[kube-api]cluster installation", func() {
 		By("Wait for Agent to be Known Unbound")
 		Eventually(func() bool {
 			agent := getAgentCRD(ctx, kubeClient, hostKey)
-			return agent.Status.DebugInfo.State == models.HostStatusKnownUnbound
+			return agent.Status.DebugInfo.State == models.HostStatusKnownDashUnbound
 		}, "1m", "10s").Should(BeTrue())
 
 		By("Create SNO cluster")
@@ -2637,7 +2637,7 @@ var _ = Describe("[kube-api]cluster installation", func() {
 		cluster = getClusterFromDB(ctx, kubeClient, db, clusterKey, waitForReconcileTimeout)
 		Expect(cluster.ID.String()).Should(Equal(oldClusterID.String()))
 		Expect(*cluster.Kind).Should(Equal(models.ClusterKindAddHostsCluster))
-		Expect(*cluster.Status).Should(Equal(models.ClusterStatusAddingHosts))
+		Expect(*cluster.Status).Should(Equal(models.ClusterStatusAddingDashHosts))
 
 		By("Verify ClusterDeployment Agents were not deleted")
 		Eventually(func() int {
@@ -2773,7 +2773,7 @@ var _ = Describe("[kube-api]cluster installation", func() {
 		cluster = getClusterFromDB(ctx, kubeClient, db, clusterKey, waitForReconcileTimeout)
 		Expect(cluster.ID.String()).Should(Equal(oldClusterID.String()))
 		Expect(*cluster.Kind).Should(Equal(models.ClusterKindAddHostsCluster))
-		Expect(*cluster.Status).Should(Equal(models.ClusterStatusAddingHosts))
+		Expect(*cluster.Status).Should(Equal(models.ClusterStatusAddingDashHosts))
 
 		By("Check ACI Event URL exists")
 		Eventually(func() string {

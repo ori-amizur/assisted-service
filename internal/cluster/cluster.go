@@ -699,7 +699,7 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, clusterID strfmt.UU
 	var totalHostsDoneStages, totalHostsStages float64
 	for _, h := range cluster.Hosts {
 		stages := m.hostAPI.GetStagesByRole(h.Role, h.Bootstrap, isSno)
-		currentIndex := m.hostAPI.IndexOfStage(h.Progress.CurrentStage, stages)
+		currentIndex := m.hostAPI.IndexOfStage(common.HostStageValue(h.Progress.CurrentStage), stages)
 		totalHostsDoneStages += float64(currentIndex + 1)
 		totalHostsStages += float64(len(stages))
 	}

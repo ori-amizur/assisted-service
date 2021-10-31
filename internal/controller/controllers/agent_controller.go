@@ -297,8 +297,8 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 			agent.Status.ValidationsInfo = newValidationsInfo
 		}
 
-		if h.Progress != nil && h.Progress.CurrentStage != "" {
-			agent.Status.Progress.CurrentStage = h.Progress.CurrentStage
+		if h.Progress != nil && common.HostStageValue(h.Progress.CurrentStage) != "" {
+			agent.Status.Progress.CurrentStage = common.HostStageValue(h.Progress.CurrentStage)
 			agent.Status.Progress.ProgressInfo = h.Progress.ProgressInfo
 			stageStartTime := metav1.NewTime(time.Time(h.Progress.StageStartedAt))
 			agent.Status.Progress.StageStartTime = &stageStartTime

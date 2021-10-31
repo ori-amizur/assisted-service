@@ -809,7 +809,7 @@ func updateHostInstallProgress(ctx context.Context, cli *client.AssistedInstall)
 			ClusterID: strfmt.UUID(uuid.New().String()),
 			HostID:    strfmt.UUID(uuid.New().String()),
 			HostProgress: &models.HostProgress{
-				CurrentStage: models.HostStageStartingInstallation,
+				CurrentStage: common.HostStagePtr(models.HostStageStartingInstallation),
 			},
 		})
 	return err

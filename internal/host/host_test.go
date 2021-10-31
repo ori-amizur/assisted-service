@@ -319,7 +319,7 @@ var _ = Describe("update_progress", func() {
 
 		Context("positive stages", func() {
 			It("some_progress", func() {
-				progress.CurrentStage = common.TestDefaultConfig.HostProgressStage
+				progress.CurrentStage = common.HostStagePtr(common.TestDefaultConfig.HostProgressStage)
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 					eventstest.WithHostIdMatcher(host.ID.String()),
@@ -331,7 +331,7 @@ var _ = Describe("update_progress", func() {
 			})
 
 			It("same_value", func() {
-				progress.CurrentStage = common.TestDefaultConfig.HostProgressStage
+				progress.CurrentStage = common.HostStagePtr(common.TestDefaultConfig.HostProgressStage)
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 					eventstest.WithHostIdMatcher(host.ID.String()),
@@ -349,7 +349,7 @@ var _ = Describe("update_progress", func() {
 			})
 
 			It("writing to disk", func() {
-				progress.CurrentStage = models.HostStageWritingImageToDisk
+				progress.CurrentStage = common.HostStagePtr(models.HostStageWritingImageToDisk)
 				progress.ProgressInfo = "20%"
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -363,7 +363,7 @@ var _ = Describe("update_progress", func() {
 			})
 
 			It("done", func() {
-				progress.CurrentStage = models.HostStageDone
+				progress.CurrentStage = common.HostStagePtr(models.HostStageDone)
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 					eventstest.WithHostIdMatcher(host.ID.String()),
@@ -376,15 +376,15 @@ var _ = Describe("update_progress", func() {
 			})
 
 			AfterEach(func() {
-				Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
-				Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
+				Expect(*hostFromDB.StatusInfo).Should(Equal(string(common.HostStageValue(progress.CurrentStage))))
+				Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(common.HostStageValue(progress.CurrentStage)))
 				Expect(hostFromDB.Progress.ProgressInfo).Should(Equal(progress.ProgressInfo))
 			})
 		})
 
 		Context("Negative stages", func() {
 			It("progress_failed", func() {
-				progress.CurrentStage = models.HostStageFailed
+				progress.CurrentStage = common.HostStagePtr(models.HostStageFailed)
 				progress.ProgressInfo = "reason"
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -395,11 +395,11 @@ var _ = Describe("update_progress", func() {
 				hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 
 				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusError))
-				Expect(*hostFromDB.StatusInfo).Should(Equal(fmt.Sprintf("%s - %s", progress.CurrentStage, progress.ProgressInfo)))
+				Expect(*hostFromDB.StatusInfo).Should(Equal(fmt.Sprintf("%s - %s", common.HostStageValue(progress.CurrentStage), progress.ProgressInfo)))
 			})
 
 			It("progress_failed_empty_reason", func() {
-				progress.CurrentStage = models.HostStageFailed
+				progress.CurrentStage = common.HostStagePtr(models.HostStageFailed)
 				progress.ProgressInfo = ""
 				mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 					eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -409,12 +409,12 @@ var _ = Describe("update_progress", func() {
 				Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 				hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 				Expect(*hostFromDB.Status).Should(Equal(models.HostStatusError))
-				Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
+				Expect(*hostFromDB.StatusInfo).Should(Equal(string(common.HostStageValue(progress.CurrentStage))))
 			})
 
 			It("progress_failed_after_a_stage", func() {
 				By("Some stage", func() {
-					progress.CurrentStage = models.HostStageWritingImageToDisk
+					progress.CurrentStage = common.HostStagePtr(models.HostStageWritingImageToDisk)
 					progress.ProgressInfo = "20%"
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 						eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -424,15 +424,15 @@ var _ = Describe("update_progress", func() {
 					Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 					hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
-					Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
+					Expect(*hostFromDB.StatusInfo).Should(Equal(string(common.HostStageValue(progress.CurrentStage))))
 
-					Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
+					Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(common.HostStageValue(progress.CurrentStage)))
 					Expect(hostFromDB.Progress.ProgressInfo).Should(Equal(progress.ProgressInfo))
 				})
 
 				By("Failed", func() {
 					newProgress := models.HostProgress{
-						CurrentStage: models.HostStageFailed,
+						CurrentStage: common.HostStagePtr(models.HostStageFailed),
 						ProgressInfo: "reason",
 					}
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
@@ -443,9 +443,9 @@ var _ = Describe("update_progress", func() {
 					Expect(state.UpdateInstallProgress(ctx, &hostFromDB.Host, &newProgress)).ShouldNot(HaveOccurred())
 					hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusError))
-					Expect(*hostFromDB.StatusInfo).Should(Equal(fmt.Sprintf("%s - %s", newProgress.CurrentStage, newProgress.ProgressInfo)))
+					Expect(*hostFromDB.StatusInfo).Should(Equal(fmt.Sprintf("%s - %s", common.HostStageValue(newProgress.CurrentStage), newProgress.ProgressInfo)))
 
-					Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
+					Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(common.HostStageValue(progress.CurrentStage)))
 					Expect(hostFromDB.Progress.ProgressInfo).Should(Equal(progress.ProgressInfo))
 				})
 			})
@@ -456,14 +456,14 @@ var _ = Describe("update_progress", func() {
 				verifyDb := func() {
 					hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
-					Expect(*hostFromDB.StatusInfo).Should(Equal(string(progress.CurrentStage)))
+					Expect(*hostFromDB.StatusInfo).Should(Equal(string(common.HostStageValue(progress.CurrentStage))))
 
-					Expect(hostFromDB.Progress.CurrentStage).Should(Equal(progress.CurrentStage))
+					Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(common.HostStageValue(progress.CurrentStage)))
 					Expect(hostFromDB.Progress.ProgressInfo).Should(Equal(progress.ProgressInfo))
 				}
 
 				By("Some stage", func() {
-					progress.CurrentStage = models.HostStageWritingImageToDisk
+					progress.CurrentStage = common.HostStagePtr(models.HostStageWritingImageToDisk)
 					progress.ProgressInfo = "20%"
 					mockMetric.EXPECT().ReportHostInstallationMetrics(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
@@ -477,7 +477,7 @@ var _ = Describe("update_progress", func() {
 
 				By("Lower stage", func() {
 					newProgress := models.HostProgress{
-						CurrentStage: models.HostStageInstalling,
+						CurrentStage: common.HostStagePtr(models.HostStageInstalling),
 					}
 					mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 						eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
@@ -495,14 +495,14 @@ var _ = Describe("update_progress", func() {
 
 					Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstalled))
 					Expect(hostFromDB.StatusInfo).Should(BeNil())
-					Expect(hostFromDB.Progress.CurrentStage).Should(BeEmpty())
+					Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(BeEmpty())
 					Expect(hostFromDB.Progress.ProgressInfo).Should(BeEmpty())
 				}
 
 				Expect(db.Model(&host).Updates(map[string]interface{}{"status": swag.String(models.HostStatusInstalled)}).Error).To(Not(HaveOccurred()))
 				verifyDb()
 
-				progress.CurrentStage = models.HostStageRebooting
+				progress.CurrentStage = common.HostStagePtr(models.HostStageRebooting)
 				Expect(state.UpdateInstallProgress(ctx, &host, &progress)).Should(HaveOccurred())
 
 				verifyDb()
@@ -512,7 +512,7 @@ var _ = Describe("update_progress", func() {
 
 	It("invalid stage", func() {
 		Expect(state.UpdateInstallProgress(ctx, &host,
-			&models.HostProgress{CurrentStage: common.TestDefaultConfig.HostProgressStage})).Should(HaveOccurred())
+			&models.HostProgress{CurrentStage: common.HostStagePtr(common.TestDefaultConfig.HostProgressStage)})).Should(HaveOccurred())
 	})
 })
 
@@ -570,7 +570,7 @@ var _ = Describe("update progress special cases", func() {
 			cluster.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeNone)
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 
-			progress.CurrentStage = models.HostStageWaitingForBootkube
+			progress.CurrentStage = common.HostStagePtr(models.HostStageWaitingForBootkube)
 			mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 				eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 				eventstest.WithHostIdMatcher(host.ID.String()),
@@ -579,20 +579,20 @@ var _ = Describe("update progress special cases", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
-			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
+			Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(models.HostStageWaitingForBootkube))
 
-			progress.CurrentStage = models.HostStageWritingImageToDisk
+			progress.CurrentStage = common.HostStagePtr(models.HostStageWritingImageToDisk)
 			progress.ProgressInfo = "20%"
 			Expect(state.UpdateInstallProgress(ctx, &hostFromDB.Host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
-			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWritingImageToDisk))
+			Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(models.HostStageWritingImageToDisk))
 		})
 		It("Single node special stage order - not allowed", func() {
 			cluster := hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
 			cluster.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeNone)
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 
-			progress.CurrentStage = models.HostStageWaitingForBootkube
+			progress.CurrentStage = common.HostStagePtr(models.HostStageWaitingForBootkube)
 			mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 				eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 				eventstest.WithHostIdMatcher(host.ID.String()),
@@ -601,9 +601,9 @@ var _ = Describe("update progress special cases", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
-			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
+			Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(models.HostStageWaitingForBootkube))
 
-			progress.CurrentStage = models.HostStageInstalling
+			progress.CurrentStage = common.HostStagePtr(models.HostStageInstalling)
 			Expect(state.UpdateInstallProgress(ctx, &hostFromDB.Host, &progress)).Should(HaveOccurred())
 		})
 		It("multi node update should fail", func() {
@@ -611,7 +611,7 @@ var _ = Describe("update progress special cases", func() {
 			cluster.HighAvailabilityMode = swag.String(models.ClusterHighAvailabilityModeFull)
 			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 
-			progress.CurrentStage = models.HostStageWaitingForBootkube
+			progress.CurrentStage = common.HostStagePtr(models.HostStageWaitingForBootkube)
 			mockEvents.EXPECT().SendHostEvent(gomock.Any(), eventstest.NewEventMatcher(
 				eventstest.WithNameMatcher(eventgen.HostStatusUpdatedEventName),
 				eventstest.WithHostIdMatcher(host.ID.String()),
@@ -620,9 +620,9 @@ var _ = Describe("update progress special cases", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, &progress)).ShouldNot(HaveOccurred())
 			hostFromDB = hostutil.GetHostFromDB(*host.ID, host.InfraEnvID, db)
 			Expect(*hostFromDB.Status).Should(Equal(models.HostStatusInstallingDashInDashProgress))
-			Expect(hostFromDB.Progress.CurrentStage).Should(Equal(models.HostStageWaitingForBootkube))
+			Expect(common.HostStageValue(hostFromDB.Progress.CurrentStage)).Should(Equal(models.HostStageWaitingForBootkube))
 
-			progress.CurrentStage = models.HostStageWritingImageToDisk
+			progress.CurrentStage = common.HostStagePtr(models.HostStageWritingImageToDisk)
 			progress.ProgressInfo = "20%"
 			Expect(state.UpdateInstallProgress(ctx, &hostFromDB.Host, &progress)).Should(HaveOccurred())
 		})
@@ -837,7 +837,7 @@ var _ = Describe("reset host", func() {
 			Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
 			h = hostutil.GenerateTestHost(id, infraEnvId, clusterId, models.HostStatusResetting)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
-			h.Progress.CurrentStage = models.HostStageRebooting
+			h.Progress.CurrentStage = common.HostStagePtr(models.HostStageRebooting)
 			Expect(state.IsRequireUserActionReset(&h)).Should(Equal(true))
 			Expect(state.ResetPendingUserAction(ctx, &h, db)).ShouldNot(HaveOccurred())
 			db.First(&h, "id = ? and cluster_id = ?", h.ID, *h.ClusterID)
@@ -3226,7 +3226,7 @@ var _ = Describe("Installation stages", func() {
 
 		By("report first progress", func() {
 
-			newStage := models.HostStageStartingInstallation
+			newStage := common.HostStagePtr(models.HostStageStartingInstallation)
 
 			progress := models.HostProgress{
 				CurrentStage: newStage,
@@ -3242,13 +3242,13 @@ var _ = Describe("Installation stages", func() {
 
 			hFromDB := hostutil.GetHostFromDB(*h.ID, h.InfraEnvID, db)
 			h = hFromDB.Host
-			expectedInstallationPercentage := int64(float64(api.IndexOfStage(newStage, MasterStages[:])+1) / float64(len(MasterStages[:])) * 100)
+			expectedInstallationPercentage := int64(float64(api.IndexOfStage(common.HostStageValue(newStage), MasterStages[:])+1) / float64(len(MasterStages[:])) * 100)
 			Expect(h.Progress.InstallationPercentage).To(Equal(expectedInstallationPercentage))
 		})
 
 		By("report another progress", func() {
 
-			newStage := models.HostStageInstalling
+			newStage := common.HostStagePtr(models.HostStageInstalling)
 
 			progress := models.HostProgress{
 				CurrentStage: newStage,
@@ -3264,7 +3264,7 @@ var _ = Describe("Installation stages", func() {
 
 			hFromDB := hostutil.GetHostFromDB(*h.ID, h.InfraEnvID, db)
 			h = hFromDB.Host
-			expectedInstallationPercentage := int64(float64(api.IndexOfStage(newStage, MasterStages[:])+1) / float64(len(MasterStages[:])) * 100)
+			expectedInstallationPercentage := int64(float64(api.IndexOfStage(common.HostStageValue(newStage), MasterStages[:])+1) / float64(len(MasterStages[:])) * 100)
 			Expect(h.Progress.InstallationPercentage).To(Equal(expectedInstallationPercentage))
 		})
 	})
@@ -3279,7 +3279,7 @@ var _ = Describe("Installation stages", func() {
 
 		By("report first progress", func() {
 
-			newStage := models.HostStageStartingInstallation
+			newStage := common.HostStagePtr(models.HostStageStartingInstallation)
 			progress := models.HostProgress{
 				CurrentStage: newStage,
 			}
@@ -3300,7 +3300,7 @@ var _ = Describe("Installation stages", func() {
 
 		By("report second progress", func() {
 
-			newStage := models.HostStageInstalling
+			newStage := common.HostStagePtr(models.HostStageInstalling)
 			progress := models.HostProgress{
 				CurrentStage: newStage,
 			}
@@ -3321,7 +3321,7 @@ var _ = Describe("Installation stages", func() {
 
 		By("report third progress", func() {
 
-			newStage := models.HostStageWritingImageToDisk
+			newStage := common.HostStagePtr(models.HostStageWritingImageToDisk)
 			progress := models.HostProgress{
 				CurrentStage: newStage,
 			}
@@ -3342,7 +3342,7 @@ var _ = Describe("Installation stages", func() {
 
 		By("report last progress", func() {
 
-			newStage := models.HostStageRebooting
+			newStage := common.HostStagePtr(models.HostStageRebooting)
 			progress := models.HostProgress{
 				CurrentStage: newStage,
 			}

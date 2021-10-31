@@ -21,6 +21,7 @@ import (
 type ImageInfo struct {
 
 	// created at
+	// Format: date-time
 	CreatedAt timeext.Time `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
 
 	// download url
@@ -51,6 +52,10 @@ type ImageInfo struct {
 func (m *ImageInfo) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateExpiresAt(formats); err != nil {
 		res = append(res, err)
 	}
@@ -66,6 +71,18 @@ func (m *ImageInfo) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ImageInfo) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

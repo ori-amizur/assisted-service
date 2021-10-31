@@ -109,7 +109,7 @@ func PrepareTestDB(extrasSchemas ...interface{}) (*gorm.DB, string) {
 }
 
 func DeleteTestDB(db *gorm.DB, dbName string) {
-	Expect(CloseDB(db)).ToNot(HaveOccurred())
+	CloseDB(db)
 
 	db, err := openTopTestDBConn()
 	Expect(err).ShouldNot(HaveOccurred())

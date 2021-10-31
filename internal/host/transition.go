@@ -71,7 +71,7 @@ func (th *transitionHandler) PostRegisterHost(sw stateswitch.StateSwitch, args s
 		extra = append(extra, resetLogsField...)
 		var dbHost *common.Host
 		if dbHost, err = hostutil.UpdateHostProgress(params.ctx, log, params.db, th.eventsHandler, hostParam.InfraEnvID, *hostParam.ID, sHost.srcState,
-			swag.StringValue(hostParam.Status), statusInfoDiscovering, hostParam.Progress.CurrentStage, "", "", extra...); err != nil {
+			swag.StringValue(hostParam.Status), statusInfoDiscovering, common.HostStageValue(hostParam.Progress.CurrentStage), "", "", extra...); err != nil {
 			return err
 		} else {
 			sHost.host = &dbHost.Host
@@ -108,7 +108,7 @@ func (th *transitionHandler) IsHostInReboot(sw stateswitch.StateSwitch, _ states
 		return false, errors.New("IsInReboot incompatible type of StateSwitch")
 	}
 
-	return sHost.host.Progress.CurrentStage == models.HostStageRebooting, nil
+	return common.HostStageValue(sHost.host.Progress.CurrentStage) == models.HostStageRebooting, nil
 }
 
 func (th *transitionHandler) IsHostInDone(sw stateswitch.StateSwitch, _ stateswitch.TransitionArgs) (bool, error) {
@@ -117,7 +117,7 @@ func (th *transitionHandler) IsHostInDone(sw stateswitch.StateSwitch, _ stateswi
 		return false, errors.New("IsInDone incompatible type of StateSwitch")
 	}
 
-	return sHost.host.Progress.CurrentStage == models.HostStageDone, nil
+	return common.HostStageValue(sHost.host.Progress.CurrentStage) == models.HostStageDone, nil
 }
 
 func (th *transitionHandler) PostRegisterDuringReboot(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) error {
@@ -565,11 +565,11 @@ func (th *transitionHandler) HasInstallationInProgressTimedOut(sw stateswitch.St
 	if !ok {
 		return false, errors.New("HasInstallationInProgressTimedOut incompatible type of StateSwitch")
 	}
-	maxDuration, ok := InstallationProgressTimeout[sHost.host.Progress.CurrentStage]
+	maxDuration, ok := InstallationProgressTimeout[common.HostStageValue(sHost.host.Progress.CurrentStage)]
 	if !ok {
 		maxDuration = InstallationProgressTimeout["DEFAULT"]
 	}
-	if sHost.host.Progress.CurrentStage == models.HostStageRebooting {
+	if common.HostStageValue(sHost.host.Progress.CurrentStage) == models.HostStageRebooting {
 		if hostutil.IsSingleNode(th.log, th.db, sHost.host) {
 			// use extended reboot timeout for SNO
 			maxDuration = singleNodeRebootTimeout
@@ -595,12 +595,12 @@ func (th *transitionHandler) PostRefreshHost(reason string) stateswitch.PostTran
 		var (
 			err error
 		)
-		if sHost.host.Progress.CurrentStage == models.HostStageWritingImageToDisk &&
+		if common.HostStageValue(sHost.host.Progress.CurrentStage) == models.HostStageWritingImageToDisk &&
 			reason == statusInfoInstallationInProgressTimedOut {
 			template = statusInfoInstallationInProgressWritingImageToDiskTimedOut
 		}
-		template = strings.Replace(template, "$STAGE", string(sHost.host.Progress.CurrentStage), 1)
-		template = strings.Replace(template, "$MAX_TIME", InstallationProgressTimeout[sHost.host.Progress.CurrentStage].String(), 1)
+		template = strings.Replace(template, "$STAGE", string(common.HostStageValue(sHost.host.Progress.CurrentStage)), 1)
+		template = strings.Replace(template, "$MAX_TIME", InstallationProgressTimeout[common.HostStageValue(sHost.host.Progress.CurrentStage)].String(), 1)
 		if strings.Contains(template, "$INSTALLATION_DISK") {
 			var installationDisk *models.Disk
 			installationDisk, err = hostutil.GetHostInstallationDisk(sHost.host)
@@ -657,7 +657,7 @@ func (th *transitionHandler) HostNotResponsiveWhileInstallation(sw stateswitch.S
 	if !ok {
 		return false, errors.New("HostNotResponsiveWhileInstallation incompatible type of StateSwitch")
 	}
-	return funk.Contains(disconnectionValidationStages, sHost.host.Progress.CurrentStage) && !hostIsResponsive(sHost.host), nil
+	return funk.Contains(disconnectionValidationStages, common.HostStageValue(sHost.host.Progress.CurrentStage)) && !hostIsResponsive(sHost.host), nil
 }
 
 func getFailedValidations(params *TransitionArgsRefreshHost) []string {

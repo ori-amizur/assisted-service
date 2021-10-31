@@ -52,7 +52,7 @@ var _ = Describe("Day2 cluster tests", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		// in order to simulate infra env generation
-		generateClusterISO(*cluster.GetPayload().ID, models.ImageTypeMinimalIso)
+		generateClusterISO(*cluster.GetPayload().ID, models.ImageTypeMinimalDashIso)
 	})
 
 	JustBeforeEach(func() {
@@ -144,13 +144,13 @@ var _ = Describe("Day2 cluster tests", func() {
 		generateDomainResolution(ctx, h, "test-cluster", "")
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h)
 		steps = getNextSteps(clusterID, *host.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck}, 2)
 
 		By("checking known state state - one host, no connectivity check")
 		generateApiVipPostStepReply(ctx, h, true)
 		waitForHostState(ctx, clusterID, "known", 60*time.Second, h)
 		steps = getNextSteps(clusterID, *host.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeAPIVipConnectivityCheck}, 1)
+		checkStepsInList(steps, []models.StepType{models.StepTypeAPIDashVipDashConnectivityDashCheck}, 1)
 	})
 
 	It("check host states - two nodes", func() {
@@ -175,7 +175,7 @@ var _ = Describe("Day2 cluster tests", func() {
 		generateConnectivityCheckPostStepReply(ctx, h2, ips[0], true)
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h2)
 		steps = getNextSteps(clusterID, *h2.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck}, 2)
 
 		By("checking insufficient state state")
 		generateEssentialHostSteps(ctx, h1, "h1host", ips[0])
@@ -183,13 +183,13 @@ var _ = Describe("Day2 cluster tests", func() {
 		generateDomainResolution(ctx, h1, "test-cluster", "")
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h1)
 		steps = getNextSteps(clusterID, *h1.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck, models.StepTypeConnectivityCheck}, 3)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck, models.StepTypeConnectivityDashCheck}, 3)
 
 		By("checking known state state")
 		generateApiVipPostStepReply(ctx, h1, true)
 		waitForHostState(ctx, clusterID, "known", 60*time.Second, h1)
 		steps = getNextSteps(clusterID, *h1.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeAPIVipConnectivityCheck, models.StepTypeConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeAPIDashVipDashConnectivityDashCheck, models.StepTypeConnectivityDashCheck}, 2)
 	})
 
 	It("check installation - one node", func() {
@@ -303,10 +303,10 @@ var _ = Describe("Day2 cluster tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		h1 = getHost(clusterID, *h1.ID)
 		Expect(*h1.Status).Should(Equal("insufficient"))
-		Expect(h1.Role).Should(Equal(models.HostRoleAutoAssign))
+		Expect(h1.Role).Should(Equal(models.HostRoleAutoDashAssign))
 		h2 = getHost(clusterID, *h2.ID)
 		Expect(*h2.Status).Should(Equal("insufficient"))
-		Expect(h2.Role).Should(Equal(models.HostRoleAutoAssign))
+		Expect(h2.Role).Should(Equal(models.HostRoleAutoDashAssign))
 
 		c := getCluster(clusterID)
 		Expect(*c.Status).Should(Equal("adding-hosts"))
@@ -487,7 +487,7 @@ var _ = Describe("[V2UpdateCluster] Day2 cluster tests", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		// in order to simulate infra env generation
-		generateClusterISO(*cluster.GetPayload().ID, models.ImageTypeMinimalIso)
+		generateClusterISO(*cluster.GetPayload().ID, models.ImageTypeMinimalDashIso)
 	})
 
 	JustBeforeEach(func() {
@@ -539,13 +539,13 @@ var _ = Describe("[V2UpdateCluster] Day2 cluster tests", func() {
 		generateDomainResolution(ctx, h, "test-cluster", "")
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h)
 		steps = getNextSteps(clusterID, *host.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck}, 2)
 
 		By("checking known state state - one host, no connectivity check")
 		generateApiVipPostStepReply(ctx, h, true)
 		waitForHostState(ctx, clusterID, "known", 60*time.Second, h)
 		steps = getNextSteps(clusterID, *host.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeAPIVipConnectivityCheck}, 1)
+		checkStepsInList(steps, []models.StepType{models.StepTypeAPIDashVipDashConnectivityDashCheck}, 1)
 	})
 
 	It("check host states - two nodes", func() {
@@ -570,7 +570,7 @@ var _ = Describe("[V2UpdateCluster] Day2 cluster tests", func() {
 		generateConnectivityCheckPostStepReply(ctx, h2, ips[0], true)
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h2)
 		steps = getNextSteps(clusterID, *h2.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck}, 2)
 
 		By("checking insufficient state state")
 		generateEssentialHostSteps(ctx, h1, "h1host", ips[0])
@@ -578,13 +578,13 @@ var _ = Describe("[V2UpdateCluster] Day2 cluster tests", func() {
 		generateDomainResolution(ctx, h1, "test-cluster", "")
 		waitForHostState(ctx, clusterID, "insufficient", 60*time.Second, h1)
 		steps = getNextSteps(clusterID, *h1.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIVipConnectivityCheck, models.StepTypeConnectivityCheck}, 3)
+		checkStepsInList(steps, []models.StepType{models.StepTypeInventory, models.StepTypeAPIDashVipDashConnectivityDashCheck, models.StepTypeConnectivityDashCheck}, 3)
 
 		By("checking known state state")
 		generateApiVipPostStepReply(ctx, h1, true)
 		waitForHostState(ctx, clusterID, "known", 60*time.Second, h1)
 		steps = getNextSteps(clusterID, *h1.ID)
-		checkStepsInList(steps, []models.StepType{models.StepTypeAPIVipConnectivityCheck, models.StepTypeConnectivityCheck}, 2)
+		checkStepsInList(steps, []models.StepType{models.StepTypeAPIDashVipDashConnectivityDashCheck, models.StepTypeConnectivityDashCheck}, 2)
 	})
 
 	It("check installation - one node", func() {
@@ -698,10 +698,10 @@ var _ = Describe("[V2UpdateCluster] Day2 cluster tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		h1 = getHost(clusterID, *h1.ID)
 		Expect(*h1.Status).Should(Equal("insufficient"))
-		Expect(h1.Role).Should(Equal(models.HostRoleAutoAssign))
+		Expect(h1.Role).Should(Equal(models.HostRoleAutoDashAssign))
 		h2 = getHost(clusterID, *h2.ID)
 		Expect(*h2.Status).Should(Equal("insufficient"))
-		Expect(h2.Role).Should(Equal(models.HostRoleAutoAssign))
+		Expect(h2.Role).Should(Equal(models.HostRoleAutoDashAssign))
 
 		c := getCluster(clusterID)
 		Expect(*c.Status).Should(Equal("adding-hosts"))
@@ -885,7 +885,7 @@ var _ = Describe("Installation progress", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			// in order to simulate infra env generation
-			generateClusterISO(*c.ID, models.ImageTypeMinimalIso)
+			generateClusterISO(*c.ID, models.ImageTypeMinimalDashIso)
 
 			// add day2 host
 
@@ -943,7 +943,7 @@ var _ = Describe("Installation progress", func() {
 
 			updateProgress(*c.Hosts[0].ID, *c.ID, models.HostStageRebooting)
 			c = getCluster(*c.ID)
-			Expect(*c.Hosts[0].Status).Should(Equal(models.HostStatusAddedToExistingCluster))
+			Expect(*c.Hosts[0].Status).Should(Equal(models.HostStatusAddedDashToDashExistingDashCluster))
 			Expect(c.Hosts[0].Progress.InstallationPercentage).To(Equal(int64(100)))
 			expectProgressToBe(c, 0, 0, 0)
 		})
@@ -974,7 +974,7 @@ var _ = Describe("Installation progress", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			// in order to simulate infra env generation
-			generateClusterISO(*c.ID, models.ImageTypeMinimalIso)
+			generateClusterISO(*c.ID, models.ImageTypeMinimalDashIso)
 
 			// add day2 host
 
@@ -1027,7 +1027,7 @@ var _ = Describe("Installation progress", func() {
 
 			updateProgress(*c.Hosts[0].ID, *c.ID, models.HostStageRebooting)
 			c = getCluster(*c.ID)
-			Expect(*c.Hosts[0].Status).Should(Equal(models.HostStatusAddedToExistingCluster))
+			Expect(*c.Hosts[0].Status).Should(Equal(models.HostStatusAddedDashToDashExistingDashCluster))
 			Expect(c.Hosts[0].Progress.InstallationPercentage).To(Equal(int64(100)))
 		})
 	})

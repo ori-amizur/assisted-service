@@ -191,7 +191,7 @@ func updateHostLogProgress(clusterID strfmt.UUID, hostID strfmt.UUID, progress m
 		ClusterID: clusterID,
 		HostID:    hostID,
 		LogsProgressParams: &models.LogsProgressParams{
-			LogsState: progress,
+			LogsState: common.LogStatePtr(progress),
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -204,7 +204,7 @@ func updateClusterLogProgress(clusterID strfmt.UUID, progress models.LogsState) 
 	updateReply, err := agentBMClient.Installer.UpdateClusterLogsProgress(ctx, &installer.UpdateClusterLogsProgressParams{
 		ClusterID: clusterID,
 		LogsProgressParams: &models.LogsProgressParams{
-			LogsState: progress,
+			LogsState: common.LogStatePtr(progress),
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -219,7 +219,7 @@ func updateProgressWithInfo(hostID strfmt.UUID, clusterID strfmt.UUID, current_s
 	ctx := context.Background()
 
 	installProgress := &models.HostProgress{
-		CurrentStage: current_step,
+		CurrentStage: common.HostStagePtr(current_step),
 		ProgressInfo: info,
 	}
 	updateReply, err := agentBMClient.Installer.V2UpdateHostInstallProgress(ctx, &installer.V2UpdateHostInstallProgressParams{
@@ -264,8 +264,8 @@ func generateConnectivityCheckPostStepReply(ctx context.Context, h *models.Host,
 		Reply: &models.StepReply{
 			ExitCode: 0,
 			Output:   string(bytes),
-			StepID:   string(models.StepTypeConnectivityCheck),
-			StepType: models.StepTypeConnectivityCheck,
+			StepID:   string(models.StepTypeConnectivityDashCheck),
+			StepType: models.StepTypeConnectivityDashCheck,
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -284,8 +284,8 @@ func generateNTPPostStepReply(ctx context.Context, h *models.Host, ntpSources []
 		Reply: &models.StepReply{
 			ExitCode: 0,
 			Output:   string(bytes),
-			StepID:   string(models.StepTypeNtpSynchronizer),
-			StepType: models.StepTypeNtpSynchronizer,
+			StepID:   string(models.StepTypeNtpDashSynchronizer),
+			StepType: models.StepTypeNtpDashSynchronizer,
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -302,7 +302,7 @@ func generateApiVipPostStepReply(ctx context.Context, h *models.Host, success bo
 		HostID:     *h.ID,
 		Reply: &models.StepReply{
 			ExitCode: 0,
-			StepType: models.StepTypeAPIVipConnectivityCheck,
+			StepType: models.StepTypeAPIDashVipDashConnectivityDashCheck,
 			Output:   string(bytes),
 			StepID:   "apivip-connectivity-check-step",
 		},
@@ -323,8 +323,8 @@ func generateContainerImageAvailabilityPostStepReply(ctx context.Context, h *mod
 		Reply: &models.StepReply{
 			ExitCode: 0,
 			Output:   string(bytes),
-			StepID:   string(models.StepTypeContainerImageAvailability),
-			StepType: models.StepTypeContainerImageAvailability,
+			StepID:   string(models.StepTypeContainerDashImageDashAvailability),
+			StepType: models.StepTypeContainerDashImageDashAvailability,
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -376,8 +376,8 @@ func generateFAPostStepReply(ctx context.Context, h *models.Host, freeAddresses 
 		Reply: &models.StepReply{
 			ExitCode: 0,
 			Output:   string(fa),
-			StepID:   string(models.StepTypeFreeNetworkAddresses),
-			StepType: models.StepTypeFreeNetworkAddresses,
+			StepID:   string(models.StepTypeFreeDashNetworkDashAddresses),
+			StepType: models.StepTypeFreeDashNetworkDashAddresses,
 		},
 	})
 	Expect(err).To(BeNil())
@@ -396,8 +396,8 @@ func generateDiskSpeedChekResponse(ctx context.Context, h *models.Host, path str
 		Reply: &models.StepReply{
 			ExitCode: exitCode,
 			Output:   string(b),
-			StepID:   string(models.StepTypeInstallationDiskSpeedCheck),
-			StepType: models.StepTypeInstallationDiskSpeedCheck,
+			StepID:   string(models.StepTypeInstallationDashDiskDashSpeedDashCheck),
+			StepType: models.StepTypeInstallationDashDiskDashSpeedDashCheck,
 		},
 	})
 	Expect(err).ShouldNot(HaveOccurred())
@@ -424,8 +424,8 @@ func generateDomainNameResolutionReply(ctx context.Context, h *models.Host, doma
 		Reply: &models.StepReply{
 			ExitCode: 0,
 			Output:   string(dnsResolotion),
-			StepID:   string(models.StepTypeDomainResolution),
-			StepType: models.StepTypeDomainResolution,
+			StepID:   string(models.StepTypeDomainDashResolution),
+			StepType: models.StepTypeDomainDashResolution,
 		},
 	})
 	Expect(err).To(BeNil())

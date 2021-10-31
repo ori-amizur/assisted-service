@@ -24,7 +24,7 @@ type Platform struct {
 	Type *PlatformType `json:"type"`
 
 	// vsphere
-	Vsphere *VspherePlatform `json:"vsphere,omitempty"`
+	Vsphere *VspherePlatform `json:"vsphere,omitempty" gorm:"embedded;embeddedPrefix:vsphere_"`
 }
 
 // Validate validates this platform

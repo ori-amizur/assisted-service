@@ -350,7 +350,7 @@ var _ = Describe("Metrics tests", func() {
 		clusterID, err = registerCluster(ctx, userBMClient, "test-cluster", pullSecret)
 		Expect(err).NotTo(HaveOccurred())
 		// in order to simulate infra env generation
-		generateClusterISO(clusterID, models.ImageTypeMinimalIso)
+		generateClusterISO(clusterID, models.ImageTypeMinimalDashIso)
 	})
 
 	AfterEach(func() {
@@ -466,7 +466,7 @@ var _ = Describe("Metrics tests", func() {
 			err := db.Model(h).UpdateColumns(&models.Host{
 				CheckedInAt: strfmt.DateTime(checkedInAt),
 				Progress: &models.HostProgressInfo{
-					CurrentStage: models.HostStageRebooting,
+					CurrentStage: common.HostStagePtr(models.HostStageRebooting),
 				},
 			}).Error
 			Expect(err).NotTo(HaveOccurred())
@@ -500,29 +500,29 @@ var _ = Describe("Metrics tests", func() {
 			// for the host and at a later time loose it, therefore this case isn't tested and we directly
 			// test the validation failure
 
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHasInventory), hostValidationFailedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHasDashInventory), hostValidationFailedMetric)
 
 			// create a validation failure
 			h := &registerHost(clusterID).Host
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHasInventory)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHasDashInventory)
 
 			// check generated metrics
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasInventory), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashInventory), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'has-inventory' got fixed", func() {
 
 			// create a validation failure
 			h := &registerHost(clusterID).Host
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHasInventory)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHasDashInventory)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h, validHwInfo, "master-0")
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHasInventory)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHasDashInventory)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasInventory, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashInventory, false)
 		})
 
 		It("'has-min-hw-capacity' failed", func() {
@@ -532,23 +532,23 @@ var _ = Describe("Metrics tests", func() {
 			err := db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventory(), Status: &hostStatusInsufficient}).Error
 			Expect(err).NotTo(HaveOccurred())
 			waitForHostValidationStatus(clusterID, *h.ID, "success",
-				models.HostValidationIDHasMinCPUCores,
-				models.HostValidationIDHasMinMemory,
-				models.HostValidationIDValidPlatformNetworkSettings,
-				models.HostValidationIDHasCPUCoresForRole,
-				models.HostValidationIDHasMemoryForRole)
+				models.HostValidationIDHasDashMinDashCPUDashCores,
+				models.HostValidationIDHasDashMinDashMemory,
+				models.HostValidationIDValidDashPlatformDashNetworkDashSettings,
+				models.HostValidationIDHasDashCPUDashCoresDashForDashRole,
+				models.HostValidationIDHasDashMemoryDashForDashRole)
 
-			oldChangedMetricCounterHasMinCPUCores := getValidationMetricCounter(string(models.HostValidationIDHasMinCPUCores), hostValidationChangedMetric)
-			oldChangedMetricCounterHasMinMemory := getValidationMetricCounter(string(models.HostValidationIDHasMinMemory), hostValidationChangedMetric)
-			oldChangedMetricCounterValidPlatform := getValidationMetricCounter(string(models.HostValidationIDValidPlatformNetworkSettings), hostValidationChangedMetric)
-			oldChangedMetricCounterHasCPUCoresForRole := getValidationMetricCounter(string(models.HostValidationIDHasCPUCoresForRole), hostValidationChangedMetric)
-			oldChangedMetricCounterHasMemoryForRole := getValidationMetricCounter(string(models.HostValidationIDHasMemoryForRole), hostValidationChangedMetric)
+			oldChangedMetricCounterHasMinCPUCores := getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashCPUDashCores), hostValidationChangedMetric)
+			oldChangedMetricCounterHasMinMemory := getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashMemory), hostValidationChangedMetric)
+			oldChangedMetricCounterValidPlatform := getValidationMetricCounter(string(models.HostValidationIDValidDashPlatformDashNetworkDashSettings), hostValidationChangedMetric)
+			oldChangedMetricCounterHasCPUCoresForRole := getValidationMetricCounter(string(models.HostValidationIDHasDashCPUDashCoresDashForDashRole), hostValidationChangedMetric)
+			oldChangedMetricCounterHasMemoryForRole := getValidationMetricCounter(string(models.HostValidationIDHasDashMemoryDashForDashRole), hostValidationChangedMetric)
 
-			oldFailedMetricCounterHasMinCPUCores := getValidationMetricCounter(string(models.HostValidationIDHasMinCPUCores), hostValidationFailedMetric)
-			oldFailedMetricCounterHasMinMemroy := getValidationMetricCounter(string(models.HostValidationIDHasMinMemory), hostValidationFailedMetric)
-			oldFailedMetricCounterValidPlatform := getValidationMetricCounter(string(models.HostValidationIDValidPlatformNetworkSettings), hostValidationFailedMetric)
-			oldFailedMetricCounterHasCPUCoresForRole := getValidationMetricCounter(string(models.HostValidationIDHasCPUCoresForRole), hostValidationFailedMetric)
-			oldFailedMetricCounterHasMemoryForRole := getValidationMetricCounter(string(models.HostValidationIDHasMemoryForRole), hostValidationFailedMetric)
+			oldFailedMetricCounterHasMinCPUCores := getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashCPUDashCores), hostValidationFailedMetric)
+			oldFailedMetricCounterHasMinMemroy := getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashMemory), hostValidationFailedMetric)
+			oldFailedMetricCounterValidPlatform := getValidationMetricCounter(string(models.HostValidationIDValidDashPlatformDashNetworkDashSettings), hostValidationFailedMetric)
+			oldFailedMetricCounterHasCPUCoresForRole := getValidationMetricCounter(string(models.HostValidationIDHasDashCPUDashCoresDashForDashRole), hostValidationFailedMetric)
+			oldFailedMetricCounterHasMemoryForRole := getValidationMetricCounter(string(models.HostValidationIDHasDashMemoryDashForDashRole), hostValidationFailedMetric)
 
 			// create a validation failure
 			nonValidInventory := &models.Inventory{
@@ -561,31 +561,31 @@ var _ = Describe("Metrics tests", func() {
 			}
 			generateHWPostStepReply(ctx, h, nonValidInventory, "master-0")
 			waitForHostValidationStatus(clusterID, *h.ID, "failure",
-				models.HostValidationIDHasMinCPUCores,
-				models.HostValidationIDHasMinMemory,
-				models.HostValidationIDValidPlatformNetworkSettings,
-				models.HostValidationIDHasCPUCoresForRole,
-				models.HostValidationIDHasMemoryForRole)
+				models.HostValidationIDHasDashMinDashCPUDashCores,
+				models.HostValidationIDHasDashMinDashMemory,
+				models.HostValidationIDValidDashPlatformDashNetworkDashSettings,
+				models.HostValidationIDHasDashCPUDashCoresDashForDashRole,
+				models.HostValidationIDHasDashMemoryDashForDashRole)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMinCPUCores, true)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMinMemory, true)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDValidPlatformNetworkSettings, true)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasCPUCoresForRole, true)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMemoryForRole, true)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMinDashCPUDashCores, true)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMinDashMemory, true)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDValidDashPlatformDashNetworkDashSettings, true)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashCPUDashCoresDashForDashRole, true)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMemoryDashForDashRole, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMinCPUCores), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMinCPUCores + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMinMemory), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMinMemory + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDValidPlatformNetworkSettings), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterValidPlatform + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasCPUCoresForRole), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasCPUCoresForRole + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMemoryForRole), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMemoryForRole + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashCPUDashCores), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMinCPUCores + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashMemory), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMinMemory + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDValidDashPlatformDashNetworkDashSettings), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterValidPlatform + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashCPUDashCoresDashForDashRole), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasCPUCoresForRole + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMemoryDashForDashRole), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounterHasMemoryForRole + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMinCPUCores), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMinCPUCores + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMinMemory), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMinMemroy + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDValidPlatformNetworkSettings), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterValidPlatform + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasCPUCoresForRole), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasCPUCoresForRole + 1))
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHasMemoryForRole), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMemoryForRole + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashCPUDashCores), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMinCPUCores + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMinDashMemory), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMinMemroy + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDValidDashPlatformDashNetworkDashSettings), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterValidPlatform + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashCPUDashCoresDashForDashRole), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasCPUCoresForRole + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHasDashMemoryDashForDashRole), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounterHasMemoryForRole + 1))
 
 		})
 
@@ -603,27 +603,27 @@ var _ = Describe("Metrics tests", func() {
 			}
 			generateHWPostStepReply(ctx, h, nonValidInventory, "master-0")
 			waitForHostValidationStatus(clusterID, *h.ID, "failure",
-				models.HostValidationIDHasMinCPUCores,
-				models.HostValidationIDHasMinMemory,
-				models.HostValidationIDValidPlatformNetworkSettings,
-				models.HostValidationIDHasCPUCoresForRole,
-				models.HostValidationIDHasMemoryForRole)
+				models.HostValidationIDHasDashMinDashCPUDashCores,
+				models.HostValidationIDHasDashMinDashMemory,
+				models.HostValidationIDValidDashPlatformDashNetworkDashSettings,
+				models.HostValidationIDHasDashCPUDashCoresDashForDashRole,
+				models.HostValidationIDHasDashMemoryDashForDashRole)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h, validHwInfo, "master-0")
 			waitForHostValidationStatus(clusterID, *h.ID, "success",
-				models.HostValidationIDHasMinCPUCores,
-				models.HostValidationIDHasMinMemory,
-				models.HostValidationIDValidPlatformNetworkSettings,
-				models.HostValidationIDHasCPUCoresForRole,
-				models.HostValidationIDHasMemoryForRole)
+				models.HostValidationIDHasDashMinDashCPUDashCores,
+				models.HostValidationIDHasDashMinDashMemory,
+				models.HostValidationIDValidDashPlatformDashNetworkDashSettings,
+				models.HostValidationIDHasDashCPUDashCoresDashForDashRole,
+				models.HostValidationIDHasDashMemoryDashForDashRole)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMinCPUCores, false)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMinMemory, false)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDValidPlatformNetworkSettings, false)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasCPUCoresForRole, false)
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasMemoryForRole, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMinDashCPUDashCores, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMinDashMemory, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDValidDashPlatformDashNetworkDashSettings, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashCPUDashCoresDashForDashRole, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHasDashMemoryDashForDashRole, false)
 		})
 
 		It("'machine-cidr-defined' failed", func() {
@@ -632,29 +632,29 @@ var _ = Describe("Metrics tests", func() {
 			// for the host and at a later time loose it, therefore this case isn't tested and we directly
 			// test the validation failure
 
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDMachineCidrDefined), hostValidationFailedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDMachineDashCidrDashDefined), hostValidationFailedMetric)
 
 			// create a validation failure
 			h := &registerHost(clusterID).Host
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDMachineCidrDefined)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDMachineDashCidrDashDefined)
 
 			// check generated metrics
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDMachineCidrDefined), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDMachineDashCidrDashDefined), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'machine-cidr-defined' got fixed", func() {
 
 			// create a validation failure
 			h := &registerHost(clusterID).Host
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDMachineCidrDefined)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDMachineDashCidrDashDefined)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h, validHwInfo, "master-0")
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDMachineCidrDefined)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDMachineDashCidrDashDefined)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDMachineCidrDefined, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDMachineDashCidrDashDefined, false)
 		})
 
 		It("'hostname-unique' failed", func() {
@@ -664,26 +664,26 @@ var _ = Describe("Metrics tests", func() {
 			h2 := &registerHost(clusterID).Host
 			generateHWPostStepReply(ctx, h1, validHwInfo, "master-0")
 			generateHWPostStepReply(ctx, h2, validHwInfo, "master-1")
-			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDHostnameUnique)
-			waitForHostValidationStatus(clusterID, *h2.ID, "success", models.HostValidationIDHostnameUnique)
+			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDHostnameDashUnique)
+			waitForHostValidationStatus(clusterID, *h2.ID, "success", models.HostValidationIDHostnameDashUnique)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameUnique), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameUnique), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameDashUnique), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameDashUnique), hostValidationFailedMetric)
 
 			// create a validation failure
 			generateHWPostStepReply(ctx, h1, validHwInfo, "nonUniqName")
 			generateHWPostStepReply(ctx, h2, validHwInfo, "nonUniqName")
-			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDHostnameUnique)
-			waitForHostValidationStatus(clusterID, *h2.ID, "failure", models.HostValidationIDHostnameUnique)
+			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDHostnameDashUnique)
+			waitForHostValidationStatus(clusterID, *h2.ID, "failure", models.HostValidationIDHostnameDashUnique)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "nonUniqName", models.HostValidationIDHostnameUnique, true)
-			assertHostValidationEvent(ctx, clusterID, "nonUniqName", models.HostValidationIDHostnameUnique, true)
+			assertHostValidationEvent(ctx, clusterID, "nonUniqName", models.HostValidationIDHostnameDashUnique, true)
+			assertHostValidationEvent(ctx, clusterID, "nonUniqName", models.HostValidationIDHostnameDashUnique, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameUnique), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 2))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameDashUnique), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 2))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameUnique), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 2))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameDashUnique), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 2))
 		})
 
 		It("'hostname-unique' got fixed", func() {
@@ -693,17 +693,17 @@ var _ = Describe("Metrics tests", func() {
 			h2 := &registerHost(clusterID).Host
 			generateHWPostStepReply(ctx, h1, validHwInfo, "master-0")
 			generateHWPostStepReply(ctx, h2, validHwInfo, "master-0")
-			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDHostnameUnique)
-			waitForHostValidationStatus(clusterID, *h2.ID, "failure", models.HostValidationIDHostnameUnique)
+			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDHostnameDashUnique)
+			waitForHostValidationStatus(clusterID, *h2.ID, "failure", models.HostValidationIDHostnameDashUnique)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h2, validHwInfo, "master-1")
-			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDHostnameUnique)
-			waitForHostValidationStatus(clusterID, *h2.ID, "success", models.HostValidationIDHostnameUnique)
+			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDHostnameDashUnique)
+			waitForHostValidationStatus(clusterID, *h2.ID, "success", models.HostValidationIDHostnameDashUnique)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHostnameUnique, false)
-			assertHostValidationEvent(ctx, clusterID, "master-1", models.HostValidationIDHostnameUnique, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHostnameDashUnique, false)
+			assertHostValidationEvent(ctx, clusterID, "master-1", models.HostValidationIDHostnameDashUnique, false)
 		})
 
 		It("'hostname-valid' failed", func() {
@@ -711,23 +711,23 @@ var _ = Describe("Metrics tests", func() {
 			// create a validation success
 			h := &registerHost(clusterID).Host
 			generateHWPostStepReply(ctx, h, validHwInfo, "master-0")
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHostnameValid)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHostnameDashValid)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameValid), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameValid), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameDashValid), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDHostnameDashValid), hostValidationFailedMetric)
 
 			// create a validation failure
 			// 'localhost' is a forbidden host name
 			generateHWPostStepReply(ctx, h, validHwInfo, "localhost")
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHostnameValid)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHostnameDashValid)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "localhost", models.HostValidationIDHostnameValid, true)
+			assertHostValidationEvent(ctx, clusterID, "localhost", models.HostValidationIDHostnameDashValid, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameValid), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameDashValid), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameValid), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDHostnameDashValid), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'hostname-valid' got fixed", func() {
@@ -736,14 +736,14 @@ var _ = Describe("Metrics tests", func() {
 			h := &registerHost(clusterID).Host
 			// 'localhost' is a forbidden host name
 			generateHWPostStepReply(ctx, h, validHwInfo, "localhost")
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHostnameValid)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDHostnameDashValid)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h, validHwInfo, "master-0")
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHostnameValid)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDHostnameDashValid)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHostnameValid, false)
+			assertHostValidationEvent(ctx, clusterID, "master-0", models.HostValidationIDHostnameDashValid, false)
 		})
 
 		It("'belongs-to-machine-cidr' failed", func() {
@@ -752,24 +752,24 @@ var _ = Describe("Metrics tests", func() {
 			h := &registerHost(clusterID).Host
 			err := db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventoryWithInterface("1.2.3.4/24")}).Error
 			Expect(err).NotTo(HaveOccurred())
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsToMachineCidr)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsDashToDashMachineDashCidr)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsToMachineCidr), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsToMachineCidr), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMachineDashCidr), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMachineDashCidr), hostValidationFailedMetric)
 
 			// create a validation failure
 			err = db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventoryWithInterface("")}).Error
 			Expect(err).NotTo(HaveOccurred())
 			// machine-cidr doesn't change after it is set
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDBelongsToMachineCidr)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDBelongsDashToDashMachineDashCidr)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDBelongsToMachineCidr, true)
+			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDBelongsDashToDashMachineDashCidr, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDBelongsToMachineCidr), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMachineDashCidr), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDBelongsToMachineCidr), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMachineDashCidr), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'belongs-to-machine-cidr' got fixed", func() {
@@ -778,111 +778,111 @@ var _ = Describe("Metrics tests", func() {
 			h := &registerHost(clusterID).Host
 			err := db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventoryWithInterface("1.2.3.4/24")}).Error
 			Expect(err).NotTo(HaveOccurred())
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsToMachineCidr)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsDashToDashMachineDashCidr)
 			err = db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventoryWithInterface("")}).Error
 			Expect(err).NotTo(HaveOccurred())
 			// machine-cidr removed after the network interface was deleted
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDBelongsToMachineCidr)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDBelongsDashToDashMachineDashCidr)
 
 			// create a validation success
 			err = db.Model(h).UpdateColumns(&models.Host{Inventory: generateValidInventoryWithInterface("1.2.3.4/24")}).Error
 			Expect(err).NotTo(HaveOccurred())
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsToMachineCidr)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDBelongsDashToDashMachineDashCidr)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDBelongsToMachineCidr, false)
+			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDBelongsDashToDashMachineDashCidr, false)
 		})
 
 		It("'api-vip-connected' failed", func() {
 
 			day2ClusterID := registerDay2Cluster(ctx)
 			// in order to simulate infra env generation
-			generateClusterISO(day2ClusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(day2ClusterID, models.ImageTypeMinimalDashIso)
 
 			// create a validation success
 			h := registerNode(ctx, day2ClusterID, "master-0", defaultCIDRv4)
 			generateApiVipPostStepReply(ctx, h, true)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIDashVipDashConnected)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationFailedMetric)
 
 			// create a validation failure
 			generateApiVipPostStepReply(ctx, h, false)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIDashVipDashConnected)
 
 			// check generated events
-			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIVipConnected, true)
+			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIDashVipDashConnected, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, day2ClusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("[V2UpdateCluster] 'api-vip-connected' failed", func() {
 
 			day2ClusterID := v2RegisterDay2Cluster(ctx)
 			// in order to simulate infra env generation
-			generateClusterISO(day2ClusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(day2ClusterID, models.ImageTypeMinimalDashIso)
 
 			// create a validation success
 			h := registerNode(ctx, day2ClusterID, "master-0", defaultCIDRv4)
 			generateApiVipPostStepReply(ctx, h, true)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIDashVipDashConnected)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationFailedMetric)
 
 			// create a validation failure
 			generateApiVipPostStepReply(ctx, h, false)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIDashVipDashConnected)
 
 			// check generated events
-			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIVipConnected, true)
+			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIDashVipDashConnected, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, day2ClusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIVipConnected), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDAPIDashVipDashConnected), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'api-vip-connected' got fixed", func() {
 
 			day2ClusterID := registerDay2Cluster(ctx)
 			// in order to simulate infra env generation
-			generateClusterISO(day2ClusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(day2ClusterID, models.ImageTypeMinimalDashIso)
 
 			// create a validation failure
 			h := registerNode(ctx, day2ClusterID, "master-0", defaultCIDRv4)
 			generateApiVipPostStepReply(ctx, h, false)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIDashVipDashConnected)
 
 			// create a validation success
 			generateApiVipPostStepReply(ctx, h, true)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIDashVipDashConnected)
 
 			// check generated events
-			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIVipConnected, false)
+			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIDashVipDashConnected, false)
 		})
 
 		It("[V2UpdateCluster] 'api-vip-connected' got fixed", func() {
 
 			day2ClusterID := v2RegisterDay2Cluster(ctx)
 			// in order to simulate infra env generation
-			generateClusterISO(day2ClusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(day2ClusterID, models.ImageTypeMinimalDashIso)
 
 			// create a validation failure
 			h := registerNode(ctx, day2ClusterID, "master-0", defaultCIDRv4)
 			generateApiVipPostStepReply(ctx, h, false)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "failure", models.HostValidationIDAPIDashVipDashConnected)
 
 			// create a validation success
 			generateApiVipPostStepReply(ctx, h, true)
-			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIVipConnected)
+			waitForHostValidationStatus(day2ClusterID, *h.ID, "success", models.HostValidationIDAPIDashVipDashConnected)
 
 			// check generated events
-			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIVipConnected, false)
+			assertHostValidationEvent(ctx, day2ClusterID, "master-0", models.HostValidationIDAPIDashVipDashConnected, false)
 		})
 
 		It("'belongs-to-majority-group' failed", func() {
@@ -894,14 +894,14 @@ var _ = Describe("Metrics tests", func() {
 			h3 := registerNode(ctx, clusterID, "h3", ips[2])
 			h4 := registerNode(ctx, clusterID, "h4", ips[3])
 			generateFullMeshConnectivity(ctx, ips[0], h1, h2, h3, h4)
-			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDBelongsToMajorityGroup)
+			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDBelongsDashToDashMajorityDashGroup)
 
 			// create a validation failure
 			generateFullMeshConnectivity(ctx, ips[0], h2, h3, h4)
-			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDBelongsToMajorityGroup)
+			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDBelongsDashToDashMajorityDashGroup)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "h1", models.HostValidationIDBelongsToMajorityGroup, true)
+			assertHostValidationEvent(ctx, clusterID, "h1", models.HostValidationIDBelongsDashToDashMajorityDashGroup, true)
 
 			// check generated metrics
 
@@ -909,10 +909,10 @@ var _ = Describe("Metrics tests", func() {
 			// be later fixed by the next refresh status cycle because generating a full mesh connectivity isn't an atomic
 			// action, therefore, in this test we will check that at least the expected failing host is failing but not fail
 			// the test if other hosts fails as well.
-			metricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsToMajorityGroup), hostValidationChangedMetric)
+			metricCounter := getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMajorityDashGroup), hostValidationChangedMetric)
 			Expect(metricCounter >= 1).To(BeTrue())
 			metricsDeregisterCluster(ctx, clusterID)
-			metricCounter = getValidationMetricCounter(string(models.HostValidationIDBelongsToMajorityGroup), hostValidationFailedMetric)
+			metricCounter = getValidationMetricCounter(string(models.HostValidationIDBelongsDashToDashMajorityDashGroup), hostValidationFailedMetric)
 			Expect(metricCounter >= 1).To(BeTrue())
 		})
 
@@ -924,14 +924,14 @@ var _ = Describe("Metrics tests", func() {
 			h3 := registerNode(ctx, clusterID, "h3", ips[2])
 			h4 := registerNode(ctx, clusterID, "h4", ips[3])
 			generateFullMeshConnectivity(ctx, ips[0], h2, h3, h4)
-			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDBelongsToMajorityGroup)
+			waitForHostValidationStatus(clusterID, *h1.ID, "failure", models.HostValidationIDBelongsDashToDashMajorityDashGroup)
 
 			// create a validation success
 			generateFullMeshConnectivity(ctx, ips[0], h1, h2, h3, h4)
-			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDBelongsToMajorityGroup)
+			waitForHostValidationStatus(clusterID, *h1.ID, "success", models.HostValidationIDBelongsDashToDashMajorityDashGroup)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, "h1", models.HostValidationIDBelongsToMajorityGroup, false)
+			assertHostValidationEvent(ctx, clusterID, "h1", models.HostValidationIDBelongsDashToDashMajorityDashGroup, false)
 		})
 
 		It("'ntp-synced' failed", func() {
@@ -939,22 +939,22 @@ var _ = Describe("Metrics tests", func() {
 			// create a validation success
 			h := &registerHost(clusterID).Host
 			generateNTPPostStepReply(ctx, h, []*models.NtpSource{common.TestNTPSourceSynced})
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDNtpSynced)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDNtpDashSynced)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDNtpSynced), hostValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDNtpSynced), hostValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDNtpDashSynced), hostValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.HostValidationIDNtpDashSynced), hostValidationFailedMetric)
 
 			// create a validation failure
 			generateNTPPostStepReply(ctx, h, nil)
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDNtpSynced)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDNtpDashSynced)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDNtpSynced, true)
+			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDNtpDashSynced, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.HostValidationIDNtpSynced), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDNtpDashSynced), hostValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.HostValidationIDNtpSynced), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.HostValidationIDNtpDashSynced), hostValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'ntp-synced' got fixed", func() {
@@ -962,14 +962,14 @@ var _ = Describe("Metrics tests", func() {
 			// create a validation failure
 			h := &registerHost(clusterID).Host
 			generateNTPPostStepReply(ctx, h, nil)
-			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDNtpSynced)
+			waitForHostValidationStatus(clusterID, *h.ID, "failure", models.HostValidationIDNtpDashSynced)
 
 			// create a validation success
 			generateNTPPostStepReply(ctx, h, []*models.NtpSource{common.TestNTPSourceSynced})
-			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDNtpSynced)
+			waitForHostValidationStatus(clusterID, *h.ID, "success", models.HostValidationIDNtpDashSynced)
 
 			// check generated events
-			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDNtpSynced, false)
+			assertHostValidationEvent(ctx, clusterID, string(*h.ID), models.HostValidationIDNtpDashSynced, false)
 		})
 		Context("for network latency and packet loss", func() {
 			BeforeEach(func() {
@@ -1034,10 +1034,10 @@ var _ = Describe("Metrics tests", func() {
 			for _, h := range c.Hosts {
 				generateDomainResolution(ctx, h, "test-cluster", "example.com")
 			}
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDAllHostsAreReadyToInstall)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDAllHostsAreReadyToInstall), clusterValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDAllHostsAreReadyToInstall), clusterValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall), clusterValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall), clusterValidationFailedMetric)
 
 			// create a validation failure
 			_, err := userBMClient.Installer.DisableHost(ctx, &installer.DisableHostParams{
@@ -1046,15 +1046,15 @@ var _ = Describe("Metrics tests", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDAllHostsAreReadyToInstall)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDAllHostsAreReadyToInstall, true)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDAllHostsAreReadyToInstall), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDAllHostsAreReadyToInstall), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'all-hosts-are-ready-to-install' got fixed", func() {
@@ -1071,7 +1071,7 @@ var _ = Describe("Metrics tests", func() {
 				HostID:    *hosts[0].ID,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientMastersCount)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientDashMastersDashCount)
 
 			// create a validation success
 			_, err = userBMClient.Installer.EnableHost(ctx, &installer.EnableHostParams{
@@ -1083,45 +1083,45 @@ var _ = Describe("Metrics tests", func() {
 			for _, h := range c.Hosts {
 				generateDomainResolution(ctx, h, "test-cluster", "example.com")
 			}
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDAllHostsAreReadyToInstall)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDAllHostsAreReadyToInstall, false)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDAllDashHostsDashAreDashReadyDashToDashInstall, false)
 		})
 
 		It("'sufficient-masters-count' failed", func() {
 
 			// create a validation success
 			hosts, _ := register3nodes(ctx, clusterID, defaultCIDRv4)
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDSufficientMastersCount)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDSufficientDashMastersDashCount)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDSufficientMastersCount), clusterValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDSufficientMastersCount), clusterValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDSufficientDashMastersDashCount), clusterValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDSufficientDashMastersDashCount), clusterValidationFailedMetric)
 
 			// create a validation failure
 			deregisterHost(*hosts[0].ID)
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientMastersCount)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientDashMastersDashCount)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDSufficientMastersCount, true)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDSufficientDashMastersDashCount, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDSufficientMastersCount), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDSufficientDashMastersDashCount), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDSufficientMastersCount), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDSufficientDashMastersDashCount), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'sufficient-masters-count' got fixed", func() {
 
 			// create a validation failure
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientMastersCount)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDSufficientDashMastersDashCount)
 
 			// create a validation success
 			register3nodes(ctx, clusterID, defaultCIDRv4)
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDSufficientMastersCount)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDSufficientDashMastersDashCount)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDSufficientMastersCount, false)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDSufficientDashMastersDashCount, false)
 		})
 
 		It("'ntp-server-configured' failed", func() {
@@ -1130,10 +1130,10 @@ var _ = Describe("Metrics tests", func() {
 			// create a validation success
 			h1 := registerNode(ctx, clusterID, "h1", ips[0])
 			registerNode(ctx, clusterID, "h2", ips[1])
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDNtpServerConfigured)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDNtpDashServerDashConfigured)
 
-			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDNtpServerConfigured), clusterValidationChangedMetric)
-			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDNtpServerConfigured), clusterValidationFailedMetric)
+			oldChangedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDNtpDashServerDashConfigured), clusterValidationChangedMetric)
+			oldFailedMetricCounter := getValidationMetricCounter(string(models.ClusterValidationIDNtpDashServerDashConfigured), clusterValidationFailedMetric)
 
 			// create a validation failure
 			nonSyncedInventory := &models.Inventory{
@@ -1141,15 +1141,15 @@ var _ = Describe("Metrics tests", func() {
 			}
 			generateHWPostStepReply(ctx, h1, nonSyncedInventory, "h1")
 			Expect(db.Model(h1).Update("status", "known").Error).NotTo(HaveOccurred())
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDNtpServerConfigured)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDNtpDashServerDashConfigured)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDNtpServerConfigured, true)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDNtpDashServerDashConfigured, true)
 
 			// check generated metrics
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDNtpServerConfigured), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDNtpDashServerDashConfigured), clusterValidationChangedMetric)).To(Equal(oldChangedMetricCounter + 1))
 			metricsDeregisterCluster(ctx, clusterID)
-			Expect(getValidationMetricCounter(string(models.ClusterValidationIDNtpServerConfigured), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
+			Expect(getValidationMetricCounter(string(models.ClusterValidationIDNtpDashServerDashConfigured), clusterValidationFailedMetric)).To(Equal(oldFailedMetricCounter + 1))
 		})
 
 		It("'ntp-server-configured' got fixed", func() {
@@ -1162,14 +1162,14 @@ var _ = Describe("Metrics tests", func() {
 			}
 			generateHWPostStepReply(ctx, h1, nonSyncedInventory, "h1")
 			Expect(db.Model(h1).Update("status", "known").Error).NotTo(HaveOccurred())
-			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDNtpServerConfigured)
+			waitForClusterValidationStatus(clusterID, "failure", models.ClusterValidationIDNtpDashServerDashConfigured)
 
 			// create a validation success
 			generateHWPostStepReply(ctx, h1, validHwInfo, "h1")
-			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDNtpServerConfigured)
+			waitForClusterValidationStatus(clusterID, "success", models.ClusterValidationIDNtpDashServerDashConfigured)
 
 			// check generated events
-			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDNtpServerConfigured, false)
+			assertClusterValidationEvent(ctx, clusterID, models.ClusterValidationIDNtpDashServerDashConfigured, false)
 		})
 	})
 
@@ -1180,7 +1180,7 @@ var _ = Describe("Metrics tests", func() {
 
 		It("'assisted_installer_filesystem_usage_percentage' metric recorded", func() {
 			By("Generate ISO for cluster")
-			imageType := models.ImageTypeMinimalIso
+			imageType := models.ImageTypeMinimalDashIso
 			_, err := userBMClient.Installer.GenerateClusterISO(ctx, &installer.GenerateClusterISOParams{
 				ClusterID: clusterID,
 				ImageCreateParams: &models.ImageCreateParams{

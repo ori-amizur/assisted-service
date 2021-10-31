@@ -270,7 +270,7 @@ var _ = Describe("Operators endpoint tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			clusterID = cID
 			// in order to simulate infra env generation
-			generateClusterISO(clusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(clusterID, models.ImageTypeMinimalDashIso)
 			registerHostsAndSetRoles(clusterID, minHosts, "test-cluster", "example.com")
 		})
 
@@ -329,7 +329,7 @@ var _ = Describe("Operators endpoint tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			clusterID = cID
 			// in order to simulate infra env generation
-			generateClusterISO(clusterID, models.ImageTypeMinimalIso)
+			generateClusterISO(clusterID, models.ImageTypeMinimalDashIso)
 			registerHostsAndSetRoles(clusterID, minHosts, "test-cluster", "example.com")
 		})
 

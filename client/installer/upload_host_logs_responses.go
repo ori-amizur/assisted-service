@@ -29,6 +29,12 @@ func (o *UploadHostLogsReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewUploadHostLogsBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 401:
 		result := NewUploadHostLogsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -81,6 +87,38 @@ func (o *UploadHostLogsNoContent) Error() string {
 }
 
 func (o *UploadHostLogsNoContent) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	return nil
+}
+
+// NewUploadHostLogsBadRequest creates a UploadHostLogsBadRequest with default headers values
+func NewUploadHostLogsBadRequest() *UploadHostLogsBadRequest {
+	return &UploadHostLogsBadRequest{}
+}
+
+/* UploadHostLogsBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type UploadHostLogsBadRequest struct {
+	Payload *models.InfraError
+}
+
+func (o *UploadHostLogsBadRequest) Error() string {
+	return fmt.Sprintf("[POST /v1/clusters/{cluster_id}/hosts/{host_id}/logs][%d] uploadHostLogsBadRequest  %+v", 400, o.Payload)
+}
+func (o *UploadHostLogsBadRequest) GetPayload() *models.InfraError {
+	return o.Payload
+}
+
+func (o *UploadHostLogsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.InfraError)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
 
 	return nil
 }

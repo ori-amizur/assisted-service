@@ -15,6 +15,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
+	"gorm.io/gorm"
 )
 
 // Cluster cluster
@@ -66,10 +67,14 @@ type Cluster struct {
 	CPUArchitecture string `json:"cpu_architecture,omitempty"`
 
 	// The time that this cluster was created.
+	// Format: date-time
 	CreatedAt timeext.Time `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
 
+	// swagger:ignore
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"type:timestamp with time zone;index"`
+
 	// Information regarding hosts' installation disks encryption.
-	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty"`
+	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty" gorm:"embedded;embeddedPrefix:disk_encryption_"`
 
 	// email domain
 	EmailDomain string `json:"email_domain,omitempty"`
@@ -121,7 +126,7 @@ type Cluster struct {
 
 	// image info
 	// Required: true
-	ImageInfo *ImageInfo `json:"image_info"`
+	ImageInfo *ImageInfo `json:"image_info" gorm:"embedded;embeddedPrefix:image_"`
 
 	// The virtual IP used for cluster ingress traffic.
 	// Pattern: ^(?:(?:(?:[0-9]{1,3}\.){3}[0-9]{1,3})|(?:(?:[0-9a-fA-F]*:[0-9a-fA-F]*){2,}))$
@@ -183,10 +188,10 @@ type Cluster struct {
 	OrgID string `json:"org_id,omitempty"`
 
 	// platform
-	Platform *Platform `json:"platform,omitempty"`
+	Platform *Platform `json:"platform,omitempty" gorm:"embedded;embeddedPrefix:platform_"`
 
 	// Installation progress percentages of the cluster.
-	Progress *ClusterProgressInfo `json:"progress,omitempty"`
+	Progress *ClusterProgressInfo `json:"progress,omitempty" gorm:"embedded;embeddedPrefix:progress_"`
 
 	// True if the pull secret has been added to the cluster.
 	PullSecretSet bool `json:"pull_secret_set,omitempty"`
@@ -224,6 +229,7 @@ type Cluster struct {
 	TotalHostCount int64 `json:"total_host_count,omitempty" gorm:"-"`
 
 	// The last time that this cluster was updated.
+	// Format: date-time
 	UpdatedAt timeext.Time `json:"updated_at,omitempty" gorm:"type:timestamp with time zone"`
 
 	// Indicate if the networking is managed by the user.
@@ -268,6 +274,10 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateControllerLogsStartedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCreatedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -368,6 +378,10 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStatusUpdatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateUpdatedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -473,6 +487,18 @@ func (m *Cluster) validateControllerLogsStartedAt(formats strfmt.Registry) error
 	}
 
 	if err := validate.FormatOf("controller_logs_started_at", "body", "date-time", m.ControllerLogsStartedAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Cluster) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
 		return err
 	}
 
@@ -1057,6 +1083,18 @@ func (m *Cluster) validateStatusUpdatedAt(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("status_updated_at", "body", "date-time", m.StatusUpdatedAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Cluster) validateUpdatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.UpdatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("updated_at", "body", "date-time", m.UpdatedAt.String(), formats); err != nil {
 		return err
 	}
 

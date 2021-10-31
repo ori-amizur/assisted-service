@@ -1357,7 +1357,7 @@ func (ib *ignitionBuilder) FormatDiscoveryIgnitionFile(ctx context.Context, infr
 		ignitionParams["ServiceIPs"] = dataurl.EncodeBytes([]byte(GetServiceIPHostnames(cfg.ServiceIPs)))
 	}
 
-	if infraEnv.StaticNetworkConfig != "" && infraEnv.Type == models.ImageTypeFullIso {
+	if infraEnv.StaticNetworkConfig != "" && common.ImageTypeValue(infraEnv.Type) == models.ImageTypeFullDashIso {
 		filesList, newErr := ib.prepareStaticNetworkConfigForIgnition(ctx, infraEnv)
 		if newErr != nil {
 			ib.log.WithError(newErr).Errorf("Failed to add static network config to ignition for infra env  %s", infraEnv.ID)

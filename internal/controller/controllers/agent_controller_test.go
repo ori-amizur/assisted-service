@@ -1038,7 +1038,7 @@ var _ = Describe("agent reconcile", func() {
 	It("Agent progress status", func() {
 		hostId := strfmt.UUID(uuid.New().String())
 		progress := &models.HostProgressInfo{
-			CurrentStage:   models.HostStageConfiguring,
+			CurrentStage:   common.HostStagePtr(models.HostStageConfiguring),
 			ProgressInfo:   "some info",
 			StageStartedAt: strfmt.DateTime(time.Now()),
 			StageUpdatedAt: strfmt.DateTime(time.Now()),

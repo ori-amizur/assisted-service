@@ -154,7 +154,7 @@ var _ = Describe("RegisterHost", func() {
 					Inventory:  defaultHwInfo,
 					Status:     swag.String(t.srcState),
 					Progress: &models.HostProgressInfo{
-						CurrentStage: t.progressStage,
+						CurrentStage: common.HostStagePtr(t.progressStage),
 					},
 				}).Error).ShouldNot(HaveOccurred())
 
@@ -282,7 +282,7 @@ var _ = Describe("RegisterHost", func() {
 
 			// Verify resetted fields
 			Expect(h.Inventory).To(BeEmpty())
-			Expect(h.Progress.CurrentStage).To(BeEmpty())
+			Expect(common.HostStageValue(h.Progress.CurrentStage)).To(BeEmpty())
 			Expect(h.Progress.ProgressInfo).To(BeEmpty())
 			Expect(h.NtpSources).To(BeEmpty())
 		})
@@ -301,7 +301,7 @@ var _ = Describe("RegisterHost", func() {
 					Bootstrap:  true,
 					Kind:       swag.String(t.kind),
 					Progress: &models.HostProgressInfo{
-						CurrentStage: common.TestDefaultConfig.HostProgressStage,
+						CurrentStage: common.HostStagePtr(common.TestDefaultConfig.HostProgressStage),
 						ProgressInfo: "some info",
 					},
 					NtpSources: "some ntp sources",
@@ -386,7 +386,7 @@ var _ = Describe("RegisterHost", func() {
 			{
 				srcState: models.HostStatusInstallingDashInDashProgress,
 				progress: models.HostProgressInfo{
-					CurrentStage: models.HostStageRebooting,
+					CurrentStage: common.HostStagePtr(models.HostStageRebooting),
 				},
 				dstState:      models.HostStatusInstallingDashPendingDashUserDashAction,
 				eventSeverity: models.EventSeverityWarning,
@@ -403,7 +403,7 @@ var _ = Describe("RegisterHost", func() {
 			{
 				srcState: models.HostStatusResetting,
 				progress: models.HostProgressInfo{
-					CurrentStage: models.HostStageRebooting,
+					CurrentStage: common.HostStagePtr(models.HostStageRebooting),
 				},
 				dstState:          models.HostStatusResetting,
 				expectedRole:      models.HostRoleMaster,
@@ -414,7 +414,7 @@ var _ = Describe("RegisterHost", func() {
 			{
 				srcState: models.HostStatusResettingDashPendingDashUserDashAction,
 				progress: models.HostProgressInfo{
-					CurrentStage: models.HostStageRebooting,
+					CurrentStage: common.HostStagePtr(models.HostStageRebooting),
 				},
 				dstState:      models.HostStatusDiscovering,
 				eventSeverity: models.EventSeverityInfo,
@@ -428,7 +428,7 @@ var _ = Describe("RegisterHost", func() {
 			{
 				srcState: models.HostStatusAddedDashToDashExistingDashCluster,
 				progress: models.HostProgressInfo{
-					CurrentStage: models.HostStageRebooting,
+					CurrentStage: common.HostStagePtr(models.HostStageRebooting),
 				},
 				dstState:      models.HostStatusInstallingDashPendingDashUserDashAction,
 				eventSeverity: models.EventSeverityWarning,
@@ -1434,7 +1434,7 @@ var _ = Describe("Unbind", func() {
 		Expect(err).ShouldNot(HaveOccurred())
 		Expect(h.NtpSources).Should(Equal(string(bytes)))
 		resetPogress := &models.HostProgressInfo{
-			CurrentStage:           "",
+			CurrentStage:           common.HostStagePtr(""),
 			InstallationPercentage: 0,
 			ProgressInfo:           "",
 			StageStartedAt:         strfmt.DateTime(time.Time{}),
@@ -1541,7 +1541,7 @@ var _ = Describe("Unbind", func() {
 			host.SuggestedRole = models.HostRoleBootstrap
 			host.Role = models.HostRoleMaster
 			host.Progress = &models.HostProgressInfo{
-				CurrentStage:           models.HostStageJoined,
+				CurrentStage:           common.HostStagePtr(models.HostStageJoined),
 				InstallationPercentage: 60,
 				ProgressInfo:           "whatever",
 				StageStartedAt:         strfmt.DateTime(time.Now()),
@@ -1754,7 +1754,7 @@ var _ = Describe("Refresh Host", func() {
 				host.StatusUpdatedAt = updatedAt
 				host.Progress = &models.HostProgressInfo{
 					StageUpdatedAt: updatedAt,
-					CurrentStage:   t.stage,
+					CurrentStage:   common.HostStagePtr(t.stage),
 				}
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				cluster = hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
@@ -1812,7 +1812,7 @@ var _ = Describe("Refresh Host", func() {
 				host.CheckedInAt = strfmt.DateTime(time.Now().Add(-MaxHostDisconnectionTime - time.Minute))
 
 				progress := models.HostProgressInfo{
-					CurrentStage:   stage,
+					CurrentStage:   common.HostStagePtr(stage),
 					StageStartedAt: strfmt.DateTime(time.Now().Add(-passedTime)),
 					StageUpdatedAt: strfmt.DateTime(time.Now().Add(-passedTime)),
 				}
@@ -1859,7 +1859,7 @@ var _ = Describe("Refresh Host", func() {
 				host.CheckedInAt = strfmt.DateTime(time.Now().Add(-MaxHostDisconnectionTime - time.Minute))
 
 				progress := models.HostProgressInfo{
-					CurrentStage:   models.HostStageDone,
+					CurrentStage:   common.HostStagePtr(models.HostStageDone),
 					StageStartedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 					StageUpdatedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 				}
@@ -2022,7 +2022,7 @@ var _ = Describe("Refresh Host", func() {
 						host.Role = models.HostRoleMaster
 						host.CheckedInAt = hostCheckInAt
 						progress := models.HostProgressInfo{
-							CurrentStage:   stage,
+							CurrentStage:   common.HostStagePtr(stage),
 							StageStartedAt: strfmt.DateTime(time.Now().Add(-passedTime)),
 							StageUpdatedAt: strfmt.DateTime(time.Now().Add(-passedTime)),
 						}
@@ -2081,7 +2081,7 @@ var _ = Describe("Refresh Host", func() {
 			master.Role = models.HostRoleMaster
 			master.CheckedInAt = strfmt.DateTime(time.Now())
 			master.Progress = &models.HostProgressInfo{
-				CurrentStage:   models.HostStageWaitingForControlPlane,
+				CurrentStage:   common.HostStagePtr(models.HostStageWaitingForControlPlane),
 				StageStartedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 				StageUpdatedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 			}
@@ -2093,7 +2093,7 @@ var _ = Describe("Refresh Host", func() {
 			host.Role = models.HostRoleWorker
 			host.CheckedInAt = strfmt.DateTime(time.Now())
 			progress := models.HostProgressInfo{
-				CurrentStage:   models.HostStageConfiguring,
+				CurrentStage:   common.HostStagePtr(models.HostStageConfiguring),
 				StageStartedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 				StageUpdatedAt: strfmt.DateTime(time.Now().Add(-90 * time.Minute)),
 			}
@@ -2333,7 +2333,7 @@ var _ = Describe("Refresh Host", func() {
 				if t.platformType == "" {
 					cluster = hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
 				} else {
-					cluster = hostutil.GenerateTestClusterWithPlatform(clusterId, common.TestIPv4Networking.MachineNetworks, &models.Platform{Type: models.PlatformTypeVsphere})
+					cluster = hostutil.GenerateTestClusterWithPlatform(clusterId, common.TestIPv4Networking.MachineNetworks, &models.Platform{Type: common.PlatformTypePtr(models.PlatformTypeVsphere)})
 				}
 
 				cluster.MonitoredOperators = []*models.MonitoredOperator{
@@ -4548,7 +4548,7 @@ var _ = Describe("Refresh Host", func() {
 
 				It(fmt.Sprintf("host src: %s cluster error: false", srcState), func() {
 					h := hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, srcState)
-					h.Progress.CurrentStage = installationStage
+					h.Progress.CurrentStage = common.HostStagePtr(installationStage)
 					h.Inventory = hostutil.GenerateMasterInventory()
 					Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 					c := hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)
@@ -4562,7 +4562,7 @@ var _ = Describe("Refresh Host", func() {
 				})
 				It(fmt.Sprintf("host src: %s cluster error: true", srcState), func() {
 					h := hostutil.GenerateTestHost(hostId, infraEnvId, clusterId, srcState)
-					h.Progress.CurrentStage = installationStage
+					h.Progress.CurrentStage = common.HostStagePtr(installationStage)
 					h.Inventory = hostutil.GenerateMasterInventory()
 					Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 					c := hostutil.GenerateTestCluster(clusterId, common.TestIPv4Networking.MachineNetworks)

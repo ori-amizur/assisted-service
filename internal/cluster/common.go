@@ -215,7 +215,7 @@ func UpdateMachineCidr(db *gorm.DB, cluster *common.Cluster, machineCidr string)
 
 	if machineCidr != previousPrimaryMachineCidr {
 		if machineCidr != "" {
-			if err := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&models.MachineNetwork{}).Save(&models.MachineNetwork{
+			if err := db.Save(&models.MachineNetwork{
 				ClusterID: *cluster.ID,
 				Cidr:      models.Subnet(machineCidr),
 			}).Error; err != nil {

@@ -66,7 +66,7 @@ var _ = Describe("IPv6 installation", func() {
 		clusterID = *cluster.ID
 		log.Infof("Register cluster %s", cluster.ID.String())
 		// in order to simulate infra env generation
-		generateClusterISO(clusterID, models.ImageTypeMinimalIso)
+		generateClusterISO(clusterID, models.ImageTypeMinimalDashIso)
 	})
 	It("install_cluster IPv6 happy flow", func() {
 		_ = registerHostsAndSetRolesV6(clusterID, 5)

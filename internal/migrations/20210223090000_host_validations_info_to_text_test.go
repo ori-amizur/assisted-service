@@ -27,11 +27,6 @@ var _ = Describe("ChangeHostValidationsInfoToText", func() {
 		db, dbName = common.PrepareTestDB()
 		hostID = strfmt.UUID(uuid.New().String())
 		clusterID := strfmt.UUID(uuid.New().String())
-		Expect(db.Create(common.InfraEnv{
-			InfraEnv: models.InfraEnv{
-				ID: &clusterID,
-			},
-		}).Error).ToNot(HaveOccurred())
 		host := models.Host{
 			ID:              &hostID,
 			ValidationsInfo: hostValidationsInfo,

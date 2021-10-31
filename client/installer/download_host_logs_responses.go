@@ -30,6 +30,12 @@ func (o *DownloadHostLogsReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewDownloadHostLogsBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 401:
 		result := NewDownloadHostLogsUnauthorized()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -95,6 +101,38 @@ func (o *DownloadHostLogsOK) GetPayload() io.Writer {
 }
 
 func (o *DownloadHostLogsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewDownloadHostLogsBadRequest creates a DownloadHostLogsBadRequest with default headers values
+func NewDownloadHostLogsBadRequest() *DownloadHostLogsBadRequest {
+	return &DownloadHostLogsBadRequest{}
+}
+
+/* DownloadHostLogsBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type DownloadHostLogsBadRequest struct {
+	Payload *models.Error
+}
+
+func (o *DownloadHostLogsBadRequest) Error() string {
+	return fmt.Sprintf("[GET /v1/clusters/{cluster_id}/hosts/{host_id}/logs][%d] downloadHostLogsBadRequest  %+v", 400, o.Payload)
+}
+func (o *DownloadHostLogsBadRequest) GetPayload() *models.Error {
+	return o.Payload
+}
+
+func (o *DownloadHostLogsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.Error)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

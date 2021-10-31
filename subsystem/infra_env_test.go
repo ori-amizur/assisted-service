@@ -32,7 +32,7 @@ var _ = Describe("Infra_Env", func() {
 				OpenshiftVersion: swag.String(openshiftVersion),
 				PullSecret:       swag.String(pullSecret),
 				SSHAuthorizedKey: swag.String(sshPublicKey),
-				ImageType:        models.ImageTypeFullIso,
+				ImageType:        models.ImageTypeFullDashIso,
 			},
 		})
 
@@ -65,7 +65,7 @@ var _ = Describe("Infra_Env", func() {
 		updateParams := &installer.UpdateInfraEnvParams{
 			InfraEnvID: infraEnvID,
 			InfraEnvUpdateParams: &models.InfraEnvUpdateParams{
-				ImageType:              models.ImageTypeMinimalIso,
+				ImageType:              models.ImageTypeMinimalDashIso,
 				IgnitionConfigOverride: `{"ignition": {"version": "3.1.0"}, "storage": {"files": [{"path": "/tmp/example", "contents": {"source": "data:text/plain;base64,aGVscGltdHJhcHBlZGluYXN3YWdnZXJzcGVj"}}]}}`,
 				SSHAuthorizedKey:       swag.String(newSshKey),
 				Proxy:                  &models.Proxy{HTTPProxy: swag.String("http://proxy.proxy"), HTTPSProxy: nil, NoProxy: swag.String("proxy.proxy")},
@@ -79,14 +79,14 @@ var _ = Describe("Infra_Env", func() {
 		Expect(swag.StringValue(updateInfraEnv.Proxy.HTTPProxy)).To(Equal("http://proxy.proxy"))
 		Expect(swag.StringValue(updateInfraEnv.Proxy.HTTPSProxy)).To(Equal("http://proxy.proxy"))
 		Expect(swag.StringValue(updateInfraEnv.Proxy.NoProxy)).To(Equal("proxy.proxy"))
-		Expect(updateInfraEnv.Type).To(Equal(models.ImageTypeMinimalIso))
+		Expect(updateInfraEnv.Type).To(Equal(models.ImageTypeMinimalDashIso))
 	})
 
 	It("download minimal-iso image success", func() {
 		time.Sleep(time.Second * 10)
 		_, err := userBMClient.Installer.UpdateInfraEnv(ctx,
 			&installer.UpdateInfraEnvParams{InfraEnvID: infraEnvID,
-				InfraEnvUpdateParams: &models.InfraEnvUpdateParams{ImageType: models.ImageTypeMinimalIso}})
+				InfraEnvUpdateParams: &models.InfraEnvUpdateParams{ImageType: models.ImageTypeMinimalDashIso}})
 		Expect(err).NotTo(HaveOccurred())
 		file, err := ioutil.TempFile("", "tmp")
 		if err != nil {
@@ -101,7 +101,7 @@ var _ = Describe("Infra_Env", func() {
 		time.Sleep(time.Second * 10)
 		_, err := userBMClient.Installer.UpdateInfraEnv(ctx,
 			&installer.UpdateInfraEnvParams{InfraEnvID: infraEnvID,
-				InfraEnvUpdateParams: &models.InfraEnvUpdateParams{ImageType: models.ImageTypeMinimalIso}})
+				InfraEnvUpdateParams: &models.InfraEnvUpdateParams{ImageType: models.ImageTypeMinimalDashIso}})
 		Expect(err).NotTo(HaveOccurred())
 		file, err := ioutil.TempFile("", "tmp")
 		if err != nil {

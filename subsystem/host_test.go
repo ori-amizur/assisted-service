@@ -41,7 +41,7 @@ var _ = Describe("Host tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		clusterID = *cluster.GetPayload().ID
 		// in order to simulate infra env generation
-		generateClusterISO(clusterID, models.ImageTypeMinimalIso)
+		generateClusterISO(clusterID, models.ImageTypeMinimalDashIso)
 	})
 
 	It("host CRUD", func() {
@@ -151,13 +151,13 @@ var _ = Describe("Host tests", func() {
 		steps = getNextSteps(clusterID, *host.ID)
 		_, ok = getStepInList(steps, models.StepTypeInventory)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "known").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
@@ -166,7 +166,7 @@ var _ = Describe("Host tests", func() {
 		Expect(len(steps.Instructions)).Should(Equal(0))
 		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "error").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
@@ -174,13 +174,13 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", models.HostStatusResetting).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeResetInstallation)
+		_, ok = getStepInList(steps, models.StepTypeResetDashInstallation)
 		Expect(ok).Should(Equal(true))
-		Expect(db.Model(host2).Update("status", models.HostStatusPreparingForInstallation).Error).NotTo(HaveOccurred())
+		Expect(db.Model(host2).Update("status", models.HostStatusPreparingDashForDashInstallation).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host2.ID)
-		_, ok = getStepInList(steps, models.StepTypeInstallationDiskSpeedCheck)
+		_, ok = getStepInList(steps, models.StepTypeInstallationDashDiskDashSpeedDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeContainerImageAvailability)
+		_, ok = getStepInList(steps, models.StepTypeContainerDashImageDashAvailability)
 		Expect(ok).Should(Equal(true))
 	})
 
@@ -206,13 +206,13 @@ var _ = Describe("Host tests", func() {
 		steps = getNextSteps(clusterID, *host.ID)
 		_, ok = getStepInList(steps, models.StepTypeInventory)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "known").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
@@ -221,7 +221,7 @@ var _ = Describe("Host tests", func() {
 		Expect(len(steps.Instructions)).Should(Equal(0))
 		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "error").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
@@ -229,13 +229,13 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", models.HostStatusResetting).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeResetInstallation)
+		_, ok = getStepInList(steps, models.StepTypeResetDashInstallation)
 		Expect(ok).Should(Equal(true))
-		Expect(db.Model(host2).Update("status", models.HostStatusPreparingForInstallation).Error).NotTo(HaveOccurred())
+		Expect(db.Model(host2).Update("status", models.HostStatusPreparingDashForDashInstallation).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host2.ID)
-		_, ok = getStepInList(steps, models.StepTypeInstallationDiskSpeedCheck)
+		_, ok = getStepInList(steps, models.StepTypeInstallationDashDiskDashSpeedDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeContainerImageAvailability)
+		_, ok = getStepInList(steps, models.StepTypeContainerDashImageDashAvailability)
 		Expect(ok).Should(Equal(true))
 	})
 
@@ -258,18 +258,18 @@ var _ = Describe("Host tests", func() {
 		steps = getNextSteps(clusterID, *host.ID)
 		_, ok = getStepInList(steps, models.StepTypeInventory)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeDhcpLeaseAllocate)
+		_, ok = getStepInList(steps, models.StepTypeDhcpDashLeaseDashAllocate)
 		Expect(ok).Should(Equal(true))
 		By("Get steps in known ...")
 		Expect(db.Model(host).Update("status", "known").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeFreeNetworkAddresses)
+		_, ok = getStepInList(steps, models.StepTypeFreeDashNetworkDashAddresses)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeDhcpLeaseAllocate)
+		_, ok = getStepInList(steps, models.StepTypeDhcpDashLeaseDashAllocate)
 		Expect(ok).Should(Equal(true))
 		By("Get steps in disabled ...")
 		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
@@ -279,9 +279,9 @@ var _ = Describe("Host tests", func() {
 		By("Get steps in insufficient ...")
 		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityDashCheck)
 		Expect(ok).Should(Equal(true))
-		_, ok = getStepInList(steps, models.StepTypeDhcpLeaseAllocate)
+		_, ok = getStepInList(steps, models.StepTypeDhcpDashLeaseDashAllocate)
 		Expect(ok).Should(Equal(true))
 		By("Get steps in error ...")
 		Expect(db.Model(host).Update("status", "error").Error).NotTo(HaveOccurred())
@@ -291,19 +291,19 @@ var _ = Describe("Host tests", func() {
 		By("Get steps in resetting ...")
 		Expect(db.Model(host).Update("status", models.HostStatusResetting).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeResetInstallation)
+		_, ok = getStepInList(steps, models.StepTypeResetDashInstallation)
 		Expect(ok).Should(Equal(true))
-		for _, st := range []string{models.HostStatusInstalling, models.HostStatusPreparingForInstallation} {
+		for _, st := range []string{models.HostStatusInstalling, models.HostStatusPreparingDashForDashInstallation} {
 			By(fmt.Sprintf("Get steps in %s ...", st))
 			Expect(db.Model(host).Update("status", st).Error).NotTo(HaveOccurred())
 			steps = getNextSteps(clusterID, *host.ID)
-			_, ok = getStepInList(steps, models.StepTypeDhcpLeaseAllocate)
+			_, ok = getStepInList(steps, models.StepTypeDhcpDashLeaseDashAllocate)
 			Expect(ok).Should(Equal(true))
 		}
-		By(fmt.Sprintf("Get steps in %s ...", models.HostStatusInstallingInProgress))
-		Expect(db.Model(host).Updates(map[string]interface{}{"status": models.HostStatusInstallingInProgress, "progress_stage_updated_at": strfmt.DateTime(time.Now())}).Error).NotTo(HaveOccurred())
+		By(fmt.Sprintf("Get steps in %s ...", models.HostStatusInstallingDashInDashProgress))
+		Expect(db.Model(host).Updates(map[string]interface{}{"status": models.HostStatusInstallingDashInDashProgress, "progress_stage_updated_at": strfmt.DateTime(time.Now())}).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeDhcpLeaseAllocate)
+		_, ok = getStepInList(steps, models.StepTypeDhcpDashLeaseDashAllocate)
 		Expect(ok).Should(Equal(true))
 	})
 
@@ -331,27 +331,27 @@ var _ = Describe("Host tests", func() {
 
 		updateProgress(*host.ID, clusterID, models.HostStageStartingInstallation)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageStartingInstallation))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageStartingInstallation))
 		time.Sleep(time.Second * 3)
 		updateProgress(*host.ID, clusterID, models.HostStageInstalling)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageInstalling))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageInstalling))
 		time.Sleep(time.Second * 3)
 		updateProgress(*host.ID, clusterID, models.HostStageWritingImageToDisk)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageWritingImageToDisk))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageWritingImageToDisk))
 		time.Sleep(time.Second * 3)
 		updateProgress(*host.ID, clusterID, models.HostStageRebooting)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageRebooting))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageRebooting))
 		time.Sleep(time.Second * 3)
 		updateProgress(*host.ID, clusterID, models.HostStageConfiguring)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageConfiguring))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageConfiguring))
 		time.Sleep(time.Second * 3)
 		updateProgress(*host.ID, clusterID, models.HostStageDone)
 		host = getHost(clusterID, *host.ID)
-		Expect(host.Progress.CurrentStage).Should(Equal(models.HostStageDone))
+		Expect(common.HostStageValue(host.Progress.CurrentStage)).Should(Equal(models.HostStageDone))
 		time.Sleep(time.Second * 3)
 	})
 
@@ -390,8 +390,8 @@ var _ = Describe("Host tests", func() {
 			Reply: &models.StepReply{
 				ExitCode: 0,
 				Output:   extraConnectivity,
-				StepID:   string(models.StepTypeConnectivityCheck),
-				StepType: models.StepTypeConnectivityCheck,
+				StepID:   string(models.StepTypeConnectivityDashCheck),
+				StepType: models.StepTypeConnectivityDashCheck,
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -404,8 +404,8 @@ var _ = Describe("Host tests", func() {
 			Reply: &models.StepReply{
 				ExitCode: 0,
 				Output:   "not a json",
-				StepID:   string(models.StepTypeConnectivityCheck),
-				StepType: models.StepTypeConnectivityCheck,
+				StepID:   string(models.StepTypeConnectivityDashCheck),
+				StepType: models.StepTypeConnectivityDashCheck,
 			},
 		})
 		Expect(err).To(HaveOccurred())
@@ -420,7 +420,7 @@ var _ = Describe("Host tests", func() {
 				ExitCode: -1,
 				Error:    "some error",
 				Output:   "not a json",
-				StepID:   string(models.StepTypeConnectivityCheck),
+				StepID:   string(models.StepTypeConnectivityDashCheck),
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -440,8 +440,8 @@ var _ = Describe("Host tests", func() {
 			Reply: &models.StepReply{
 				ExitCode: 0,
 				Output:   free_addresses_report,
-				StepID:   string(models.StepTypeFreeNetworkAddresses),
-				StepType: models.StepTypeFreeNetworkAddresses,
+				StepID:   string(models.StepTypeFreeDashNetworkDashAddresses),
+				StepType: models.StepTypeFreeDashNetworkDashAddresses,
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -477,8 +477,8 @@ var _ = Describe("Host tests", func() {
 			Reply: &models.StepReply{
 				ExitCode: 0,
 				Output:   "not a json",
-				StepID:   string(models.StepTypeFreeNetworkAddresses),
-				StepType: models.StepTypeFreeNetworkAddresses,
+				StepID:   string(models.StepTypeFreeDashNetworkDashAddresses),
+				StepType: models.StepTypeFreeDashNetworkDashAddresses,
 			},
 		})
 		Expect(err).To(HaveOccurred())
@@ -491,7 +491,7 @@ var _ = Describe("Host tests", func() {
 				ExitCode: -1,
 				Error:    "some error",
 				Output:   "not a json",
-				StepID:   string(models.StepTypeFreeNetworkAddresses),
+				StepID:   string(models.StepTypeFreeDashNetworkDashAddresses),
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -523,7 +523,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{imageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(imageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 
 			By("network failure", func() {
@@ -538,7 +538,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{newImageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(expectedImageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 
 			By("network fixed", func() {
@@ -549,7 +549,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{newImageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(imageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 		})
 
@@ -565,7 +565,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{imageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(imageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 
 			By("network failure", func() {
@@ -580,7 +580,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{newImageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(expectedImageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 
 			By("network fixed", func() {
@@ -598,7 +598,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{newImageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(expectedImageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 		})
 
@@ -608,7 +608,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{imageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(imageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationFailure), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 			By("network fixed", func() {
 				newImageStatus := common.TestImageStatusesSuccess
@@ -622,7 +622,7 @@ var _ = Describe("Host tests", func() {
 
 				generateContainerImageAvailabilityPostStepReply(ctx, h, []*models.ContainerImageAvailability{newImageStatus})
 				Expect(getHostImageStatus(*h.ID, imageStatus.Name)).Should(Equal(expectedImageStatus))
-				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerImagesAvailable)
+				waitForHostValidationStatus(clusterID, *h.ID, string(serviceHost.ValidationSuccess), models.HostValidationIDContainerDashImagesDashAvailable)
 			})
 		})
 	})
@@ -668,7 +668,7 @@ var _ = Describe("Host tests", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		// in order to simulate infra env generation
-		generateClusterISO(*cluster2.GetPayload().ID, models.ImageTypeMinimalIso)
+		generateClusterISO(*cluster2.GetPayload().ID, models.ImageTypeMinimalDashIso)
 
 		// register to cluster2
 		_, err = agentBMClient.Installer.V2RegisterHost(ctx, &installer.V2RegisterHostParams{

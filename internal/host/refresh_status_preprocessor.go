@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/hardware"
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/api"
@@ -80,7 +81,7 @@ func (r *refreshPreprocessor) preprocess(c *validationContext) (map[string]bool,
 		}
 
 		// skip the validations per states
-		if funk.Contains(v.skippedStates, c.host.Progress.CurrentStage) {
+		if funk.Contains(v.skippedStates, common.HostStageValue(c.host.Progress.CurrentStage)) {
 			continue
 		}
 		category, err := v.id.category()

@@ -19,8 +19,8 @@ import (
 // swagger:model service_network
 type ServiceNetwork struct {
 
-	// The IP block address pool.
-	Cidr Subnet `json:"cidr,omitempty"`
+	// cidr
+	Cidr Subnet `json:"cidr,omitempty" gorm:"primaryKey"`
 
 	// The cluster that this network is associated with.
 	// Format: uuid

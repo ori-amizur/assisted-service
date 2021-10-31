@@ -76,7 +76,7 @@ func (v *validator) isStageInWrongBootStages(c *validationContext) bool {
 	if c.infraEnv != nil {
 		return false
 	}
-	return funk.Contains(WrongBootOrderIgnoreTimeoutStages, c.host.Progress.CurrentStage)
+	return funk.Contains(WrongBootOrderIgnoreTimeoutStages, common.HostStageValue(c.host.Progress.CurrentStage))
 }
 
 func (v *validator) isSuccessfulContainerImageAvailability(c *validationContext) bool {

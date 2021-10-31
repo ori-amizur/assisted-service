@@ -34,7 +34,7 @@ var _ = Describe("Host tests v2", func() {
 				OpenshiftVersion: swag.String(openshiftVersion),
 				PullSecret:       swag.String(pullSecret),
 				SSHAuthorizedKey: swag.String(sshPublicKey),
-				ImageType:        models.ImageTypeFullIso,
+				ImageType:        models.ImageTypeFullDashIso,
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -81,9 +81,9 @@ var _ = Describe("Host tests v2", func() {
 		host := &registerHost(infraEnvID).Host
 		host = getHostV2(infraEnvID, *host.ID)
 		Expect(host).NotTo(BeNil())
-		waitForHostStateV2(ctx, models.HostStatusDiscoveringUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusDiscoveringDashUnbound, defaultWaitForHostStateTimeout, host)
 		host = updateInventory(ctx, infraEnvID, *host.ID, defaultInventory())
-		waitForHostStateV2(ctx, models.HostStatusKnownUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusKnownDashUnbound, defaultWaitForHostStateTimeout, host)
 	})
 
 	It("update_hostname_successfully", func() {
@@ -161,7 +161,7 @@ var _ = Describe("Host tests v2", func() {
 				OpenshiftVersion: swag.String(openshiftVersion),
 				PullSecret:       swag.String(pullSecret),
 				SSHAuthorizedKey: swag.String(sshPublicKey),
-				ImageType:        models.ImageTypeFullIso,
+				ImageType:        models.ImageTypeFullDashIso,
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -194,9 +194,9 @@ var _ = Describe("Host tests v2", func() {
 		host := &registerHost(infraEnvID).Host
 		host = getHostV2(infraEnvID, *host.ID)
 		Expect(host).NotTo(BeNil())
-		waitForHostStateV2(ctx, models.HostStatusDiscoveringUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusDiscoveringDashUnbound, defaultWaitForHostStateTimeout, host)
 		host = updateInventory(ctx, infraEnvID, *host.ID, defaultInventory())
-		waitForHostStateV2(ctx, models.HostStatusKnownUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusKnownDashUnbound, defaultWaitForHostStateTimeout, host)
 		host = bindHost(host.InfraEnvID, *host.ID, clusterID)
 		Expect(host.ClusterID).NotTo(BeNil())
 		Expect(*host.ClusterID).Should(Equal(clusterID))
@@ -225,7 +225,7 @@ var _ = Describe("Day2 Host tests v2", func() {
 				OpenshiftVersion: swag.String(openshiftVersion),
 				PullSecret:       swag.String(pullSecret),
 				SSHAuthorizedKey: swag.String(sshPublicKey),
-				ImageType:        models.ImageTypeFullIso,
+				ImageType:        models.ImageTypeFullDashIso,
 			},
 		})
 		Expect(err).NotTo(HaveOccurred())
@@ -250,9 +250,9 @@ var _ = Describe("Day2 Host tests v2", func() {
 		Expect(*host.Status).Should(Equal("discovering-unbound"))
 		Expect(host.StatusUpdatedAt).ShouldNot(Equal(strfmt.DateTime(time.Time{})))
 
-		waitForHostStateV2(ctx, models.HostStatusDiscoveringUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusDiscoveringDashUnbound, defaultWaitForHostStateTimeout, host)
 		host = updateInventory(ctx, infraEnvID, *host.ID, defaultInventory())
-		waitForHostStateV2(ctx, models.HostStatusKnownUnbound, defaultWaitForHostStateTimeout, host)
+		waitForHostStateV2(ctx, models.HostStatusKnownDashUnbound, defaultWaitForHostStateTimeout, host)
 
 		host = bindHost(infraEnvID, *host.ID, clusterID)
 		Expect(swag.StringValue(host.Status)).Should(Equal("binding"))

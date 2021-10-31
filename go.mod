@@ -20,9 +20,10 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/filanov/stateswitch v0.0.0-20200714113403-51a42a34c604
 	github.com/frankban/quicktest v1.11.3 // indirect
+	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	github.com/go-openapi/errors v0.20.1
 	github.com/go-openapi/loads v0.20.3
-	github.com/go-openapi/runtime v0.20.0
+	github.com/go-openapi/runtime v0.19.24
 	github.com/go-openapi/spec v0.20.4
 	github.com/go-openapi/strfmt v0.20.3
 	github.com/go-openapi/swag v0.19.15
@@ -68,11 +69,10 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
 	golang.org/x/tools v0.1.5 // indirect
-	github.com/go-gormigrate/gormigrate/v2 v2.0.0
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.4.0
-	gorm.io/driver/postgres v1.1.2 // indirect
+	gorm.io/driver/postgres v1.1.2
 	gorm.io/gorm v1.21.16
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1

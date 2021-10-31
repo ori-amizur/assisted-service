@@ -534,7 +534,7 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 	previousProgress := h.Progress
 
 	if previousProgress != nil &&
-		previousProgress.CurrentStage == progress.CurrentStage {
+		common.HostStageValue(previousProgress.CurrentStage) == common.HostStageValue(progress.CurrentStage) {
 		if previousProgress.ProgressInfo == progress.ProgressInfo {
 			return nil
 		}
@@ -549,7 +549,7 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 		models.HostStatusInstalling, models.HostStatusInstallingDashInDashProgress, models.HostStatusInstallingDashPendingDashUserDashAction,
 	}
 	if !funk.ContainsString(validStatuses, swag.StringValue(h.Status)) {
-		return errors.Errorf("Can't set progress <%s> to host in status <%s>", progress.CurrentStage, swag.StringValue(h.Status))
+		return errors.Errorf("Can't set progress <%s> to host in status <%s>", common.HostStageValue(progress.CurrentStage), swag.StringValue(h.Status))
 	}
 
 	var extra []interface{}
@@ -859,9 +859,10 @@ func (m *Manager) IsRequireUserActionReset(h *models.Host) bool {
 			"Exceeded reset timeout: %s", h.ClusterID.String(), h.ID.String(), m.Config.ResetTimeout.String())
 		return true
 	}
-	if funk.Contains(manualRebootStages, h.Progress.CurrentStage) {
+	hostStage := common.HostStageValue(h.Progress.CurrentStage)
+	if funk.Contains(manualRebootStages, hostStage) {
 		m.log.Infof("Cluster %s Host %s is in stage %s and must be restarted by user to the live image "+
-			"in order to reset the installation.", h.ClusterID.String(), h.ID.String(), h.Progress.CurrentStage)
+			"in order to reset the installation.", h.ClusterID.String(), h.ID.String(), hostStage)
 		return true
 	}
 	return false

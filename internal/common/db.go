@@ -63,9 +63,6 @@ type Cluster struct {
 
 	// StaticNetworkConfigured indicates if static network configuration was set for the ISO used by clusters' nodes
 	StaticNetworkConfigured bool `json:"static_network_configured"`
-
-	// To enable soft delete
-	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 type Event struct {
@@ -82,9 +79,6 @@ type Host struct {
 
 	// Timestamp to trigger monitor. Monitor will be triggered if timestamp is recent
 	TriggerMonitorTimestamp time.Time
-
-	// To enable soft delete
-	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 type InfraEnv struct {
@@ -354,7 +348,7 @@ func CreateInfraEnvForCluster(db *gorm.DB, cluster *Cluster, imageType models.Im
 	}
 	infraEnv := &InfraEnv{InfraEnv: models.InfraEnv{
 		ID:               cluster.ID,
-		ClusterID:     	   *cluster.ID,
+		ClusterID:        *cluster.ID,
 		OpenshiftVersion: cluster.OpenshiftVersion,
 		PullSecretSet:    true,
 		Proxy:            &proxy,
@@ -371,10 +365,10 @@ func CreateInfraEnvForCluster(db *gorm.DB, cluster *Cluster, imageType models.Im
 	return err
 }
 
-func CloseDB(db *gorm.DB) error {
+func CloseDB(db *gorm.DB) {
 	sqlDB, err := db.DB()
 	if err != nil {
-		return err
+		return
 	}
-	return sqlDB.Close()
+	_ = sqlDB.Close()
 }

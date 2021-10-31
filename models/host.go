@@ -15,6 +15,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
+	"gorm.io/gorm"
 )
 
 // Host host
@@ -40,7 +41,11 @@ type Host struct {
 	Connectivity string `json:"connectivity,omitempty" gorm:"type:text"`
 
 	// created at
+	// Format: date-time
 	CreatedAt timeext.Time `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
+
+	// swagger:ignore
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"type:timestamp with time zone;index"`
 
 	// discovery agent version
 	DiscoveryAgentVersion string `json:"discovery_agent_version,omitempty"`
@@ -115,7 +120,7 @@ type Host struct {
 	NtpSources string `json:"ntp_sources,omitempty" gorm:"type:text"`
 
 	// progress
-	Progress *HostProgressInfo `json:"progress,omitempty"`
+	Progress *HostProgressInfo `json:"progress,omitempty" gorm:"embedded;embeddedPrefix:progress_"`
 
 	// progress stages
 	ProgressStages []HostStage `json:"progress_stages" gorm:"-"`
@@ -151,6 +156,7 @@ type Host struct {
 	SuggestedRole HostRole `json:"suggested_role,omitempty"`
 
 	// updated at
+	// Format: date-time
 	UpdatedAt timeext.Time `json:"updated_at,omitempty" gorm:"type:timestamp with time zone"`
 
 	// user name
@@ -169,6 +175,10 @@ func (m *Host) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateClusterID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCreatedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -236,6 +246,10 @@ func (m *Host) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateUpdatedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -260,6 +274,18 @@ func (m *Host) validateClusterID(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("cluster_id", "body", "uuid", m.ClusterID.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Host) validateCreatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
 		return err
 	}
 
@@ -609,6 +635,18 @@ func (m *Host) validateSuggestedRole(formats strfmt.Registry) error {
 		} else if ce, ok := err.(*errors.CompositeError); ok {
 			return ce.ValidateName("suggested_role")
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *Host) validateUpdatedAt(formats strfmt.Registry) error {
+	if swag.IsZero(m.UpdatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("updated_at", "body", "date-time", m.UpdatedAt.String(), formats); err != nil {
 		return err
 	}
 

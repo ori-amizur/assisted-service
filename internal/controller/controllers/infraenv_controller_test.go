@@ -86,7 +86,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal = bminventory.NewMockInstallerInternals(mockCtrl)
 		ir = &InfraEnvReconciler{
 			Client:    c,
-			Config:    InfraEnvConfig{ImageType: models.ImageTypeMinimalIso},
+			Config:    InfraEnvConfig{ImageType: models.ImageTypeMinimalDashIso},
 			Log:       common.GetTestLog(),
 			Installer: mockInstallerInternal,
 			APIReader: c,
@@ -115,7 +115,7 @@ var _ = Describe("infraEnv reconcile", func() {
 	It("create new infraEnv minimal-iso image - success", func() {
 		imageInfo := models.ImageInfo{
 			DownloadURL: "downloadurl",
-			CreatedAt:   strfmt.DateTime(time.Now()),
+			CreatedAt:   time.Now(),
 		}
 		clusterDeployment := newClusterDeployment("clusterDeployment", testNamespace, getDefaultClusterDeploymentSpec("clusterDeployment-test", "test-cluster-aci", "pull-secret"))
 		Expect(c.Create(ctx, clusterDeployment)).To(BeNil())
@@ -124,7 +124,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 			Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 				Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 			}).Return(
 			&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}, GeneratedAt: strfmt.DateTime(time.Now())}, nil).Times(1)
 		infraEnvImage := newInfraEnvImage("infraEnvImage", testNamespace, aiv1beta1.InfraEnvSpec{
@@ -158,7 +158,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 			Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 				Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeFullIso))
+				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeFullDashIso))
 			}).Return(
 			&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}, GeneratedAt: strfmt.DateTime(time.Now())}, nil).Times(1)
 
@@ -167,7 +167,7 @@ var _ = Describe("infraEnv reconcile", func() {
 			PullSecretRef: &corev1.LocalObjectReference{Name: "pull-secret"},
 		})
 		Expect(c.Create(ctx, infraEnvImage)).To(BeNil())
-		ir.Config.ImageType = models.ImageTypeFullIso
+		ir.Config.ImageType = models.ImageTypeFullDashIso
 		res, err := ir.Reconcile(ctx, newInfraEnvRequest(infraEnvImage))
 		Expect(err).To(BeNil())
 		Expect(res).To(Equal(ctrl.Result{}))
@@ -519,7 +519,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 			Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 				Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 			}).Return(
 			&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}, GeneratedAt: strfmt.DateTime(time.Now())}, nil).Times(1)
 		infraEnvImage := newInfraEnvImage("infraEnvImage", testNamespace, aiv1beta1.InfraEnvSpec{
@@ -566,7 +566,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 			Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 				Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 			}).Return(
 			&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}, GeneratedAt: strfmt.DateTime(time.Now())}, nil).Times(1)
 		infraEnvImage := newInfraEnvImage("infraEnvImage", testNamespace, aiv1beta1.InfraEnvSpec{
@@ -612,7 +612,7 @@ var _ = Describe("infraEnv reconcile", func() {
 		mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 			Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 				Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+				Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 			}).Return(
 			&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}, GeneratedAt: strfmt.DateTime(time.Now())}, nil).Times(1)
 		infraEnvImage := newInfraEnvImage("infraEnvImage", testNamespace, aiv1beta1.InfraEnvSpec{
@@ -693,7 +693,7 @@ var _ = Describe("infraEnv reconcile", func() {
 			mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 				Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 					Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-					Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+					Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 					Expect(params.InfraEnvUpdateParams.StaticNetworkConfig).To(Equal([]*models.HostStaticNetworkConfig{hostStaticNetworkConfig}))
 				}).Return(
 				&common.InfraEnv{InfraEnv: models.InfraEnv{ClusterID: sId, ID: &sId, DownloadURL: downloadURL}}, nil).Times(1)
@@ -737,7 +737,7 @@ var _ = Describe("infraEnv reconcile", func() {
 			mockInstallerInternal.EXPECT().UpdateInfraEnvInternal(gomock.Any(), gomock.Any()).
 				Do(func(ctx context.Context, params installer.UpdateInfraEnvParams) {
 					Expect(params.InfraEnvID).To(Equal(*backendInfraEnv.ID))
-					Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalIso))
+					Expect(params.InfraEnvUpdateParams.ImageType).To(Equal(models.ImageTypeMinimalDashIso))
 				}).Return(nil, expectedError).Times(1)
 
 			infraEnvImage := newInfraEnvImage("infraEnvImage", testNamespace, aiv1beta1.InfraEnvSpec{

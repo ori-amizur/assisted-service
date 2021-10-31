@@ -109,7 +109,7 @@ var _ = Describe("Validations test", func() {
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
 			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleMaster)
-			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr20)
+			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr2Dot0)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 
 			mockAndRefreshStatus(&h)
@@ -129,7 +129,7 @@ var _ = Describe("Validations test", func() {
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
 			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleWorker)
-			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr20)
+			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr2Dot0)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 
 			mockAndRefreshStatus(&h)
@@ -149,7 +149,7 @@ var _ = Describe("Validations test", func() {
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
 			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleAutoDashAssign)
-			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr20)
+			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr2Dot0)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 
 			checkValidation := func(expectedStatus ValidationStatus, expectedMsg string) {
@@ -254,7 +254,7 @@ var _ = Describe("Validations test", func() {
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
 			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleMaster)
-			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr12)
+			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr1Dot2)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 
 			mockAndRefreshStatus(&h)
@@ -264,7 +264,7 @@ var _ = Describe("Validations test", func() {
 			Expect(found).To(BeTrue())
 			Expect(validationStatus).To(Equal(ValidationFailure))
 			Expect(validationMessage).To(Equal(fmt.Sprintf("The host's TPM version is not supported, expected-version: %s, actual-version: %s",
-				models.InventoryTpmVersionNr20, models.InventoryTpmVersionNr12)))
+				models.InventoryTpmVersionNr2Dot0, models.InventoryTpmVersionNr1Dot2)))
 		})
 
 		It("happy flow - explicit role", func() {
@@ -277,7 +277,7 @@ var _ = Describe("Validations test", func() {
 			Expect(db.Create(&c).Error).ToNot(HaveOccurred())
 
 			h := hostutil.GenerateTestHostByKind(hostID, infraEnvID, &clusterID, models.HostStatusDiscovering, models.HostKindHost, models.HostRoleWorker)
-			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr20)
+			h.Inventory = common.GenerateTestInventoryWithTpmVersion(models.InventoryTpmVersionNr2Dot0)
 			Expect(db.Create(&h).Error).ShouldNot(HaveOccurred())
 
 			mockAndRefreshStatus(&h)

@@ -43,7 +43,7 @@ type ClusterCreateParams struct {
 	CPUArchitecture string `json:"cpu_architecture,omitempty"`
 
 	// Installation disks encryption mode and host roles to be applied.
-	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty"`
+	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty" gorm:"embedded;embeddedPrefix:disk_encryption_"`
 
 	// Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
 	// over multiple master nodes whereas 'None' installs a full cluster over one node.
@@ -96,7 +96,7 @@ type ClusterCreateParams struct {
 	OpenshiftVersion *string `json:"openshift_version"`
 
 	// platform
-	Platform *Platform `json:"platform,omitempty"`
+	Platform *Platform `json:"platform,omitempty" gorm:"embedded;embeddedPrefix:platform_"`
 
 	// The pull secret obtained from Red Hat OpenShift Cluster Manager at cloud.redhat.com/openshift/install/pull-secret.
 	// Required: true

@@ -14,11 +14,11 @@ import (
 
 var _ = Describe("populateInfraEnv", func() {
 	var (
-		db         *gorm.DB
-		dbName     string
-		gm         *gormigrate.Gormigrate
-		hostID     strfmt.UUID
-		clusterID  strfmt.UUID
+		db        *gorm.DB
+		dbName    string
+		gm        *gormigrate.Gormigrate
+		hostID    strfmt.UUID
+		clusterID strfmt.UUID
 	)
 
 	const (
@@ -36,7 +36,7 @@ var _ = Describe("populateInfraEnv", func() {
 		SizeBytes               = int64(32000)
 		SshPublicKey            = "SSH_PUBLIC_KEY"
 		StaticNetworkConfig     = "STATIC_NETWORK_CONFIG"
-		ImageType               = models.ImageTypeFullIso
+		ImageType               = models.ImageTypeFullDashIso
 		OpenshiftVersion        = "OPENSHIFT_VERSION"
 		Generated               = true
 		ProxyHash               = "PROXY_HASH"
@@ -50,7 +50,7 @@ var _ = Describe("populateInfraEnv", func() {
 			ID: &hostID,
 			// [TODO] - currently we check migration by adding dummy value and seeing it replaced
 			// in case we add host v1 model to the swagger, then we can replace the models.Host with it
-			ClusterID:  &clusterID,
+			ClusterID: &clusterID,
 		}
 		err := db.Create(&host).Error
 		Expect(err).NotTo(HaveOccurred())
@@ -115,7 +115,7 @@ var _ = Describe("populateInfraEnv", func() {
 		Expect(*infra_env.SizeBytes).To(Equal(SizeBytes))
 		Expect(infra_env.SSHAuthorizedKey).To(Equal(SshPublicKey))
 		Expect(infra_env.StaticNetworkConfig).To(Equal(StaticNetworkConfig))
-		Expect(infra_env.Type).To(Equal(ImageType))
+		Expect(common.ImageTypeValue(infra_env.Type)).To(Equal(ImageType))
 		Expect(infra_env.OpenshiftVersion).To(Equal(OpenshiftVersion))
 
 		var host common.Host

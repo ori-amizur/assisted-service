@@ -347,7 +347,7 @@ func createVspherePlatformParams() *models.Platform {
 		VCenter:          &dummyField,
 	}
 	return &models.Platform{
-		Type:    models.PlatformTypeVsphere,
+		Type:    common.PlatformTypePtr(models.PlatformTypeVsphere),
 		Vsphere: &vspherePlatform,
 	}
 }

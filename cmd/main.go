@@ -817,7 +817,7 @@ func createControllerManager() (manager.Manager, error) {
 func disableFreeAddressesIfNeeded(enableKubeAPI bool, disabledSteps []models.StepType) []models.StepType {
 	if enableKubeAPI {
 		// If this step was already disabled via environment, it wont matter once parsed.
-		return append(disabledSteps, models.StepTypeFreeNetworkAddresses)
+		return append(disabledSteps, models.StepTypeFreeDashNetworkDashAddresses)
 	}
 	return disabledSteps
 }

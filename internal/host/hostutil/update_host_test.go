@@ -98,10 +98,10 @@ var _ = Describe("update_host_state", func() {
 		Describe("same_status", func() {
 			It("new_stage", func() {
 				returnedHost, err = UpdateHostProgress(ctx, common.GetTestLog(), db, mockEvents, host.InfraEnvID, *host.ID, *host.Status, common.TestDefaultConfig.Status, common.TestDefaultConfig.StatusInfo,
-					host.Progress.CurrentStage, common.TestDefaultConfig.HostProgressStage, host.Progress.ProgressInfo)
+					common.HostStageValue(host.Progress.CurrentStage), common.TestDefaultConfig.HostProgressStage, host.Progress.ProgressInfo)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				Expect(returnedHost.Progress.CurrentStage).Should(Equal(common.TestDefaultConfig.HostProgressStage))
+				Expect(common.HostStageValue(returnedHost.Progress.CurrentStage)).Should(Equal(common.TestDefaultConfig.HostProgressStage))
 				Expect(returnedHost.Progress.ProgressInfo).Should(Equal(host.Progress.ProgressInfo))
 				Expect(returnedHost.Progress.StageUpdatedAt.String()).ShouldNot(Equal(lastUpdatedTime.String()))
 				Expect(returnedHost.Progress.StageStartedAt.String()).ShouldNot(Equal(lastUpdatedTime.String()))
@@ -110,10 +110,10 @@ var _ = Describe("update_host_state", func() {
 			It("same_stage", func() {
 				// Still updates because stage_updated_at is being updated
 				returnedHost, err = UpdateHostProgress(ctx, common.GetTestLog(), db, mockEvents, host.InfraEnvID, *host.ID, *host.Status, common.TestDefaultConfig.Status, common.TestDefaultConfig.StatusInfo,
-					host.Progress.CurrentStage, host.Progress.CurrentStage, host.Progress.ProgressInfo)
+					common.HostStageValue(host.Progress.CurrentStage), common.HostStageValue(host.Progress.CurrentStage), host.Progress.ProgressInfo)
 				Expect(err).ShouldNot(HaveOccurred())
 
-				Expect(returnedHost.Progress.CurrentStage).Should(Equal(models.HostStage("")))
+				Expect(common.HostStageValue(returnedHost.Progress.CurrentStage)).Should(Equal(models.HostStage("")))
 				Expect(returnedHost.Progress.ProgressInfo).Should(Equal(""))
 				Expect(returnedHost.Progress.StageUpdatedAt.String()).ShouldNot(Equal(lastUpdatedTime.String()))
 				Expect(returnedHost.Progress.StageStartedAt.String()).Should(Equal(lastUpdatedTime.String()))
@@ -134,10 +134,10 @@ var _ = Describe("update_host_state", func() {
 				eventstest.WithHostIdMatcher(host.ID.String()),
 				eventstest.WithInfraEnvIdMatcher(host.InfraEnvID.String())))
 			returnedHost, err = UpdateHostProgress(ctx, common.GetTestLog(), db, mockEvents, host.InfraEnvID, *host.ID, *host.Status, newStatus, newStatusInfo,
-				host.Progress.CurrentStage, common.TestDefaultConfig.HostProgressStage, "")
+				common.HostStageValue(host.Progress.CurrentStage), common.TestDefaultConfig.HostProgressStage, "")
 			Expect(err).ShouldNot(HaveOccurred())
 
-			Expect(returnedHost.Progress.CurrentStage).Should(Equal(common.TestDefaultConfig.HostProgressStage))
+			Expect(common.HostStageValue(returnedHost.Progress.CurrentStage)).Should(Equal(common.TestDefaultConfig.HostProgressStage))
 			Expect(returnedHost.Progress.ProgressInfo).Should(Equal(""))
 			Expect(returnedHost.Progress.StageUpdatedAt.String()).ShouldNot(Equal(lastUpdatedTime.String()))
 			Expect(returnedHost.Progress.StageStartedAt.String()).ShouldNot(Equal(lastUpdatedTime.String()))
@@ -152,7 +152,7 @@ var _ = Describe("update_host_state", func() {
 		It("update_info", func() {
 			for _, i := range []int{5, 10, 15} {
 				returnedHost, err = UpdateHostProgress(ctx, common.GetTestLog(), db, mockEvents, host.InfraEnvID, *host.ID, *host.Status, common.TestDefaultConfig.Status, common.TestDefaultConfig.StatusInfo,
-					host.Progress.CurrentStage, host.Progress.CurrentStage, fmt.Sprintf("%d%%", i))
+					common.HostStageValue(host.Progress.CurrentStage), common.HostStageValue(host.Progress.CurrentStage), fmt.Sprintf("%d%%", i))
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(returnedHost.Progress.ProgressInfo).Should(Equal(fmt.Sprintf("%d%%", i)))
 				Expect(returnedHost.Progress.StageStartedAt.String()).Should(Equal(lastUpdatedTime.String()))

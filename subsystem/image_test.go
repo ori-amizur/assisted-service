@@ -119,7 +119,7 @@ var _ = Describe("system-test image tests", func() {
 		})
 	}
 
-	for _, imageType := range []models.ImageType{models.ImageTypeFullIso, models.ImageTypeMinimalIso} {
+	for _, imageType := range []models.ImageType{models.ImageTypeFullDashIso, models.ImageTypeMinimalDashIso} {
 		assertImageGenerates(imageType)
 	}
 })

@@ -1999,7 +1999,7 @@ var _ = Describe("Refresh Cluster - Advanced networking validations", func() {
 			},
 			{
 				name:              "pending-for-input to insufficient - networkType invalid (OVN and VIP DHCP allocation)",
-				srcState:          models.ClusterStatusPendingForInput,
+				srcState:          models.ClusterStatusPendingDashForDashInput,
 				dstState:          models.ClusterStatusInsufficient,
 				clusterNetworks:   common.TestIPv4Networking.ClusterNetworks,
 				serviceNetworks:   common.TestIPv4Networking.ServiceNetworks,
@@ -2606,13 +2606,13 @@ var _ = Describe("Refresh Cluster - With DHCP", func() {
 			errorExpected           bool
 		}{
 			{
-				name:          "pending-for-input to pending-for-input",
-				srcState:      models.ClusterStatusPendingDashForDashInput,
-				dstState:      models.ClusterStatusPendingDashForDashInput,
-				apiVip:        "",
-				ingressVip:    "",
-				dnsDomain:     "test.com",
-				pullSecretSet: true,
+				name:              "pending-for-input to pending-for-input",
+				srcState:          models.ClusterStatusPendingDashForDashInput,
+				dstState:          models.ClusterStatusPendingDashForDashInput,
+				apiVip:            "",
+				ingressVip:        "",
+				dnsDomain:         "test.com",
+				pullSecretSet:     true,
 				vipDhcpAllocation: true,
 				hosts: []models.Host{
 					{ID: &hid1, Status: swag.String(models.HostStatusKnown), Role: models.HostRoleMaster},

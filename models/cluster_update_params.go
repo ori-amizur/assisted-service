@@ -47,7 +47,7 @@ type ClusterUpdateParams struct {
 	ClusterNetworks []*ClusterNetwork `json:"cluster_networks"`
 
 	// Installation disks encryption mode and host roles to be applied.
-	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty"`
+	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty" gorm:"embedded;embeddedPrefix:disk_encryption_"`
 
 	// disks selected config
 	DisksSelectedConfig []*ClusterUpdateParamsDisksSelectedConfigItems0 `json:"disks_selected_config"`
@@ -102,7 +102,7 @@ type ClusterUpdateParams struct {
 	OlmOperators []*OperatorCreateParams `json:"olm_operators"`
 
 	// platform
-	Platform *Platform `json:"platform,omitempty"`
+	Platform *Platform `json:"platform,omitempty" gorm:"embedded;embeddedPrefix:platform_"`
 
 	// The pull secret obtained from Red Hat OpenShift Cluster Manager at cloud.redhat.com/openshift/install/pull-secret.
 	PullSecret *string `json:"pull_secret,omitempty"`
