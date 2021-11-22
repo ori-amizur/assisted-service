@@ -32,6 +32,7 @@ import (
 	"github.com/openshift/assisted-service/pkg/leader"
 	"github.com/openshift/assisted-service/pkg/s3wrapper"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
 	"gorm.io/gorm"
@@ -2154,6 +2155,90 @@ var _ = Describe("Majority groups", func() {
 			run("1.2.3.10", "10.0.0.15")
 			expect("1.2.3.0/24", "10.0.0.0/24")
 		})
+	})
+})
+
+var _ = Describe("cluster-performance", func() {
+	var (
+		dbIndex    int
+		clusterApi *Manager
+		db         *gorm.DB
+		mockEvents eventsapi.Handler
+		dbName     string
+		log        *logrus.Logger
+		clusters   []*common.Cluster
+	)
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
+		printTimes()
+	})
+
+	BeforeEach(func() {
+		db, dbName = common.PrepareTestDB()
+		dbIndex++
+		log = logrus.New()
+		log.SetOutput(ioutil.Discard)
+		mockEvents = events.New(db, log)
+		mockOperators := operators.NewManager(common.GetTestLog(), nil, operators.Options{}, nil, nil)
+		dummy := &leader.DummyElector{}
+		clusterApi = NewManager(getDefaultConfig(), common.GetTestLog().WithField("pkg", "cluster-monitor"), db,
+			mockEvents, nil, metrics.NewMetricsManager(prometheus.DefaultRegisterer, mockEvents), nil, dummy, mockOperators, nil, nil, nil)
+		durations = make(map[string]stats)
+	})
+	setup := func(numClusters uint) {
+		for i := uint(0); i != numClusters; i++ {
+			id := strfmt.UUID(uuid.New().String())
+			cluster := common.Cluster{Cluster: models.Cluster{
+				ID:                 &id,
+				Status:             swag.String(models.ClusterStatusInsufficient),
+				MachineNetworkCidr: "1.2.3.0/24",
+				MachineNetworks: []*models.MachineNetwork{
+					{
+						Cidr:      "1.2.3.0/24",
+						ClusterID: id,
+					},
+				},
+				BaseDNSDomain:      "test.com",
+				PullSecretSet:      true,
+				ServiceNetworkCidr: "1.2.4.0/24",
+				ServiceNetworks: []*models.ServiceNetwork{
+					{
+						ClusterID: id,
+						Cidr:      "1.2.4.0/24",
+					},
+				},
+				ClusterNetworkCidr:       "1.3.0.0/16",
+				ClusterNetworkHostPrefix: 24,
+				ClusterNetworks: []*models.ClusterNetwork{
+					{
+						Cidr:       "1.3.0.0/16",
+						ClusterID:  id,
+						HostPrefix: 24,
+					},
+				},
+			}}
+			Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+			clusters = append(clusters, &cluster)
+		}
+	}
+	//It("1", func() {
+	//	setup(1)
+	//	timeIt(clusterApi.ClusterMonitoring, "mnitoring")
+	//})
+	//It("2", func() {
+	//	setup(2)
+	//	timeIt(clusterApi.ClusterMonitoring, "mnitoring")
+	//})
+	//It("10", func() {
+	//	setup(10)
+	//	timeIt(clusterApi.ClusterMonitoring, "mnitoring")
+	//})
+	It("50", func() {
+		setup(5000)
+		for i := 0; i != 2; i++ {
+			timeIt(clusterApi.ClusterMonitoring, "monitoring")
+		}
 	})
 })
 

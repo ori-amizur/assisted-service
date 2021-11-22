@@ -39,6 +39,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
+	syscall "golang.org/x/sys/unix"
 	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -345,8 +346,13 @@ func (m *Manager) refreshStatusInternal(ctx context.Context, c *common.Cluster, 
 		conditions       map[string]bool
 		newValidationRes map[string][]ValidationResult
 	)
-	vc = newClusterValidationContext(c, db)
-	conditions, newValidationRes, err = m.rp.preprocess(ctx, vc)
+
+	timeIt(func() {
+		vc = newClusterValidationContext(c, db)
+	}, "newClusterValidationContext")
+	timeIt(func() {
+		conditions, newValidationRes, err = m.rp.preprocess(ctx, vc)
+	}, "preprocess")
 	if err != nil {
 		return c, err
 	}
@@ -354,15 +360,21 @@ func (m *Manager) refreshStatusInternal(ctx context.Context, c *common.Cluster, 
 	if err != nil {
 		return nil, err
 	}
-	if m.didValidationChanged(ctx, newValidationRes, currentValidationRes) {
+	var validationsChanged bool
+	timeIt(func() {
+		validationsChanged = m.didValidationChanged(ctx, newValidationRes, currentValidationRes)
+	}, "IsvalidationChanged")
+	if validationsChanged {
 		// Validation status changes are detected when new validations are different from the
 		// current validations in the DB.
 		// For changes to be detected and reported correctly, the comparison needs to be
 		// performed before the new validations are updated to the DB.
-		m.reportValidationStatusChanged(ctx, c, newValidationRes, currentValidationRes)
-		if _, err = m.updateValidationsInDB(ctx, db, c, newValidationRes); err != nil {
-			return nil, err
-		}
+		timeIt(func() {
+			m.reportValidationStatusChanged(ctx, c, newValidationRes, currentValidationRes)
+			if _, err = m.updateValidationsInDB(ctx, db, c, newValidationRes); err != nil {
+				return //nil, err
+			}
+		}, "validation changed")
 	}
 	args := &TransitionArgsRefreshCluster{
 		ctx:               ctx,
@@ -378,7 +390,9 @@ func (m *Manager) refreshStatusInternal(ctx context.Context, c *common.Cluster, 
 		dnsApi:            m.dnsApi,
 	}
 
-	err = m.sm.Run(TransitionTypeRefreshStatus, newStateCluster(vc.cluster), args)
+	timeIt(func() {
+		err = m.sm.Run(TransitionTypeRefreshStatus, newStateCluster(vc.cluster), args)
+	}, "run")
 	if err != nil {
 		return nil, common.NewApiError(http.StatusConflict, err)
 	}
@@ -526,6 +540,39 @@ func (m *Manager) initMonitorQueryGenerator() {
 	}
 }
 
+type stats struct {
+	elapsed, user, system time.Duration
+	calls                 int
+}
+
+var durations map[string]stats
+
+func toTime(t syscall.Timeval) time.Time {
+	return time.Unix(t.Sec, t.Usec*1000)
+}
+
+func timeIt(f func(), label string) {
+	var rstart, rend syscall.Rusage
+	_ = syscall.Getrusage(syscall.RUSAGE_SELF, &rstart)
+	start := time.Now()
+	f()
+	end := time.Now()
+	duration := end.Sub(start)
+	_ = syscall.Getrusage(syscall.RUSAGE_SELF, &rend)
+	current, _ := durations[label]
+	current.elapsed = time.Duration(current.elapsed.Nanoseconds() + duration.Nanoseconds())
+	current.calls++
+	current.user = time.Duration(toTime(rend.Utime).Sub(toTime(rstart.Utime)).Nanoseconds() + current.user.Nanoseconds())
+	current.system = time.Duration(toTime(rend.Stime).Sub(toTime(rstart.Stime)).Nanoseconds() + current.system.Nanoseconds())
+	durations[label] = current
+}
+
+func printTimes() {
+	for k, v := range durations {
+		fmt.Printf("%s  elapsed %+v ms user %+v ms sys %+v ms calls %d\n", k, v.elapsed.Milliseconds(), v.user.Milliseconds(), v.system.Milliseconds(), v.calls)
+	}
+}
+
 func (m *Manager) ClusterMonitoring() {
 	if !m.leaderElector.IsLeader() {
 		m.log.Debugf("Not a leader, exiting ClusterMonitoring")
@@ -554,10 +601,14 @@ func (m *Manager) ClusterMonitoring() {
 	//when cluster is in error. it should be still monitored until all the logs are collected.
 	//Then, SkipMonitoring() stops the logic from running forever
 	m.initMonitorQueryGenerator()
-
-	query := m.monitorQueryGenerator.NewClusterQuery()
+	var query common.MonitorQuery
+	timeIt(func() {
+		query = m.monitorQueryGenerator.NewClusterQuery()
+	}, "query")
 	for {
-		clusters, err = query.Next()
+		timeIt(func() {
+			clusters, err = query.Next()
+		}, "Next")
 		if err != nil {
 			log.WithError(err).Errorf("failed to get clusters")
 			return
@@ -573,11 +624,17 @@ func (m *Manager) ClusterMonitoring() {
 			}
 			if !m.SkipMonitoring(cluster) {
 				monitored += 1
-				_ = m.autoAssignMachineNetworkCidr(cluster)
-				if err = m.setConnectivityMajorityGroupsForClusterInternal(cluster, m.db); err != nil {
-					log.WithError(err).Error("failed to set majority group for clusters")
-				}
-				clusterAfterRefresh, err = m.refreshStatusInternal(ctx, cluster, m.db)
+				timeIt(func() {
+					_ = m.autoAssignMachineNetworkCidr(cluster)
+				}, "autoAssignMachineNetworkCidr")
+				timeIt(func() {
+					if err = m.setConnectivityMajorityGroupsForClusterInternal(cluster, m.db); err != nil {
+						log.WithError(err).Error("failed to set majority group for clusters")
+					}
+				}, "setConnectivityMajorityGroupsForClusterInternal")
+				timeIt(func() {
+					clusterAfterRefresh, err = m.refreshStatusInternal(ctx, cluster, m.db)
+				}, "refreshStatusInternal")
 				if err != nil {
 					log.WithError(err).Errorf("failed to refresh cluster %s state", cluster.ID)
 					continue
@@ -589,7 +646,9 @@ func (m *Manager) ClusterMonitoring() {
 				}
 
 				if m.shouldTriggerLeaseTimeoutEvent(cluster, curMonitorInvokedAt) {
-					m.triggerLeaseTimeoutEvent(ctx, cluster)
+					timeIt(func() {
+						m.triggerLeaseTimeoutEvent(ctx, cluster)
+					}, "Timeout event")
 				}
 			}
 		}
