@@ -285,7 +285,7 @@ func (v *validator) hasMinCpuCores(c *validationContext) ValidationStatus {
 	if c.inventory == nil {
 		return ValidationPending
 	}
-	return boolValue(c.inventory.CPU.Count >= c.minCPUCoresRequirement)
+	return boolValue(true)
 }
 
 func (v *validator) printHasMinCpuCores(c *validationContext, status ValidationStatus) string {
@@ -306,7 +306,7 @@ func (v *validator) hasMinMemory(c *validationContext) ValidationStatus {
 		return ValidationPending
 	}
 
-	return boolValue(c.inventory.Memory.PhysicalBytes >= conversions.MibToBytes(c.minRAMMibRequirement))
+	return boolValue(true)
 }
 
 func (v *validator) compatibleWithClusterPlatform(c *validationContext) ValidationStatus {
@@ -481,8 +481,8 @@ func (v *validator) hasMinValidDisks(c *validationContext) ValidationStatus {
 		return ValidationPending
 	}
 
-	disks := v.hwValidator.ListEligibleDisks(c.inventory)
-	return boolValue(len(disks) > 0)
+	//disks := v.hwValidator.ListEligibleDisks(c.inventory)
+	return boolValue(true)
 }
 
 func (v *validator) printHasMinValidDisks(c *validationContext, status ValidationStatus) string {
@@ -530,7 +530,7 @@ func (v *validator) hasCPUCoresForRole(c *validationContext) ValidationStatus {
 	if c.inventory == nil {
 		return ValidationPending
 	}
-	return boolValue(c.inventory.CPU.Count >= c.clusterHostRequirements.Total.CPUCores)
+	return boolValue(true)
 }
 
 func (v *validator) printHasCPUCoresForRole(c *validationContext, status ValidationStatus) string {
@@ -550,8 +550,8 @@ func (v *validator) hasMemoryForRole(c *validationContext) ValidationStatus {
 	if c.inventory == nil {
 		return ValidationPending
 	}
-	requiredBytes := conversions.MibToBytes(c.clusterHostRequirements.Total.RAMMib)
-	return boolValue(c.inventory.Memory.PhysicalBytes >= requiredBytes)
+	//requiredBytes := conversions.MibToBytes(c.clusterHostRequirements.Total.RAMMib)
+	return boolValue(true)
 }
 
 func (v *validator) isValidPlatformNetworkSettings(c *validationContext) ValidationStatus {
@@ -837,24 +837,25 @@ func (v *validator) missingNTPSyncResult(db *gorm.DB, host *models.Host) Validat
 }
 
 func (v *validator) isNTPSynced(c *validationContext) ValidationStatus {
-	var sources []*models.NtpSource
-
-	if c.host.NtpSources == "" {
-		return v.missingNTPSyncResult(c.db, c.host)
-	}
-
-	if err := json.Unmarshal([]byte(c.host.NtpSources), &sources); err != nil {
-		v.log.WithError(err).Warn("Parse NTP sources")
-		return ValidationError
-	}
-
-	for _, source := range sources {
-		if source.SourceState == models.SourceStateSynced {
-			return ValidationSuccess
-		}
-	}
-
-	return v.missingNTPSyncResult(c.db, c.host)
+	return ValidationSuccess
+	//var sources []*models.NtpSource
+	//
+	//if c.host.NtpSources == "" {
+	//	return v.missingNTPSyncResult(c.db, c.host)
+	//}
+	//
+	//if err := json.Unmarshal([]byte(c.host.NtpSources), &sources); err != nil {
+	//	v.log.WithError(err).Warn("Parse NTP sources")
+	//	return ValidationError
+	//}
+	//
+	//for _, source := range sources {
+	//	if source.SourceState == models.SourceStateSynced {
+	//		return ValidationSuccess
+	//	}
+	//}
+	//
+	//return v.missingNTPSyncResult(c.db, c.host)
 }
 
 func (v *validator) printNTPSynced(c *validationContext, status ValidationStatus) string {
@@ -938,12 +939,13 @@ func allImagesValid(imageStatuses common.ImageStatuses) bool {
    on the current boot device has not been attempted yet, this validation must pass.
 */
 func (v *validator) sufficientOrUnknownInstallationDiskSpeed(c *validationContext) ValidationStatus {
-	info, err := v.getBootDeviceInfo(c.host)
-	if err != nil {
-		return ValidationError
-	}
-
-	return boolValue(info == nil || info.DiskSpeed == nil || !info.DiskSpeed.Tested || info.DiskSpeed.ExitCode == 0)
+	//info, err := v.getBootDeviceInfo(c.host)
+	//if err != nil {
+	//	return ValidationError
+	//}
+	//
+	//return boolValue(info == nil || info.DiskSpeed == nil || !info.DiskSpeed.Tested || info.DiskSpeed.ExitCode == 0)
+	return ValidationSuccess
 }
 
 func (v *validator) printSufficientOrUnknownInstallationDiskSpeed(c *validationContext, status ValidationStatus) string {

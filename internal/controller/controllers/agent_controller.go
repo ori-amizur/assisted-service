@@ -35,6 +35,7 @@ import (
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/gencrypto"
 	"github.com/openshift/assisted-service/internal/host"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/auth"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -83,6 +84,7 @@ type AgentReconciler struct {
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
 
 func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	defer profiler.Measure("agent Reconcile")()
 	ctx := addRequestIdIfNeeded(origCtx)
 	log := logutil.FromContext(ctx, r.Log).WithFields(
 		logrus.Fields{
@@ -98,7 +100,10 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 
 	agent := &aiv1beta1.Agent{}
 
-	err := r.Get(ctx, req.NamespacedName, agent)
+	var err error
+	profiler.TimeIt(func() {
+		err = r.Get(ctx, req.NamespacedName, agent)
+	}, "Get agent")
 	if err != nil {
 		log.WithError(err).Errorf("Failed to get resource %s", req.NamespacedName)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -115,7 +120,10 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 		// Register a finalizer if it is absent.
 		if !funk.ContainsString(agent.GetFinalizers(), AgentFinalizerName) {
 			controllerutil.AddFinalizer(agent, AgentFinalizerName)
-			if err = r.Update(ctx, agent); err != nil {
+			profiler.TimeIt(func() {
+				err = r.Update(ctx, agent)
+			}, "Add finalizer")
+			if err != nil {
 				log.WithError(err).Errorf("failed to add finalizer %s to resource %s %s", AgentFinalizerName, agent.Name, agent.Namespace)
 			}
 			// After update there should not be any more changes on the object
@@ -141,7 +149,10 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
-	h, err := r.Installer.GetHostByKubeKey(req.NamespacedName)
+	var h *common.Host
+	profiler.TimeIt(func() {
+		h, err = r.Installer.GetHostByKubeKey(req.NamespacedName)
+	}, "Agent - GetHostByKubeKey")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return r.deleteAgent(ctx, log, req.NamespacedName)
@@ -162,9 +173,11 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 			Name:      agent.Spec.ClusterDeploymentName.Name,
 		}
 		clusterDeployment := &hivev1.ClusterDeployment{}
-
+		profiler.TimeIt(func() {
+			err = r.Get(ctx, kubeKey, clusterDeployment)
+		}, "Get cluster deployment")
 		// Retrieve clusterDeployment
-		if err = r.Get(ctx, kubeKey, clusterDeployment); err != nil {
+		if err != nil {
 			errMsg := fmt.Sprintf("failed to get clusterDeployment with name %s in namespace %s",
 				agent.Spec.ClusterDeploymentName.Name, agent.Spec.ClusterDeploymentName.Namespace)
 			log.WithError(err).Error(errMsg)
@@ -174,9 +187,12 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 		}
 
 		// Retrieve cluster by ClusterDeploymentName from the database
-		cluster, err2 := r.Installer.GetClusterByKubeKey(kubeKey)
-		if err2 != nil {
-			log.WithError(err2).Errorf("Fail to get cluster name: %s namespace: %s in backend",
+		var cluster *common.Cluster
+		profiler.TimeIt(func() {
+			cluster, err = r.Installer.GetClusterByKubeKey(kubeKey)
+		}, "GetClusterByKubeKey - agent")
+		if err != nil {
+			log.WithError(err).Errorf("Fail to get cluster name: %s namespace: %s in backend",
 				agent.Spec.ClusterDeploymentName.Name, agent.Spec.ClusterDeploymentName.Namespace)
 			// Update that we failed to retrieve the cluster from the database
 			return r.updateStatus(ctx, log, agent, origAgent, &h.Host, nil, err2, true)
@@ -326,6 +342,7 @@ func (r *AgentReconciler) tryApproveDay2CSRs(ctx context.Context, agent *aiv1bet
 }
 
 func (r *AgentReconciler) unbindHost(ctx context.Context, log logrus.FieldLogger, agent, origAgent *aiv1beta1.Agent, h *common.Host) (ctrl.Result, error) {
+	defer profiler.Measure("unbindHost")()
 	host, err2 := r.Installer.UnbindHostInternal(ctx, installer.UnbindHostParams{
 		HostID:     *h.ID,
 		InfraEnvID: h.InfraEnvID,
@@ -419,6 +436,7 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 		isNoneDay2Rebooting bool
 	)
 	ret := ctrl.Result{}
+	defer profiler.Measure("updateStatus - agent")()
 	specSynced(agent, syncErr, internal)
 
 	if h != nil && h.Status != nil {
@@ -476,11 +494,13 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 				agent.Status.DebugInfo.LogsURL = logsURL
 			}
 		}
-		connected(agent, status)
-		requirementsMet(agent, status)
-		validated(agent, status, h)
-		installed(agent, status, swag.StringValue(h.StatusInfo))
-		bound(agent, status, h)
+		profiler.TimeIt(func() {
+			connected(agent, status)
+			requirementsMet(agent, status)
+			validated(agent, status, h)
+			installed(agent, status, swag.StringValue(h.StatusInfo))
+			bound(agent, status, h)
+		}, "known conditions")
 	} else {
 		setConditionsUnknown(agent)
 	}
@@ -545,6 +565,7 @@ func generateControllerLogsDownloadURL(baseURL string, clusterID string, authTyp
 }
 
 func setConditionsUnknown(agent *aiv1beta1.Agent) {
+	defer profiler.Measure("setConditionsUnknown")()
 	agent.Status.DebugInfo.State = ""
 	agent.Status.DebugInfo.StateInfo = ""
 	conditionsv1.SetStatusConditionNoHeartbeat(&agent.Status.Conditions, conditionsv1.Condition{
@@ -609,6 +630,7 @@ func specSynced(agent *aiv1beta1.Agent, syncErr error, internal bool) {
 }
 
 func (r *AgentReconciler) updateInstallerArgs(ctx context.Context, log logrus.FieldLogger, host *common.Host, agent *aiv1beta1.Agent) error {
+	defer profiler.Measure("updateInstallerArgs")()
 
 	if agent.Spec.InstallerArgs == host.InstallerArgs {
 		log.Debugf("Nothing to update, installer args were already set")
@@ -1066,6 +1088,7 @@ func setAgentLabel(log logrus.FieldLogger, agent *aiv1beta1.Agent, key string, v
 }
 
 func (r *AgentReconciler) updateHostIgnition(ctx context.Context, log logrus.FieldLogger, host *common.Host, agent *aiv1beta1.Agent) error {
+	defer profiler.Measure("updateHostIgnition")()
 	if agent.Spec.IgnitionConfigOverrides == host.IgnitionConfigOverrides {
 		log.Debugf("Nothing to update, ignition config override was already set")
 		return nil
@@ -1087,6 +1110,7 @@ func (r *AgentReconciler) updateHostIgnition(ctx context.Context, log logrus.Fie
 }
 
 func (r *AgentReconciler) updateIfNeeded(ctx context.Context, log logrus.FieldLogger, agent *aiv1beta1.Agent, internalHost *common.Host) (*common.Host, error) {
+	defer profiler.Measure("updateIfNeeded")()
 	spec := agent.Spec
 	var err error
 	returnedHost := internalHost

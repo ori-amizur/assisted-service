@@ -7,6 +7,7 @@ import (
     "strings"
     "time"
     eventsapi "github.com/openshift/assisted-service/internal/events/api"
+    "github.com/openshift/assisted-service/internal/profiler"
 
     "github.com/go-openapi/strfmt"
 )
@@ -3184,6 +3185,7 @@ func SendHostValidationFailedEvent(
     clusterId *strfmt.UUID,
     hostName string,
     validationId string,) {
+    defer profiler.Measure("SendHostValidationFailedEvent")()
     ev := NewHostValidationFailedEvent(
         hostId,
         infraEnvId,
@@ -3287,6 +3289,7 @@ func SendHostValidationFixedEvent(
     clusterId *strfmt.UUID,
     hostName string,
     validationId string,) {
+    defer profiler.Measure("SendHostValidationFixedEvent")()
     ev := NewHostValidationFixedEvent(
         hostId,
         infraEnvId,

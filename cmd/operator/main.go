@@ -26,6 +26,7 @@ import (
 	routev1 "github.com/openshift/api/route/v1"
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
 	"github.com/openshift/assisted-service/internal/controller/controllers"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/sirupsen/logrus"
@@ -136,9 +137,11 @@ func main() {
 		tolerations = operatorPod.Spec.Tolerations
 	}
 
+	l := logrus.New()
+	go profiler.PeriodicPrinter(l)
 	if err = (&controllers.AgentServiceConfigReconciler{
 		Client:       mgr.GetClient(),
-		Log:          logrus.New(),
+		Log:          l,
 		Scheme:       mgr.GetScheme(),
 		Recorder:     mgr.GetEventRecorderFor("agentserviceconfig-controller"),
 		Namespace:    ns,

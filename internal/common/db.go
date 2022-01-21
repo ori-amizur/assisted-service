@@ -6,6 +6,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/internal/gencrypto"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/transaction"
 	"github.com/pkg/errors"
@@ -158,6 +159,7 @@ func LoadClusterTablesFromDB(db *gorm.DB, excludeTables ...string) *gorm.DB {
 }
 
 func GetClusterFromDB(db *gorm.DB, clusterId strfmt.UUID, eagerLoading EagerLoadingState) (*Cluster, error) {
+	defer profiler.Measure("GetClusterFromDB")()
 	c, err := GetClusterFromDBWhere(db, eagerLoading, SkipDeletedRecords, "id = ?", clusterId.String())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to get cluster %s", clusterId.String())

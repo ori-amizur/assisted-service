@@ -13,6 +13,7 @@ import (
 	"github.com/openshift/assisted-service/internal/hardware"
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/internal/oc"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/internal/versions"
 	"github.com/openshift/assisted-service/models"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -151,7 +152,13 @@ func (i *InstructionManager) GetNextSteps(ctx context.Context, host *models.Host
 		returnSteps.NextInstructionSeconds = cmdsMap.NextStepInSec
 		returnSteps.PostStepAction = swag.String(cmdsMap.PostStepAction)
 		for _, cmd := range cmdsMap.Commands {
-			steps, err := cmd.GetSteps(ctx, host)
+			var (
+				steps []*models.Step
+				err   error
+			)
+			profiler.TimeIt(func() {
+				steps, err = cmd.GetSteps(ctx, host)
+			}, fmt.Sprintf("GetSteps %T", cmd))
 			if err != nil {
 				// Allow to return additional steps if the current one failed
 				log.WithError(err).Warnf("Failed to generate steps for command %T", cmd)

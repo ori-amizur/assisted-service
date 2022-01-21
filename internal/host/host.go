@@ -22,6 +22,7 @@ import (
 	"github.com/openshift/assisted-service/internal/host/hostutil"
 	"github.com/openshift/assisted-service/internal/metrics"
 	"github.com/openshift/assisted-service/internal/operators"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/leader"
@@ -379,6 +380,7 @@ func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, 
 }
 
 func (m *Manager) refreshRoleInternal(ctx context.Context, h *models.Host, db *gorm.DB, forceRefresh bool) error {
+	defer profiler.Measure("refreshRoleInternal - hosts")()
 	//update suggested role, if not yet set
 	var suggestedRole models.HostRole
 	var err error
@@ -402,6 +404,7 @@ func (m *Manager) refreshRoleInternal(ctx context.Context, h *models.Host, db *g
 }
 
 func (m *Manager) refreshStatusInternal(ctx context.Context, h *models.Host, c *common.Cluster, i *common.InfraEnv, db *gorm.DB) error {
+	defer profiler.Measure("refreshStatusInternal - hosts")()
 	log := logutil.FromContext(ctx, m.log)
 	if db == nil {
 		db = m.db
@@ -437,13 +440,15 @@ func (m *Manager) refreshStatusInternal(ctx context.Context, h *models.Host, c *
 		}
 	}
 
-	err = m.sm.Run(TransitionTypeRefresh, newStateHost(h), &TransitionArgsRefreshHost{
-		ctx:               ctx,
-		db:                db,
-		eventHandler:      m.eventsHandler,
-		conditions:        conditions,
-		validationResults: newValidationRes,
-	})
+	profiler.TimeIt(func() {
+		err = m.sm.Run(TransitionTypeRefresh, newStateHost(h), &TransitionArgsRefreshHost{
+			ctx:               ctx,
+			db:                db,
+			eventHandler:      m.eventsHandler,
+			conditions:        conditions,
+			validationResults: newValidationRes,
+		})
+	}, "Host SM Run")
 	if err != nil {
 		return common.NewApiError(http.StatusConflict, err)
 	}
@@ -609,6 +614,7 @@ func (m *Manager) SetUploadLogsAt(ctx context.Context, h *models.Host, db *gorm.
 
 func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, connectivityReport string) error {
 	if h.Connectivity != connectivityReport {
+		defer profiler.Measure("UpdateConnectivityReport")()
 		// Only if the connectivity between the hosts changed change the updated_at field
 		if err := m.db.Model(h).Update("connectivity", connectivityReport).Error; err != nil {
 			return errors.Wrapf(err, "failed to set connectivity to host %s", h.ID.String())
@@ -979,6 +985,7 @@ func (m *Manager) ReportValidationFailedMetrics(ctx context.Context, h *models.H
 
 func (m *Manager) reportValidationStatusChanged(ctx context.Context, vc *validationContext, h *models.Host,
 	newValidationRes, currentValidationRes ValidationsStatus) {
+	defer profiler.Measure("reportValidationStatusChanged - hosts")()
 	log := logutil.FromContext(ctx, m.log)
 	for vCategory, vRes := range newValidationRes {
 		for _, v := range vRes {
@@ -1021,6 +1028,7 @@ func (m *Manager) didValidationChanged(ctx context.Context, newValidationRes, cu
 }
 
 func (m *Manager) updateValidationsInDB(ctx context.Context, db *gorm.DB, h *models.Host, newValidationRes ValidationsStatus) (*common.Host, error) {
+	defer profiler.Measure("updateValidationsInDB - hosts")()
 	b, err := json.Marshal(newValidationRes)
 	if err != nil {
 		return nil, err

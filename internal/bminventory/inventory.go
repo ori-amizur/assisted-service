@@ -45,6 +45,7 @@ import (
 	"github.com/openshift/assisted-service/internal/metrics"
 	"github.com/openshift/assisted-service/internal/network"
 	"github.com/openshift/assisted-service/internal/operators"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/internal/usage"
 	"github.com/openshift/assisted-service/internal/versions"
@@ -358,6 +359,7 @@ func (b *bareMetalInventory) RegisterClusterInternal(
 	ctx context.Context,
 	kubeKey *types.NamespacedName,
 	params installer.V2RegisterClusterParams) (*common.Cluster, error) {
+	defer profiler.Measure("RegisterClusterInternal")()
 
 	id := strfmt.UUID(uuid.New().String())
 	url := installer.V2GetClusterURL{ClusterID: id}
@@ -1023,6 +1025,7 @@ func (b *bareMetalInventory) integrateWithAMSClusterPreInstallation(ctx context.
 }
 
 func (b *bareMetalInventory) InstallClusterInternal(ctx context.Context, params installer.V2InstallClusterParams) (*common.Cluster, error) {
+	defer profiler.Measure("InstallClusterInternal")()
 	log := logutil.FromContext(ctx, b.log)
 	cluster := &common.Cluster{}
 	var err error
@@ -1545,6 +1548,7 @@ func (b *bareMetalInventory) UpdateClusterNonInteractive(ctx context.Context, pa
 }
 
 func (b *bareMetalInventory) v2UpdateClusterInternal(ctx context.Context, params installer.V2UpdateClusterParams, interactivity Interactivity) (*common.Cluster, error) {
+	defer profiler.Measure("v2UpdateClusterInternal")()
 	log := logutil.FromContext(ctx, b.log)
 	var cluster *common.Cluster
 	var err error
@@ -3525,6 +3529,7 @@ func (b *bareMetalInventory) GetCommonHostInternal(_ context.Context, infraEnvId
 // Updates host's approved field by a specified flag.
 // Used execlusively by kube-api.
 func (b *bareMetalInventory) UpdateHostApprovedInternal(ctx context.Context, infraEnvId, hostId string, approved bool) error {
+	defer profiler.Measure("UpdateHostApprovedInternal")()
 	log := logutil.FromContext(ctx, b.log)
 	log.Infof("Updating Approved to %t Host %s InfraEnv %s", approved, hostId, infraEnvId)
 	dbHost, err := common.GetHostFromDB(b.db, infraEnvId, hostId)
@@ -3625,10 +3630,12 @@ func secretValidationToUserError(err error) error {
 }
 
 func (b *bareMetalInventory) GetClusterByKubeKey(key types.NamespacedName) (*common.Cluster, error) {
+	defer profiler.Measure("GetClusterByKubeKey")()
 	return b.clusterApi.GetClusterByKubeKey(key)
 }
 
 func (b *bareMetalInventory) GetHostByKubeKey(key types.NamespacedName) (*common.Host, error) {
+	defer profiler.Measure("GetHostByKubeKey")()
 	h, err := b.hostApi.GetHostByKubeKey(key)
 	if err != nil {
 		return nil, err
@@ -4374,6 +4381,7 @@ func (b *bareMetalInventory) V2GetHostIgnition(ctx context.Context, params insta
 }
 
 func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installer.V2GetNextStepsParams) middleware.Responder {
+	defer profiler.Measure("V2GetNextSteps")()
 	log := logutil.FromContext(ctx, b.log)
 	var steps models.Steps
 
@@ -4397,7 +4405,13 @@ func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installe
 	}
 
 	//TODO check the error type
-	host, err := common.GetHostFromDB(tx, params.InfraEnvID.String(), params.HostID.String())
+	var (
+		host *common.Host
+		err error
+	)
+	profiler.TimeIt(func() {
+	host, err = common.GetHostFromDB(tx, params.InfraEnvID.String(), params.HostID.String())
+	}, "GetHostFromDB - GetNextSteps")
 	if err != nil {
 		log.WithError(err).Errorf("failed to find host: %s", params.HostID)
 		return installer.NewV2GetNextStepsNotFound().
@@ -4405,18 +4419,26 @@ func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installe
 	}
 
 	host.CheckedInAt = strfmt.DateTime(time.Now())
-	if err = tx.Model(&host).UpdateColumn("checked_in_at", host.CheckedInAt).Error; err != nil {
+	profiler.TimeIt(func() {
+		err = tx.Model(&host).UpdateColumn("checked_in_at", host.CheckedInAt).Error
+	}, "CheckedInAt - GetNextSteps")
+	if err != nil {
 		log.WithError(err).Errorf("failed to update host: %s", params.HostID.String())
 		return installer.NewV2GetNextStepsInternalServerError()
 	}
 
-	if err = tx.Commit().Error; err != nil {
+	profiler.TimeIt(func() {
+		err = tx.Commit().Error
+	}, "Commit - GetNextSteps")
+	if err != nil {
 		log.Error(err)
 		return installer.NewV2GetNextStepsInternalServerError()
 	}
 	txSuccess = true
 
-	steps, err = b.hostApi.GetNextSteps(ctx, &host.Host)
+	profiler.TimeIt(func() {
+		steps, err = b.hostApi.GetNextSteps(ctx, &host.Host)
+	}, "GetNextSteps - GetNextSteps")
 	if err != nil {
 		log.WithError(err).Errorf("failed to get steps for host %s infra-env %s", params.HostID.String(), params.InfraEnvID.String())
 	}
@@ -4425,6 +4447,7 @@ func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installe
 }
 
 func (b *bareMetalInventory) V2PostStepReply(ctx context.Context, params installer.V2PostStepReplyParams) middleware.Responder {
+	defer profiler.Measure("V2PostStepReply " + string(params.Reply.StepType))()
 	log := logutil.FromContext(ctx, b.log)
 
 	host, err := common.GetHostFromDB(b.db, params.InfraEnvID.String(), params.HostID.String())
@@ -4550,6 +4573,7 @@ func (b *bareMetalInventory) BindHost(ctx context.Context, params installer.Bind
 }
 
 func (b *bareMetalInventory) BindHostInternal(ctx context.Context, params installer.BindHostParams) (*common.Host, error) {
+	defer profiler.Measure("BindHostInternal")()
 	log := logutil.FromContext(ctx, b.log)
 	log.Infof("Binding host %s to cluster %s", params.HostID, params.BindHostParams.ClusterID)
 	host, err := common.GetHostFromDB(b.db, params.InfraEnvID.String(), params.HostID.String())
@@ -4690,6 +4714,7 @@ func (b *bareMetalInventory) V2UpdateHostInstallerArgs(ctx context.Context, para
 }
 
 func (b *bareMetalInventory) V2UpdateHostInstallerArgsInternal(ctx context.Context, params installer.V2UpdateHostInstallerArgsParams) (*models.Host, error) {
+	defer profiler.Measure("V2UpdateHostInstallerArgsInternal")()
 
 	log := logutil.FromContext(ctx, b.log)
 
@@ -4884,6 +4909,7 @@ func (b *bareMetalInventory) V2UpdateHostLogsProgress(ctx context.Context, param
 }
 
 func (b *bareMetalInventory) V2UpdateHostInternal(ctx context.Context, params installer.V2UpdateHostParams) (*common.Host, error) {
+	defer profiler.Measure("V2UpdateHostInternal")()
 	log := logutil.FromContext(ctx, b.log)
 	var c *models.Cluster
 	var cluster *common.Cluster

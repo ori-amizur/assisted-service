@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sort"
 	"time"
@@ -22,13 +23,16 @@ import (
 	"github.com/openshift/assisted-service/internal/events"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
 	"github.com/openshift/assisted-service/internal/events/eventstest"
+	"github.com/openshift/assisted-service/internal/hardware"
 	"github.com/openshift/assisted-service/internal/host"
 	"github.com/openshift/assisted-service/internal/metrics"
 	"github.com/openshift/assisted-service/internal/network"
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/api"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/auth"
+	"github.com/openshift/assisted-service/pkg/conversions"
 	"github.com/openshift/assisted-service/pkg/leader"
 	"github.com/openshift/assisted-service/pkg/s3wrapper"
 	"github.com/pkg/errors"
@@ -2158,6 +2162,34 @@ var _ = Describe("Majority groups", func() {
 	})
 })
 
+func GenerateTestInventoryWithSetNetwork(ip net.IP) string {
+	cidr := &net.IPNet{
+		IP:   ip,
+		Mask: net.CIDRMask(16, 32),
+	}
+	inventory := &models.Inventory{
+		Interfaces: []*models.Interface{
+			{
+				Name: "eth0",
+				IPV4Addresses: []string{
+					cidr.String(),
+				},
+				IPV6Addresses: []string{
+					"1001:db8::10/120",
+				},
+			},
+		},
+		Disks:        []*models.Disk{{SizeBytes: conversions.GibToBytes(120), DriveType: "HDD"}},
+		CPU:          &models.CPU{Count: 16},
+		Memory:       &models.Memory{PhysicalBytes: conversions.GibToBytes(16), UsableBytes: conversions.GibToBytes(16)},
+		SystemVendor: &models.SystemVendor{Manufacturer: "Red Hat", ProductName: "RHEL", SerialNumber: "3534"},
+		Routes:       common.TestDefaultRouteConfiguration,
+	}
+	b, err := json.Marshal(inventory)
+	Expect(err).To(Not(HaveOccurred()))
+	return string(b)
+}
+
 var _ = Describe("cluster-performance", func() {
 	var (
 		dbIndex    int
@@ -2171,8 +2203,37 @@ var _ = Describe("cluster-performance", func() {
 
 	AfterEach(func() {
 		common.DeleteTestDB(db, dbName)
-		printTimes()
+		profiler.PrintTimes()
 	})
+
+	createConnectivity := func(ips []net.IP, hids []strfmt.UUID, exclude int) string {
+		var connectivityReport models.ConnectivityReport
+		for i := range hids {
+			if i == exclude {
+				continue
+			}
+			l2Connectivity := make([]*models.L2Connectivity, 0)
+			l3Connectivity := make([]*models.L3Connectivity, 0)
+
+			l2Connectivity = append(l2Connectivity, &models.L2Connectivity{
+				RemoteIPAddress: ips[i].String(),
+				Successful:      true,
+			})
+			l3Connectivity = append(l3Connectivity, &models.L3Connectivity{
+				RemoteIPAddress: ips[i].String(),
+				Successful:      true,
+			})
+
+			connectivityReport.RemoteHosts = append(connectivityReport.RemoteHosts, &models.ConnectivityRemoteHost{
+				HostID:         hids[i],
+				L2Connectivity: l2Connectivity,
+				L3Connectivity: l3Connectivity,
+			})
+		}
+		b, err := json.Marshal(&connectivityReport)
+		Expect(err).ToNot(HaveOccurred())
+		return string(b)
+	}
 
 	BeforeEach(func() {
 		db, dbName = common.PrepareTestDB()
@@ -2180,15 +2241,44 @@ var _ = Describe("cluster-performance", func() {
 		log = logrus.New()
 		log.SetOutput(ioutil.Discard)
 		mockEvents = events.New(db, log)
-		mockOperators := operators.NewManager(common.GetTestLog(), nil, operators.Options{}, nil, nil)
+		l := common.GetTestLog()
+		mockOperators := operators.NewManager(l, nil, operators.Options{}, nil, nil)
 		dummy := &leader.DummyElector{}
+		hwValidator := hardware.NewValidator(l, hardware.ValidatorCfg{}, mockOperators)
+		hostApi := host.NewManager(l, db, mockEvents, hwValidator, nil, nil, nil, &host.Config{}, nil, nil, nil)
 		clusterApi = NewManager(getDefaultConfig(), common.GetTestLog().WithField("pkg", "cluster-monitor"), db,
-			mockEvents, nil, metrics.NewMetricsManager(prometheus.DefaultRegisterer, mockEvents), nil, dummy, mockOperators, nil, nil, nil)
-		durations = make(map[string]stats)
+			mockEvents, hostApi, metrics.NewMetricsManager(prometheus.DefaultRegisterer, mockEvents), nil, dummy, mockOperators, nil, nil,
+			nil, nil)
 	})
-	setup := func(numClusters uint) {
+	setup := func(numClusters, numHosts uint) {
 		for i := uint(0); i != numClusters; i++ {
 			id := strfmt.UUID(uuid.New().String())
+			hids := make([]strfmt.UUID, 0)
+			ip := net.ParseIP("1.2.0.1")
+			ips := make([]net.IP, 0)
+			for j := uint(0); j != numHosts; j++ {
+				hids = append(hids, strfmt.UUID(uuid.New().String()))
+				ips = append(ips, net.ParseIP(ip.String()))
+				common.IncrementIP(ip)
+			}
+			for j := uint(0); j < numHosts; j++ {
+				host := models.Host{
+					CheckedInAt:       strfmt.DateTime(time.Now()),
+					ClusterID:         &id,
+					InfraEnvID:        id,
+					Connectivity:      createConnectivity(ips, hids, int(i)),
+					CreatedAt:         time.Now(),
+					DeletedAt:         gorm.DeletedAt{},
+					Inventory:         GenerateTestInventoryWithSetNetwork(ips[j]),
+					ID:                &hids[j],
+					Kind:              swag.String(models.HostKindHost),
+					RequestedHostname: fmt.Sprintf("h%d", j),
+					Role:              models.HostRoleAutoAssign,
+					Status:            swag.String(models.HostStatusInsufficient),
+					StatusInfo:        swag.String("Stam"),
+				}
+				Expect(db.Create(&host).Error).ToNot(HaveOccurred())
+			}
 			cluster := common.Cluster{Cluster: models.Cluster{
 				ID:                 &id,
 				Status:             swag.String(models.ClusterStatusInsufficient),
@@ -2235,10 +2325,11 @@ var _ = Describe("cluster-performance", func() {
 	//	timeIt(clusterApi.ClusterMonitoring, "mnitoring")
 	//})
 	It("50", func() {
-		setup(5000)
+		setup(1, 200)
 		for i := 0; i != 2; i++ {
-			timeIt(clusterApi.ClusterMonitoring, "monitoring")
+			clusterApi.ClusterMonitoring()
 		}
+		Fail("Stam")
 	})
 })
 

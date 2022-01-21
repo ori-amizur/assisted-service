@@ -9,6 +9,7 @@ import (
 	"github.com/openshift/assisted-service/internal/hardware"
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/api"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
@@ -59,6 +60,7 @@ func newRefreshPreprocessor(log logrus.FieldLogger, hwValidatorCfg *hardware.Val
 const validationDisabledByConfiguration = "Validation disabled by configuration"
 
 func (r *refreshPreprocessor) preprocess(c *validationContext) (map[string]bool, ValidationsStatus, error) {
+	defer profiler.Measure("preprocess - hosts")()
 	conditions := make(map[string]bool)
 	validationsOutput := make(ValidationsStatus)
 	for _, v := range r.validations {
@@ -70,13 +72,17 @@ func (r *refreshPreprocessor) preprocess(c *validationContext) (map[string]bool,
 			message = validationDisabledByConfiguration
 			conditions[v.id.String()] = true
 		} else {
-			st = v.condition(c)
+			profiler.TimeIt(func() {
+				st = v.condition(c)
+			}, "Host validation "+v.id.String())
 			conditions[v.id.String()] = funk.ContainsString([]string{ValidationSuccess.String(), ValidationSuccessSuppressOutput.String()}, st.String())
 			// Don't output this validation status to validations in case that the output needs to be suppressed
 			if st == ValidationSuccessSuppressOutput {
 				continue
 			}
-			message = v.formatter(c, st)
+			profiler.TimeIt(func() {
+				message = v.formatter(c, st)
+			}, "Host formatter "+v.id.String())
 		}
 
 		// skip the validations per states
@@ -315,6 +321,7 @@ func newConditions(v *validator) []condition {
 }
 
 func GetValidations(h *models.Host) (ValidationsStatus, error) {
+	defer profiler.Measure("GetValidations - hosts")()
 	var currentValidationRes ValidationsStatus
 	if h.ValidationsInfo != "" {
 		if err := json.Unmarshal([]byte(h.ValidationsInfo), &currentValidationRes); err != nil {

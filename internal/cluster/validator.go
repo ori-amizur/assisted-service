@@ -10,6 +10,7 @@ import (
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/host"
 	"github.com/openshift/assisted-service/internal/network"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
@@ -61,6 +62,7 @@ func hasHostsWithInventories(c *common.Cluster) bool {
 }
 
 func newClusterValidationContext(c *common.Cluster, db *gorm.DB) *clusterPreprocessContext {
+	defer profiler.Measure("newClusterValidationContext")()
 	return &clusterPreprocessContext{
 		clusterId:               *c.ID,
 		cluster:                 c,

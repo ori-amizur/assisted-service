@@ -8,6 +8,7 @@ import (
 	"github.com/alecthomas/units"
 	"github.com/go-openapi/strfmt"
 	eventsapi "github.com/openshift/assisted-service/internal/events/api"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	logutil "github.com/openshift/assisted-service/pkg/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -345,6 +346,7 @@ func (m *MetricsManager) HostValidationFailed(clusterVersion string, emailDomain
 }
 
 func (m *MetricsManager) HostValidationChanged(clusterVersion string, emailDomain string, hostValidationType models.HostValidationID) {
+	defer profiler.Measure("HostValidationChanged")()
 	m.serviceLogicHostValidationChanged.WithLabelValues(clusterVersion, emailDomain, string(hostValidationType)).Inc()
 }
 

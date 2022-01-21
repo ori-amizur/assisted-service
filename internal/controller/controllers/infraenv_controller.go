@@ -33,6 +33,7 @@ import (
 	"github.com/openshift/assisted-service/internal/gencrypto"
 	"github.com/openshift/assisted-service/internal/imageservice"
 	"github.com/openshift/assisted-service/internal/versions"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/auth"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -82,6 +83,7 @@ type InfraEnvReconciler struct {
 // +kubebuilder:rbac:groups=agent-install.openshift.io,resources=infraenvs/status,verbs=get;update;patch
 
 func (r *InfraEnvReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	defer profiler.Measure("infraenv Reconcile")()
 	ctx := addRequestIdIfNeeded(origCtx)
 	log := logutil.FromContext(ctx, r.Log).WithFields(
 		logrus.Fields{

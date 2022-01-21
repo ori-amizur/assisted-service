@@ -9,6 +9,7 @@ import (
 	"github.com/openshift/assisted-service/internal/host"
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/api"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/sirupsen/logrus"
 	"github.com/thoas/go-funk"
@@ -48,6 +49,7 @@ func newRefreshPreprocessor(log logrus.FieldLogger, hostAPI host.API, operatorsA
 }
 
 func (r *refreshPreprocessor) preprocess(ctx context.Context, c *clusterPreprocessContext) (map[string]bool, map[string][]ValidationResult, error) {
+	defer profiler.Measure("preprocess - cluster")()
 	stateMachineInput := make(map[string]bool)
 	validationsOutput := make(map[string][]ValidationResult)
 	checkValidationsInStatuses := []string{

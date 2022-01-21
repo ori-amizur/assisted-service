@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/internal/common"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -32,6 +33,7 @@ func GetCurrentHostName(host *models.Host) (string, error) {
 }
 
 func GetHostnameForMsg(host *models.Host) string {
+	defer profiler.Measure("GetHostnameForMsg")()
 	hostName, err := GetCurrentHostName(host)
 	// An error here probably indicates that the agent didn't send inventory yet, fall back to UUID
 	if err != nil || hostName == "" {

@@ -23,6 +23,7 @@ import (
 
 	hiveext "github.com/openshift/assisted-service/api/hiveextension/v1beta1"
 	"github.com/openshift/assisted-service/internal/common"
+	"github.com/openshift/assisted-service/internal/profiler"
 	logutil "github.com/openshift/assisted-service/pkg/log"
 	hivev1 "github.com/openshift/hive/apis/hive/v1"
 	"github.com/pkg/errors"
@@ -48,6 +49,7 @@ type AgentClusterInstallReconciler struct {
 // +kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls/status,verbs=get;update;patch
 
 func (r *AgentClusterInstallReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	defer profiler.Measure("agentClusterInstall Reconcile")()
 	ctx := addRequestIdIfNeeded(origCtx)
 	log := logutil.FromContext(ctx, r.Log).WithFields(
 		logrus.Fields{

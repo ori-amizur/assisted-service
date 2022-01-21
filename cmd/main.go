@@ -40,6 +40,7 @@ import (
 	"github.com/openshift/assisted-service/internal/oc"
 	"github.com/openshift/assisted-service/internal/operators"
 	"github.com/openshift/assisted-service/internal/operators/handler"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/internal/provider/registry"
 	"github.com/openshift/assisted-service/internal/spec"
 	"github.com/openshift/assisted-service/internal/usage"
@@ -183,6 +184,7 @@ func maxDuration(dur time.Duration, durations ...time.Duration) time.Duration {
 
 func main() {
 	err := envconfig.Process(common.EnvConfigPrefix, &Options)
+	Options.Auth.AuthType = auth.TypeNone
 	log := InitLogs()
 
 	if err != nil {
@@ -232,6 +234,8 @@ func main() {
 	}
 
 	failOnError(os.MkdirAll(Options.BMConfig.ISOCacheDir, 0700), "Failed to create ISO cache directory %s", Options.BMConfig.ISOCacheDir)
+
+	go profiler.PeriodicPrinter(log)
 
 	// Connect to db
 	db := setupDB(log)

@@ -30,6 +30,7 @@ import (
 	bmh_v1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	aiv1beta1 "github.com/openshift/assisted-service/api/v1beta1"
 	"github.com/openshift/assisted-service/internal/ignition"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/conversions"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -174,6 +175,7 @@ func (r reconcileError) Stop(ctx context.Context) bool {
 // +kubebuilder:rbac:groups=metal3.io,resources=baremetalhosts,verbs=get;list;watch;update;patch
 
 func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	defer profiler.Measure("bmh Reconcile")()
 	ctx := addRequestIdIfNeeded(origCtx)
 	log := logutil.FromContext(ctx, r.Log).WithFields(
 		logrus.Fields{
@@ -187,8 +189,11 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 
 	log.Info("BareMetalHost Reconcile started")
 	bmh := &bmh_v1alpha1.BareMetalHost{}
-
-	if err := r.Get(ctx, req.NamespacedName, bmh); err != nil {
+	var err error
+	profiler.TimeIt(func() {
+		err = r.Get(ctx, req.NamespacedName, bmh)
+	}, "Get bmh")
+	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return reconcileError{err}.Result()
 		}
@@ -205,7 +210,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 	if agent != nil {
 		result := r.reconcileUnboundAgent(log, bmh, agent)
 		if result.Dirty() {
-			err := r.Client.Update(ctx, bmh)
+			profiler.TimeIt(func() {
+				err = r.Client.Update(ctx, bmh)
+			}, "BMH update")
 			if err != nil {
 				log.WithError(err).Errorf("Error adding reset annotation on BMH for unbound agent")
 				return reconcileError{err}.Result()
@@ -221,7 +228,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 	result := r.reconcileBMH(ctx, log, bmh)
 	if result.Dirty() {
 		log.Debugf("Updating dirty BMH %v", bmh)
-		err := r.Client.Update(ctx, bmh)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, bmh)
+		}, "BMH update")
 		if err != nil {
 			log.WithError(err).Errorf("Error updating after BMH reconcile")
 			return reconcileError{err}.Result()
@@ -246,7 +255,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 	// any action to take is implemented in each function respectively.
 	result = r.reconcileAgentSpec(log, bmh, agent)
 	if result.Dirty() {
-		err := r.Client.Update(ctx, agent)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, agent)
+		}, "BMH Agent update")
 		if err != nil {
 			log.WithError(err).Errorf("Error updating agent")
 			return reconcileError{err}.Result()
@@ -262,7 +273,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 
 	result = r.reconcileAgentInventory(log, bmh, agent)
 	if result.Dirty() {
-		err := r.Client.Update(ctx, bmh)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, bmh)
+		}, "BMH update")
 		if err != nil {
 			log.WithError(err).Errorf("Error updating hardwaredetails")
 			return reconcileError{err}.Result()
@@ -276,7 +289,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 
 	result = r.ensureMCSCert(ctx, log, bmh, agent)
 	if result.Dirty() {
-		err := r.Client.Update(ctx, bmh)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, bmh)
+		}, "BMH update")
 		if err != nil {
 			log.WithError(err).Errorf("Error adding MCS cert of spoke cluster into BMH")
 			return reconcileError{err}.Result()
@@ -292,7 +307,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 	// Adding the detached annotation to the BMH stops Ironic from managing it.
 	result = r.addBMHDetachedAnnotationIfAgentHasStartedInstallation(ctx, log, bmh, agent)
 	if result.Dirty() {
-		err := r.Client.Update(ctx, bmh)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, bmh)
+		}, "BMH update")
 		if err != nil {
 			log.WithError(err).Errorf("Error updating BMH detached annotation")
 			return reconcileError{err}.Result()
@@ -306,7 +323,9 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 
 	result = r.reconcileSpokeBMH(ctx, log, bmh, agent)
 	if result.Dirty() {
-		err := r.Client.Update(ctx, bmh)
+		profiler.TimeIt(func() {
+			err = r.Client.Update(ctx, bmh)
+		}, "BMH update")
 		if err != nil {
 			log.WithError(err).Errorf("Error adding BMH detached annotation after creating spoke BMH")
 			return reconcileError{err}.Result()
@@ -332,7 +351,7 @@ func (r *BMACReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (c
 // reconcile and a label should be set on it referencing the BMH. No changes to
 // the BMH should happen in this reconcile step.
 func (r *BMACReconciler) reconcileAgentSpec(log logrus.FieldLogger, bmh *bmh_v1alpha1.BareMetalHost, agent *aiv1beta1.Agent) reconcileResult {
-
+	defer profiler.Measure("reconcileAgentSpec")()
 	log.Debugf("Started Agent Spec reconcile for agent %s/%s and bmh %s/%s", agent.Namespace, agent.Name, bmh.Namespace, bmh.Name)
 
 	// Do all the copying from the BMH annotations to the agent.
@@ -462,6 +481,7 @@ func (r *BMACReconciler) addBMHDetachedAnnotationIfAgentHasStartedInstallation(c
 // BMAC and the BMH reconcile as the former will update the hardwaredetails annotation
 // while the latter will continue to update the status.
 func (r *BMACReconciler) reconcileAgentInventory(log logrus.FieldLogger, bmh *bmh_v1alpha1.BareMetalHost, agent *aiv1beta1.Agent) reconcileResult {
+	defer profiler.Measure("reconcileAgentInventory")()
 	log.Debugf("Started Agent Inventory reconcile for agent %s/%s and bmh %s/%s", agent.Namespace, agent.Name, bmh.Namespace, bmh.Name)
 
 	// This check should be updated. We should check the agent's conditions instead
@@ -676,6 +696,7 @@ func (r *BMACReconciler) findInfraEnvForBMH(ctx context.Context, log logrus.Fiel
 // been set in the `InfraEnv` resource and the Image.URL value has not been
 // set in the `BareMetalHost`
 func (r *BMACReconciler) reconcileBMH(ctx context.Context, log logrus.FieldLogger, bmh *bmh_v1alpha1.BareMetalHost) reconcileResult {
+	defer profiler.Measure("reconcileBMH")()
 	log.Debugf("Started BMH reconcile for %s/%s", bmh.Namespace, bmh.Name)
 	log.Debugf("BMH value %v", bmh)
 
@@ -770,10 +791,10 @@ func (r *BMACReconciler) reconcileBMH(ctx context.Context, log logrus.FieldLogge
 // - Create BMH with externallyProvisioned set to true and set the newly created machine as ConsumerRef
 // BMH_HARDWARE_DETAILS_ANNOTATION is needed for auto approval of the CSR.
 func (r *BMACReconciler) reconcileSpokeBMH(ctx context.Context, log logrus.FieldLogger, bmh *bmh_v1alpha1.BareMetalHost, agent *aiv1beta1.Agent) reconcileResult {
-
 	if !r.validateWorkerForDay2(log, agent) {
 		return reconcileComplete{}
 	}
+	defer profiler.Measure("reconcileSpokeBMH")()
 	cd, installed, err := r.getClusterDeploymentAndCheckIfInstalled(ctx, log, agent)
 	if err != nil {
 		return reconcileError{err}
@@ -1014,6 +1035,7 @@ func (r *BMACReconciler) findAgentsByClusterDeployment(ctx context.Context, clus
 //
 // `nil` will be returned if no agent matches
 func (r *BMACReconciler) findAgent(ctx context.Context, bmh *bmh_v1alpha1.BareMetalHost) *aiv1beta1.Agent {
+	defer profiler.Measure("BMH findAgent")()
 	agentList := aiv1beta1.AgentList{}
 	err := r.Client.List(ctx, &agentList, client.InNamespace(bmh.Namespace))
 	if err != nil {
@@ -1131,6 +1153,7 @@ func (r *BMACReconciler) ensureSpokeMachine(ctx context.Context, log logrus.Fiel
 // before the node boots so that there is no failure due to Certificate signed by Unknown Authority
 // Ref: https://access.redhat.com/solutions/4799921
 func (r *BMACReconciler) ensureMCSCert(ctx context.Context, log logrus.FieldLogger, bmh *bmh_v1alpha1.BareMetalHost, agent *aiv1beta1.Agent) reconcileResult {
+	defer profiler.Measure("ensureMCSCert")()
 	if !r.validateWorkerForDay2(log, agent) {
 		return reconcileComplete{}
 	}

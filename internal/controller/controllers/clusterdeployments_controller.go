@@ -42,6 +42,7 @@ import (
 	manifestsapi "github.com/openshift/assisted-service/internal/manifests/api"
 	"github.com/openshift/assisted-service/internal/network"
 	"github.com/openshift/assisted-service/internal/operators"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/auth"
 	logutil "github.com/openshift/assisted-service/pkg/log"
@@ -105,6 +106,7 @@ type ClusterDeploymentsReconciler struct {
 // +kubebuilder:rbac:groups=extensions.hive.openshift.io,resources=agentclusterinstalls/finalizers,verbs=update
 
 func (r *ClusterDeploymentsReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	defer profiler.Measure("clusterDeployment Reconcile")()
 	ctx := addRequestIdIfNeeded(origCtx)
 	logFields := logrus.Fields{
 		"cluster_deployment":           req.Name,
@@ -274,6 +276,7 @@ func (r *ClusterDeploymentsReconciler) validateClusterDeployment(ctx context.Con
 
 func (r *ClusterDeploymentsReconciler) agentClusterInstallFinalizer(ctx context.Context, log logrus.FieldLogger, req ctrl.Request,
 	clusterInstall *hiveext.AgentClusterInstall) (*ctrl.Result, error) {
+	defer profiler.Measure("agentClusterInstallFinalizer")()
 	if clusterInstall.ObjectMeta.DeletionTimestamp.IsZero() { // clusterInstall not being deleted
 		// Register a finalizer if it is absent.
 		if !funk.ContainsString(clusterInstall.GetFinalizers(), AgentClusterInstallFinalizerName) {
@@ -373,6 +376,7 @@ func isInstalled(clusterDeployment *hivev1.ClusterDeployment, clusterInstall *hi
 
 func (r *ClusterDeploymentsReconciler) installDay1(ctx context.Context, log logrus.FieldLogger, clusterDeployment *hivev1.ClusterDeployment,
 	clusterInstall *hiveext.AgentClusterInstall, cluster *common.Cluster, pullSecret string) (ctrl.Result, error) {
+	defer profiler.Measure("installDay1")()
 	ready, err := r.isReadyForInstallation(ctx, log, clusterInstall, cluster)
 	if err != nil {
 		log.WithError(err).Error("failed to check if cluster ready for installation")
@@ -1051,6 +1055,7 @@ func (r *ClusterDeploymentsReconciler) getManifestConfigMap(ctx context.Context,
 
 func (r *ClusterDeploymentsReconciler) addCustomManifests(ctx context.Context, log logrus.FieldLogger,
 	clusterInstall *hiveext.AgentClusterInstall, cluster *common.Cluster) error {
+	defer profiler.Measure("addCustomManifests")()
 
 	alreadyCreatedManifests, err := r.Manifests.ListClusterManifestsInternal(ctx, operations.V2ListClusterManifestsParams{
 		ClusterID: *cluster.ID,
@@ -1248,6 +1253,7 @@ func (r *ClusterDeploymentsReconciler) addReleaseImage(
 	cluster *common.Cluster) (*models.ReleaseImage, error) {
 
 	var err error
+	defer profiler.Measure("addReleaseImage")()
 
 	// retrieve the release image url from the associated
 	// ClusterImageSetRef
@@ -1429,6 +1435,7 @@ func (r *ClusterDeploymentsReconciler) SetupWithManager(mgr ctrl.Manager) error 
 // In case that an error has occurred when trying to sync the Spec, the error (syncErr) is presented in SpecSyncedCondition.
 // Internal bool differentiate between backend server error (internal HTTP 5XX) and user input error (HTTP 4XXX)
 func (r *ClusterDeploymentsReconciler) updateStatus(ctx context.Context, log logrus.FieldLogger, clusterInstall *hiveext.AgentClusterInstall, c *common.Cluster, syncErr error) (ctrl.Result, error) {
+	defer profiler.Measure("updateStatus cluster deployment")()
 	clusterSpecSynced(clusterInstall, syncErr)
 	if c != nil {
 		clusterInstall.Status.ConnectivityMajorityGroups = c.ConnectivityMajorityGroups
@@ -1518,6 +1525,7 @@ func (r *ClusterDeploymentsReconciler) populateLogsURL(ctx context.Context, log 
 }
 
 func (r *ClusterDeploymentsReconciler) getNumOfClusterAgents(ctx context.Context, c *common.Cluster) (int, int, error) {
+	defer profiler.Measure("getNumOfClusterAgents")()
 	registeredHosts := 0
 	approvedHosts := 0
 	for _, h := range c.Hosts {

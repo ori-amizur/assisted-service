@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/internal/common"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/commonutils"
 	"github.com/openshift/assisted-service/pkg/conversions"
@@ -107,6 +108,7 @@ func sortHosts(hosts []*models.Host) []*models.Host {
 }
 
 func (m *Manager) clusterHostMonitoring() int64 {
+	defer profiler.Measure("clusterHostMonitoring")()
 	var (
 		monitored int64
 		requestID = requestid.NewID()
