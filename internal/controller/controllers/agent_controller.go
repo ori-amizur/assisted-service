@@ -188,11 +188,12 @@ func (r *AgentReconciler) Reconcile(origCtx context.Context, req ctrl.Request) (
 
 		// Retrieve cluster by ClusterDeploymentName from the database
 		var cluster *common.Cluster
+		var err2 error
 		profiler.TimeIt(func() {
-			cluster, err = r.Installer.GetClusterByKubeKey(kubeKey)
+			cluster, err2 = r.Installer.GetClusterByKubeKey(kubeKey)
 		}, "GetClusterByKubeKey - agent")
-		if err != nil {
-			log.WithError(err).Errorf("Fail to get cluster name: %s namespace: %s in backend",
+		if err2 != nil {
+			log.WithError(err2).Errorf("Fail to get cluster name: %s namespace: %s in backend",
 				agent.Spec.ClusterDeploymentName.Name, agent.Spec.ClusterDeploymentName.Namespace)
 			// Update that we failed to retrieve the cluster from the database
 			return r.updateStatus(ctx, log, agent, origAgent, &h.Host, nil, err2, true)
@@ -494,13 +495,11 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 				agent.Status.DebugInfo.LogsURL = logsURL
 			}
 		}
-		profiler.TimeIt(func() {
-			connected(agent, status)
-			requirementsMet(agent, status)
-			validated(agent, status, h)
-			installed(agent, status, swag.StringValue(h.StatusInfo))
-			bound(agent, status, h)
-		}, "known conditions")
+		connected(agent, status)
+		requirementsMet(agent, status)
+		validated(agent, status, h)
+		installed(agent, status, swag.StringValue(h.StatusInfo))
+		bound(agent, status, h)
 	} else {
 		setConditionsUnknown(agent)
 	}

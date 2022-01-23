@@ -18,7 +18,7 @@ COPY --from=registry.ci.openshift.org/openshift/release:golang-1.17 /usr/bin/got
 COPY --from=registry.ci.openshift.org/openshift/release:golang-1.17 /usr/local/go /usr/local/go
 
 COPY ./hack/setup_env.sh ./dev-requirements.txt ./
-RUN ./setup_env.sh assisted_service
+RUN ulimit -n 20000 && ./setup_env.sh assisted_service
 
 RUN chmod g+xw -R $GOPATH && chmod g+xw -R $(go env GOROOT)
 
