@@ -512,7 +512,12 @@ func (r *AgentReconciler) updateStatus(ctx context.Context, log logrus.FieldLogg
 		}
 	}
 	if !reflect.DeepEqual(agent, origAgent) {
-		if updateErr := r.Status().Update(ctx, agent); updateErr != nil {
+		var updateErr error
+		profiler.TimeIt(
+			func() {
+				updateErr = r.Status().Update(ctx, agent)
+			}, "Agent update")
+		if updateErr != nil {
 			log.WithError(updateErr).Error("failed to update agent Status")
 			return ctrl.Result{Requeue: true}, nil
 		}

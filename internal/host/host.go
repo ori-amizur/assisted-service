@@ -747,16 +747,20 @@ func (m *Manager) UpdateImageStatus(ctx context.Context, h *models.Host, newImag
 			eventInfo += fmt.Sprintf("time: %.2f seconds; size: %.2f Megabytes; download rate: %.2f MBps",
 				newImageStatus.Time, newImageStatus.SizeBytes/math.Pow(1024, 2), newImageStatus.DownloadRate)
 		}
-
-		eventgen.SendImageStatusUpdatedEvent(ctx, m.eventsHandler, *h.ID, h.InfraEnvID, h.ClusterID,
-			hostutil.GetHostnameForMsg(h), newImageStatus.Name, string(newImageStatus.Result), eventInfo)
+		profiler.TimeIt(func() {
+			eventgen.SendImageStatusUpdatedEvent(ctx, m.eventsHandler, *h.ID, h.InfraEnvID, h.ClusterID,
+				hostutil.GetHostnameForMsg(h), newImageStatus.Name, string(newImageStatus.Result), eventInfo)
+		}, "SendImageStatusUpdatedEvent")
 	}
 	marshalledStatuses, err := common.MarshalImageStatuses(hostImageStatuses)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to marshal image statuses for host %s", h.ID.String())
 	}
 
-	return db.Model(h).Update("images_status", marshalledStatuses).Error
+	profiler.TimeIt(func() {
+		err = db.Model(h).Update("images_status", marshalledStatuses).Error
+	}, "Image status - update")
+	return err
 }
 
 func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) error {

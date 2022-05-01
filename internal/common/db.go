@@ -159,7 +159,7 @@ func LoadClusterTablesFromDB(db *gorm.DB, excludeTables ...string) *gorm.DB {
 }
 
 func GetClusterFromDB(db *gorm.DB, clusterId strfmt.UUID, eagerLoading EagerLoadingState) (*Cluster, error) {
-	defer profiler.Measure("GetClusterFromDB")()
+	defer profiler.Measure("GetClusterFromDB " + profiler.Caller())()
 	c, err := GetClusterFromDBWhere(db, eagerLoading, SkipDeletedRecords, "id = ?", clusterId.String())
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to get cluster %s", clusterId.String())

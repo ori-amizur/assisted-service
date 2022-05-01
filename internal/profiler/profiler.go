@@ -2,6 +2,7 @@ package profiler
 
 import (
 	"fmt"
+	"runtime"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -75,6 +76,14 @@ func PrintTimes() {
 	for _, s := range formatter() {
 		fmt.Println(s)
 	}
+}
+
+func Caller() string {
+	pc, _, _, ok := runtime.Caller(2)
+	if ok {
+		return runtime.FuncForPC(pc).Name()
+	}
+	return ""
 }
 
 func Measure(label string) func() {

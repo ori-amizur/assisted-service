@@ -55,7 +55,7 @@ func (f *dhcpAllocateCmd) prepareParam(host *models.Host, cluster *common.Cluste
 }
 
 func (f *dhcpAllocateCmd) GetSteps(ctx context.Context, host *models.Host) ([]*models.Step, error) {
-	cluster, err := common.GetClusterFromDB(f.db, *host.ClusterID, common.UseEagerLoading)
+	cluster, err := common.GetClusterFromDB(common.LoadTableFromDB(f.db, common.MachineNetworksTable), *host.ClusterID, common.SkipEagerLoading)
 	if err != nil {
 		return nil, err
 	}

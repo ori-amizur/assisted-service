@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/oc"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/restapi"
 	operations "github.com/openshift/assisted-service/restapi/operations/versions"
@@ -229,6 +230,7 @@ func (h *handler) GetOsImage(openshiftVersion, cpuArchitecture string) (*models.
 
 // Returns the ReleaseImage entity
 func (h *handler) GetReleaseImage(openshiftVersion, cpuArchitecture string) (*models.ReleaseImage, error) {
+	defer profiler.Measure("GetReleaseImage")()
 	if cpuArchitecture == "" {
 		// Empty implies default CPU architecture
 		cpuArchitecture = common.DefaultCPUArchitecture

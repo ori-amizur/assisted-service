@@ -3630,7 +3630,7 @@ func secretValidationToUserError(err error) error {
 }
 
 func (b *bareMetalInventory) GetClusterByKubeKey(key types.NamespacedName) (*common.Cluster, error) {
-	defer profiler.Measure("GetClusterByKubeKey")()
+	defer profiler.Measure("GetClusterByKubeKey " + profiler.Caller())()
 	return b.clusterApi.GetClusterByKubeKey(key)
 }
 
@@ -4407,10 +4407,10 @@ func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installe
 	//TODO check the error type
 	var (
 		host *common.Host
-		err error
+		err  error
 	)
 	profiler.TimeIt(func() {
-	host, err = common.GetHostFromDB(tx, params.InfraEnvID.String(), params.HostID.String())
+		host, err = common.GetHostFromDB(tx, params.InfraEnvID.String(), params.HostID.String())
 	}, "GetHostFromDB - GetNextSteps")
 	if err != nil {
 		log.WithError(err).Errorf("failed to find host: %s", params.HostID)

@@ -11,6 +11,7 @@ import (
 	"github.com/buger/jsonparser"
 	"github.com/hashicorp/go-version"
 	"github.com/openshift/assisted-service/internal/common"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/executer"
 	"github.com/sirupsen/logrus"
@@ -61,11 +62,13 @@ const (
 // GetMCOImage gets mcoImage url from the releaseImageMirror if provided.
 // Else gets it from the source releaseImage
 func (r *release) GetMCOImage(log logrus.FieldLogger, releaseImage string, releaseImageMirror string, pullSecret string) (string, error) {
+	defer profiler.Measure("GetMCOImage")()
 	return r.getImageByName(log, mcoImageName, releaseImage, releaseImageMirror, pullSecret)
 }
 
 // GetMustGatherImage gets must-gather image URL from the release image or releaseImageMirror, if provided.
 func (r *release) GetMustGatherImage(log logrus.FieldLogger, releaseImage string, releaseImageMirror string, pullSecret string) (string, error) {
+	defer profiler.Measure("GetMustGatherImage")()
 	return r.getImageByName(log, mustGatherImageName, releaseImage, releaseImageMirror, pullSecret)
 }
 
