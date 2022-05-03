@@ -595,6 +595,7 @@ func (r *ClusterDeploymentsReconciler) isReadyForInstallation(ctx context.Contex
 
 	expectedHosts := clusterInstall.Spec.ProvisionRequirements.ControlPlaneAgents +
 		clusterInstall.Spec.ProvisionRequirements.WorkerAgents
+	log.Infof("************** approved = %d expected %d registered %d ***************", approvedHosts, expectedHosts, registered)
 	return approvedHosts == expectedHosts && registered == approvedHosts, nil
 }
 
@@ -1526,22 +1527,7 @@ func (r *ClusterDeploymentsReconciler) populateLogsURL(ctx context.Context, log 
 
 func (r *ClusterDeploymentsReconciler) getNumOfClusterAgents(ctx context.Context, c *common.Cluster) (int, int, error) {
 	defer profiler.Measure("getNumOfClusterAgents")()
-	registeredHosts := 0
-	approvedHosts := 0
-	for _, h := range c.Hosts {
-		if r.HostApi.IsInstallable(h) {
-			registeredHosts += 1
-			commonh, err := r.Installer.GetCommonHostInternal(ctx, h.InfraEnvID.String(), h.ID.String())
-			if err != nil {
-				return 0, 0, err
-			}
-			if commonh.Approved {
-				approvedHosts += 1
-			}
-		}
-	}
-
-	return registeredHosts, approvedHosts, nil
+	return r.Installer.GetClusterRegisteredAndApprovedHostsSummary(*c.ID)
 }
 
 // clusterSpecSynced is updating the Cluster SpecSynced Condition.

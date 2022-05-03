@@ -55,7 +55,9 @@ func (f *dhcpAllocateCmd) prepareParam(host *models.Host, cluster *common.Cluste
 }
 
 func (f *dhcpAllocateCmd) GetSteps(ctx context.Context, host *models.Host) ([]*models.Step, error) {
-	cluster, err := common.GetClusterFromDB(common.LoadTableFromDB(f.db, common.MachineNetworksTable), *host.ClusterID, common.SkipEagerLoading)
+	var cluster common.Cluster
+	err := f.db.Preload(common.MachineNetworksTable).Select("id", "vip_dhcp_allocation", "api_vip_lease", "ingress_vip_lease").
+		Take(&cluster, "id = ?", host.ClusterID.String()).Error
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +69,10 @@ func (f *dhcpAllocateCmd) GetSteps(ctx context.Context, host *models.Host) ([]*m
 	 * - MachineNetworks is empty: Machine Network Cidr has not been set by the user
 	 * - Inventory is empty: Inventory has not been received yet from the host
 	 */
-	if !swag.BoolValue(cluster.VipDhcpAllocation) || !network.IsMachineCidrAvailable(cluster) || host.Inventory == "" {
+	if !swag.BoolValue(cluster.VipDhcpAllocation) || !network.IsMachineCidrAvailable(&cluster) || host.Inventory == "" {
 		return nil, nil
 	}
-	param, err := f.prepareParam(host, cluster)
+	param, err := f.prepareParam(host, &cluster)
 	if err != nil {
 		return nil, err
 	}

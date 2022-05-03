@@ -66,6 +66,7 @@ type validationContext struct {
 	clusterHostRequirements *models.ClusterHostRequirements
 	minCPUCoresRequirement  int64
 	minRAMMibRequirement    int64
+	inventoryCache          map[strfmt.UUID]*models.Inventory
 }
 
 type validationCondition func(context *validationContext) ValidationStatus
@@ -94,17 +95,30 @@ func (c *validationContext) loadInfraEnv() error {
 	return err
 }
 
+func (c *validationContext) getInventory(host *models.Host) (*models.Inventory, error) {
+	inventory, ok := c.inventoryCache[*host.ID]
+	if ok {
+		return inventory, nil
+	}
+	var err error
+	inventory, err = common.UnmarshalInventory(host.Inventory)
+	if err != nil {
+		return nil, err
+	}
+	c.inventoryCache[*host.ID] = inventory
+	return inventory, nil
+}
+
 func (c *validationContext) loadInventory() error {
 	if c.host.Inventory != "" {
-		var inventory models.Inventory
-		err := json.Unmarshal([]byte(c.host.Inventory), &inventory)
+		inventory, err := c.getInventory(c.host)
 		if err != nil {
 			return err
 		}
 		if inventory.CPU == nil || inventory.Memory == nil || len(inventory.Disks) == 0 {
 			return errors.Errorf("Inventory is not valid")
 		}
-		c.inventory = &inventory
+		c.inventory = inventory
 	}
 	return nil
 }
@@ -177,12 +191,17 @@ func (c *validationContext) loadGeneralInfraEnvMinRequirements(hwValidator hardw
 	return err
 }
 
-func newValidationContext(host *models.Host, c *common.Cluster, i *common.InfraEnv, db *gorm.DB, hwValidator hardware.Validator) (*validationContext, error) {
+func newValidationContext(host *models.Host, c *common.Cluster, i *common.InfraEnv, db *gorm.DB, hwValidator hardware.Validator,
+	inventoryCache map[strfmt.UUID]*models.Inventory) (*validationContext, error) {
+	if inventoryCache == nil {
+		inventoryCache = make(map[strfmt.UUID]*models.Inventory)
+	}
 	ret := &validationContext{
-		host:     host,
-		db:       db,
-		cluster:  c,
-		infraEnv: i,
+		host:           host,
+		db:             db,
+		cluster:        c,
+		infraEnv:       i,
+		inventoryCache: inventoryCache,
 	}
 	if host.ClusterID != nil {
 		err := ret.loadCluster()
@@ -649,13 +668,16 @@ func (v *validator) isHostnameUnique(c *validationContext) ValidationStatus {
 	realHostname := getRealHostname(c.host, c.inventory)
 	for _, h := range c.cluster.Hosts {
 		if h.ID.String() != c.host.ID.String() && h.Inventory != "" {
-			var otherInventory models.Inventory
-			if err := json.Unmarshal([]byte(h.Inventory), &otherInventory); err != nil {
+			var (
+				otherInventory *models.Inventory
+				err            error
+			)
+			if otherInventory, err = c.getInventory(h); err != nil {
 				v.log.WithError(err).Warnf("Illegal inventory for host %s", h.ID.String())
 				// It is not our hostname
 				continue
 			}
-			if realHostname == getRealHostname(h, &otherInventory) {
+			if realHostname == getRealHostname(h, otherInventory) {
 				return ValidationFailure
 			}
 		}
@@ -967,21 +989,22 @@ func (v *validator) printSufficientOrUnknownInstallationDiskSpeed(c *validationC
 }
 
 func (v *validator) hasSufficientNetworkLatencyRequirementForRole(c *validationContext) ValidationStatus {
-	if c.infraEnv != nil {
-		return ValidationSuccessSuppressOutput
-	}
-
-	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.NetworkLatencyThresholdMs == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
-		// Single Node use case || no requirements defined || role is auto assign
-		return ValidationSuccess
-	}
-
-	if len(c.host.Connectivity) == 0 {
-		return ValidationPending
-	}
-
-	status, _, _ := v.validateNetworkLatencyForRole(c.host, c.clusterHostRequirements, c.cluster.Hosts)
-	return status
+	return ValidationSuccess
+	//if c.infraEnv != nil {
+	//	return ValidationSuccessSuppressOutput
+	//}
+	//
+	//if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.NetworkLatencyThresholdMs == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
+	//	// Single Node use case || no requirements defined || role is auto assign
+	//	return ValidationSuccess
+	//}
+	//
+	//if len(c.host.Connectivity) == 0 {
+	//	return ValidationPending
+	//}
+	//
+	//status, _, _ := v.validateNetworkLatencyForRole(c.host, c.clusterHostRequirements, c.cluster.Hosts)
+	//return status
 }
 
 func (v *validator) validateNetworkLatencyForRole(host *models.Host, clusterRoleReqs *models.ClusterHostRequirements, hosts []*models.Host) (ValidationStatus, []string, error) {
@@ -1047,21 +1070,22 @@ func (v *validator) printSufficientNetworkLatencyRequirementForRole(c *validatio
 }
 
 func (v *validator) hasSufficientPacketLossRequirementForRole(c *validationContext) ValidationStatus {
-	if c.infraEnv != nil {
-		return ValidationSuccessSuppressOutput
-	}
-
-	if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.PacketLossPercentage == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
-		// Single Node use case || no requirements defined || role is auto assign
-		return ValidationSuccess
-	}
-
-	if len(c.host.Connectivity) == 0 {
-		return ValidationPending
-	}
-
-	status, _, _ := v.validatePacketLossForRole(c.host, c.clusterHostRequirements, c.cluster.Hosts)
-	return status
+	return ValidationSuccess
+	//if c.infraEnv != nil {
+	//	return ValidationSuccessSuppressOutput
+	//}
+	//
+	//if len(c.cluster.Hosts) == 1 || c.clusterHostRequirements.Total.PacketLossPercentage == nil || common.GetEffectiveRole(c.host) == models.HostRoleAutoAssign || hostutil.IsDay2Host(c.host) {
+	//	// Single Node use case || no requirements defined || role is auto assign
+	//	return ValidationSuccess
+	//}
+	//
+	//if len(c.host.Connectivity) == 0 {
+	//	return ValidationPending
+	//}
+	//
+	//status, _, _ := v.validatePacketLossForRole(c.host, c.clusterHostRequirements, c.cluster.Hosts)
+	//return status
 }
 
 func (v *validator) validatePacketLossForRole(host *models.Host, clusterRoleReqs *models.ClusterHostRequirements, hosts []*models.Host) (ValidationStatus, []string, error) {

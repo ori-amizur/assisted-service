@@ -7,11 +7,13 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 	"github.com/openshift/assisted-service/internal/connectivity"
+	"github.com/openshift/assisted-service/internal/profiler"
 	"github.com/openshift/assisted-service/models"
 	"github.com/thoas/go-funk"
 )
 
 func convertHostsToConnectivityCheckParams(currentHostId *strfmt.UUID, hosts []*models.Host, connectivityValidator connectivity.Validator) (string, error) {
+	defer profiler.Measure("convertHostsToConnectivityCheckParams")()
 	var connectivityCheckHosts models.ConnectivityCheckParams
 	for i := range hosts {
 		// We don't need to check if host is in some certain states:

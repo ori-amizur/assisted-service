@@ -6,9 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/cornelk/hashmap"
 	"github.com/hashicorp/go-version"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/profiler"
@@ -40,16 +42,21 @@ type Release interface {
 	Extract(log logrus.FieldLogger, releaseImage string, releaseImageMirror string, cacheDir string, pullSecret string, platformType models.PlatformType) (string, error)
 }
 
+type imageValue struct {
+	value string
+	mutex sync.Mutex
+}
+
 type release struct {
 	executer executer.Executer
 	config   Config
 
 	// A map for caching images (image name > release image URL > image)
-	imagesMap map[string]map[string]string
+	imagesMap hashmap.HashMap
 }
 
 func NewRelease(executer executer.Executer, config Config) Release {
-	return &release{executer, config, make(map[string]map[string]string)}
+	return &release{executer: executer, config: config}
 }
 
 const (
@@ -157,10 +164,23 @@ func (r *release) GetReleaseArchitecture(log logrus.FieldLogger, releaseImage st
 	return architecture, nil
 }
 
+func getKey(imageName, releaseImage string) string {
+	return imageName + "@" + releaseImage
+}
+
 func (r *release) getImageFromRelease(log logrus.FieldLogger, imageName, releaseImage, pullSecret string, insecure bool) (string, error) {
+	defer profiler.Measure("getImageFromRelease " + imageName + " " + profiler.Caller())()
 	// Fetch image URL from cache
-	if image, ok := r.imagesMap[imageName][releaseImage]; ok {
-		return image, nil
+	key := getKey(imageName, releaseImage)
+	actualIntf, _ := r.imagesMap.GetOrInsert(key, &imageValue{})
+	actualImageValue := actualIntf.(*imageValue)
+	if actualImageValue.value != "" {
+		return actualImageValue.value, nil
+	}
+	actualImageValue.mutex.Lock()
+	defer actualImageValue.mutex.Unlock()
+	if actualImageValue.value != "" {
+		return actualImageValue.value, nil
 	}
 
 	cmd := fmt.Sprintf(templateGetImage, imageName, insecure, releaseImage)
@@ -172,8 +192,7 @@ func (r *release) getImageFromRelease(log logrus.FieldLogger, imageName, release
 	}
 
 	// Update image URL in cache
-	r.imagesMap[imageName] = make(map[string]string)
-	r.imagesMap[imageName][releaseImage] = image
+	actualImageValue.value = image
 
 	return image, nil
 }

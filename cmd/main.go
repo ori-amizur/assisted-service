@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	_ "net/http/pprof"
+	"net/http/pprof"
 	"os"
 	"strings"
 	"time"
@@ -552,12 +552,24 @@ func main() {
 		}
 	}()
 
+	h = withHeapResponderMiddleware(h)
 	address := fmt.Sprintf(":%s", swag.StringValue(port))
 	if Options.ServeHTTPS {
 		log.Fatal(http.ListenAndServeTLS(address, Options.HTTPSCertFile, Options.HTTPSKeyFile, h))
 	} else {
 		log.Fatal(http.ListenAndServe(address, h))
 	}
+}
+
+func withHeapResponderMiddleware(next http.Handler) http.Handler {
+	heapHandler := pprof.Handler("heap")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/heap" {
+			heapHandler.ServeHTTP(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func generateAPMTransactionName(request *http.Request) string {

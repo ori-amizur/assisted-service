@@ -160,6 +160,7 @@ type InstallerInternals interface {
 	UnbindHostInternal(ctx context.Context, params installer.UnbindHostParams) (*common.Host, error)
 	BindHostInternal(ctx context.Context, params installer.BindHostParams) (*common.Host, error)
 	GetInfraEnvHostsInternal(ctx context.Context, infraEnvId strfmt.UUID) ([]*common.Host, error)
+	GetClusterRegisteredAndApprovedHostsSummary(clusterID strfmt.UUID) (registered, approved int, err error)
 }
 
 //go:generate mockgen -package bminventory -destination mock_crd_utils.go . CRDUtils
@@ -254,6 +255,26 @@ func NewBareMetalInventory(
 		gcConfig:             gcConfig,
 		providerRegistry:     providerRegistry,
 	}
+}
+
+func (b *bareMetalInventory) GetClusterRegisteredAndApprovedHostsSummary(clusterID strfmt.UUID) (registered, approved int, err error) {
+	var hostCounts []struct {
+		Count    int
+		Approved bool
+	}
+	err = b.db.Table("hosts").Select("count(1) as count, approved").Group("approved").
+		Where("cluster_id = ? and status = 'known' and deleted_at is null", clusterID.String()).Scan(&hostCounts).Error
+	if err != nil {
+		b.log.WithError(err).Errorf("Failed to get counts")
+		return
+	}
+	for _, h := range hostCounts {
+		registered += h.Count
+		if h.Approved {
+			approved += h.Count
+		}
+	}
+	return
 }
 
 func (b *bareMetalInventory) updatePullSecret(pullSecret string, log logrus.FieldLogger) (string, error) {
@@ -1058,12 +1079,12 @@ func (b *bareMetalInventory) InstallClusterInternal(ctx context.Context, params 
 		return nil, err
 	}
 
-	if err = b.refreshAllHostsOnInstall(ctx, cluster); err != nil {
-		return nil, err
-	}
-	if _, err = b.clusterApi.RefreshStatus(ctx, cluster, b.db); err != nil {
-		return nil, err
-	}
+	//if err = b.refreshAllHostsOnInstall(ctx, cluster); err != nil {
+	//	return nil, err
+	//}
+	//if _, err = b.clusterApi.RefreshStatus(ctx, cluster, b.db); err != nil {
+	//	return nil, err
+	//}
 
 	// Reload again after refresh
 	if cluster, err = common.GetClusterFromDBWithHosts(b.db, params.ClusterID); err != nil {
@@ -1629,10 +1650,12 @@ func (b *bareMetalInventory) v2UpdateClusterInternal(ctx context.Context, params
 		return nil, err
 	}
 
-	err = b.updateHostsAndClusterStatus(ctx, cluster, tx, log)
-	if err != nil {
-		log.WithError(err).Errorf("failed to validate or update cluster %s state or its hosts", cluster.ID)
-		return nil, common.NewApiError(http.StatusInternalServerError, err)
+	if interactivity {
+		err = b.updateHostsAndClusterStatus(ctx, cluster, tx, log)
+		if err != nil {
+			log.WithError(err).Errorf("failed to validate or update cluster %s state or its hosts", cluster.ID)
+			return nil, common.NewApiError(http.StatusInternalServerError, err)
+		}
 	}
 
 	b.updateClusterNetworkVMUsage(cluster, params.ClusterUpdateParams, usages, log)
@@ -2499,23 +2522,23 @@ func (b *bareMetalInventory) GetClusterInternal(ctx context.Context, params inst
 		}
 	}
 
-	cluster, err := common.GetClusterFromDBWhere(b.db, common.UseEagerLoading,
+	db := common.LoadClusterTablesFromDB(b.db, common.HostsTable)
+	if !swag.BoolValue(params.ExcludeHosts) {
+		db = common.LoadTableFromDB(db, common.HostsTable)
+	}
+	cluster, err := common.GetClusterFromDBWhere(db, common.SkipEagerLoading,
 		common.DeleteRecordsState(swag.BoolValue(params.GetUnregisteredClusters)), "id = ?", params.ClusterID)
 	if err != nil {
 		return nil, err
 	}
 
 	cluster.HostNetworks = b.calculateHostNetworks(log, cluster)
-	if swag.BoolValue(params.ExcludeHosts) {
-		cluster.Hosts = nil
-	} else {
-		for _, host := range cluster.Hosts {
-			if err = b.customizeHost(&cluster.Cluster, host); err != nil {
-				return nil, err
-			}
-			// Clear this field as it is not needed to be sent via API
-			host.FreeAddresses = ""
+	for _, host := range cluster.Hosts {
+		if err = b.customizeHost(&cluster.Cluster, host); err != nil {
+			return nil, err
 		}
+		// Clear this field as it is not needed to be sent via API
+		host.FreeAddresses = ""
 	}
 
 	imageInfo, err := b.getImageInfo(cluster.ID)
@@ -2850,7 +2873,7 @@ func (b *bareMetalInventory) updateDomainNameResolutionResponse(ctx context.Cont
 }
 
 func (b *bareMetalInventory) getInstallationDiskSpeedThresholdMs(ctx context.Context, h *models.Host) (int64, error) {
-	cluster, err := common.GetClusterFromDB(b.db, *h.ClusterID, common.UseEagerLoading)
+	cluster, err := common.GetClusterFromDB(b.db, *h.ClusterID, common.SkipEagerLoading)
 	if err != nil {
 		return 0, err
 	}
@@ -4420,7 +4443,7 @@ func (b *bareMetalInventory) V2GetNextSteps(ctx context.Context, params installe
 
 	host.CheckedInAt = strfmt.DateTime(time.Now())
 	profiler.TimeIt(func() {
-		err = tx.Model(&host).UpdateColumn("checked_in_at", host.CheckedInAt).Error
+		err = tx.Model(&models.Host{ID: host.ID, InfraEnvID: host.InfraEnvID}).UpdateColumn("checked_in_at", host.CheckedInAt).Error
 	}, "CheckedInAt - GetNextSteps")
 	if err != nil {
 		log.WithError(err).Errorf("failed to update host: %s", params.HostID.String())
@@ -4909,7 +4932,7 @@ func (b *bareMetalInventory) V2UpdateHostLogsProgress(ctx context.Context, param
 }
 
 func (b *bareMetalInventory) V2UpdateHostInternal(ctx context.Context, params installer.V2UpdateHostParams) (*common.Host, error) {
-	defer profiler.Measure("V2UpdateHostInternal")()
+	defer profiler.Measure("V2UpdateHostInternal " + profiler.Caller())()
 	log := logutil.FromContext(ctx, b.log)
 	var c *models.Cluster
 	var cluster *common.Cluster

@@ -294,6 +294,7 @@ func (m *Manager) UpdateInventory(ctx context.Context, h *models.Host, inventory
 }
 
 func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, h *models.Host, inventoryStr string, db *gorm.DB) error {
+	defer profiler.Measure("updateInventory " + profiler.Caller())()
 	log := logutil.FromContext(ctx, m.log)
 
 	hostStatus := swag.StringValue(h.Status)
@@ -311,7 +312,7 @@ func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, 
 	}
 
 	if h.ClusterID != nil && h.ClusterID.String() != "" {
-		cluster, err = common.GetClusterFromDB(m.db, *h.ClusterID, common.UseEagerLoading)
+		cluster, err = common.GetClusterFromDB(m.db, *h.ClusterID, common.SkipEagerLoading)
 		if err != nil {
 			log.WithError(err).Errorf("not updating inventory - failed to find cluster %s", h.ClusterID.String())
 			return common.NewApiError(http.StatusNotFound, err)
@@ -372,11 +373,14 @@ func (m *Manager) updateInventory(ctx context.Context, cluster *common.Cluster, 
 	// If there is substantial change in the inventory that might cause the state machine to move to a new status
 	// or one of the validations to change, then the updated_at field has to be modified.  Otherwise, we just
 	// perform update with touching the updated_at field
-	return db.Model(h).Updates(map[string]interface{}{
-		"inventory":              inventoryStr,
-		"installation_disk_path": installationDiskPath,
-		"installation_disk_id":   installationDiskID,
-	}).Error
+	profiler.TimeIt(func() {
+		err = db.Model(&models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}).Updates(map[string]interface{}{
+			"inventory":              inventoryStr,
+			"installation_disk_path": installationDiskPath,
+			"installation_disk_id":   installationDiskID,
+		}).Error
+	}, "updateInventory - update")
+	return err
 }
 
 func (m *Manager) refreshRoleInternal(ctx context.Context, h *models.Host, db *gorm.DB, forceRefresh bool) error {
@@ -403,8 +407,8 @@ func (m *Manager) refreshRoleInternal(ctx context.Context, h *models.Host, db *g
 	return err
 }
 
-func (m *Manager) refreshStatusInternal(ctx context.Context, h *models.Host, c *common.Cluster, i *common.InfraEnv, db *gorm.DB) error {
-	defer profiler.Measure("refreshStatusInternal - hosts")()
+func (m *Manager) refreshStatusInternal(ctx context.Context, h *models.Host, c *common.Cluster, i *common.InfraEnv, inventoryCache map[strfmt.UUID]*models.Inventory, db *gorm.DB) error {
+	defer profiler.Measure("refreshStatusInternal - hosts " + profiler.Caller())()
 	log := logutil.FromContext(ctx, m.log)
 	if db == nil {
 		db = m.db
@@ -415,7 +419,7 @@ func (m *Manager) refreshStatusInternal(ctx context.Context, h *models.Host, c *
 		conditions       map[string]bool
 		newValidationRes ValidationsStatus
 	)
-	vc, err = newValidationContext(h, c, i, db, m.hwValidator)
+	vc, err = newValidationContext(h, c, i, db, m.hwValidator, inventoryCache)
 	if err != nil {
 		return err
 	}
@@ -463,10 +467,11 @@ func (m *Manager) RefreshRole(ctx context.Context, h *models.Host, db *gorm.DB) 
 }
 
 func (m *Manager) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) error {
+	defer profiler.Measure("RefreshStatus hosts " + profiler.Caller())
 	if db == nil {
 		db = m.db
 	}
-	return m.refreshStatusInternal(ctx, h, nil, nil, db)
+	return m.refreshStatusInternal(ctx, h, nil, nil, nil, db)
 }
 
 func (m *Manager) Install(ctx context.Context, h *models.Host, db *gorm.DB) error {
@@ -657,7 +662,7 @@ func (m *Manager) UpdateMachineConfigPoolName(ctx context.Context, db *gorm.DB, 
 		cdb = db
 	}
 
-	return cdb.Model(common.Host{Host: *h}).Updates(map[string]interface{}{"machine_config_pool_name": machineConfigPoolName, "trigger_monitor_timestamp": time.Now()}).Error
+	return cdb.Model(common.Host{Host: models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}}).Updates(map[string]interface{}{"machine_config_pool_name": machineConfigPoolName, "trigger_monitor_timestamp": time.Now()}).Error
 }
 
 func (m *Manager) UpdateIgnitionEndpointToken(ctx context.Context, db *gorm.DB, h *models.Host, token string) error {
@@ -678,7 +683,7 @@ func (m *Manager) UpdateIgnitionEndpointToken(ctx context.Context, db *gorm.DB, 
 		tokenSet = false
 	}
 
-	return cdb.Model(common.Host{Host: *h}).Updates(map[string]interface{}{
+	return cdb.Model(common.Host{Host: models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}}).Updates(map[string]interface{}{
 		"ignition_endpoint_token":     token,
 		"ignition_endpoint_token_set": tokenSet,
 		"trigger_monitor_timestamp":   time.Now()}).Error
@@ -697,7 +702,7 @@ func (m *Manager) UpdateNodeLabels(ctx context.Context, h *models.Host, nodeLabe
 	if db != nil {
 		cdb = db
 	}
-	return cdb.Model(common.Host{Host: *h}).Updates(map[string]interface{}{"node_labels": nodeLabelsStr, "trigger_monitor_timestamp": time.Now()}).Error
+	return cdb.Model(common.Host{Host: models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}}).Updates(map[string]interface{}{"node_labels": nodeLabelsStr, "trigger_monitor_timestamp": time.Now()}).Error
 }
 
 func (m *Manager) UpdateNTP(ctx context.Context, h *models.Host, ntpSources []*models.NtpSource, db *gorm.DB) error {
@@ -776,7 +781,7 @@ func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname s
 	if db != nil {
 		cdb = db
 	}
-	return cdb.Model(common.Host{Host: *h}).Updates(map[string]interface{}{"requested_hostname": hostname, "trigger_monitor_timestamp": time.Now()}).Error
+	return cdb.Model(common.Host{Host: models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}}).Updates(map[string]interface{}{"requested_hostname": hostname, "trigger_monitor_timestamp": time.Now()}).Error
 }
 
 func (m *Manager) UpdateInstallationDisk(ctx context.Context, db *gorm.DB, h *models.Host, installationDiskPath string) error {
@@ -805,7 +810,7 @@ func (m *Manager) UpdateInstallationDisk(ctx context.Context, db *gorm.DB, h *mo
 	if db != nil {
 		cdb = db
 	}
-	return cdb.Model(common.Host{Host: *h}).Updates(map[string]interface{}{
+	return cdb.Model(common.Host{Host: models.Host{ID: h.ID, InfraEnvID: h.InfraEnvID}}).Updates(map[string]interface{}{
 		"installation_disk_path":    h.InstallationDiskPath,
 		"installation_disk_id":      h.InstallationDiskID,
 		"trigger_monitor_timestamp": time.Now(),
@@ -1109,7 +1114,7 @@ func (m *Manager) selectRole(ctx context.Context, h *models.Host, db *gorm.DB) (
 
 	if len(masters) < common.MinMasterHostsNeededForInstallation {
 		h.Role = models.HostRoleMaster
-		vc, err = newValidationContext(h, nil, nil, db, m.hwValidator)
+		vc, err = newValidationContext(h, nil, nil, db, m.hwValidator, nil)
 		if err != nil {
 			log.WithError(err).Errorf("failed to create new validation context for host %s", h.ID.String())
 			return autoSelectedRole, err
@@ -1134,7 +1139,7 @@ func (m *Manager) IsValidMasterCandidate(h *models.Host, c *common.Cluster, db *
 
 	h.Role = models.HostRoleMaster
 
-	vc, err := newValidationContext(h, c, nil, db, m.hwValidator)
+	vc, err := newValidationContext(h, c, nil, db, m.hwValidator, nil)
 	if err != nil {
 		log.WithError(err).Errorf("failed to create new validation context for host %s", h.ID.String())
 		return false, err
