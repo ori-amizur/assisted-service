@@ -13,8 +13,9 @@
       {% set bmhs = baremetalhosts %}
 {% endif %}
 {% endif %}
+{% set limit = spoke_controlplane_agents|int + spoke_worker_agents|int %}
 {% for host in bmhs %}
-{% if day2|string == "true"  or ns.counter <= spoke_controlplane_agents|int%}
+{% if day2|string == "true"  or ns.counter <= limit %}
 
 ---
 apiVersion: v1
@@ -40,8 +41,25 @@ metadata:
 {% if baremetalhosts_ignition_override|string | length > 0 %}
     bmac.agent-install.openshift.io/ignition-config-overrides: '{{ baremetalhosts_ignition_override | tojson }}'
 {% endif %}
-{% if day2_masters is defined and day2_masters|string == "True" %}
+  {% if ns.counter <= 3 or day2_masters is defined and day2_masters|string == "True" %}
     bmac.agent-install.openshift.io/role: master
+{% endif %}
+{% set hostname = host["name"] %}
+{% if machine_config_pools is defined  %}
+{% for key, value in machine_config_pools.items() %}
+{% if key == hostname  %}
+    bmac.agent-install.openshift.io/machine-config-pool: '{{ value }}'
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if node_labels is defined  %}
+{% for key, value in node_labels.items() %}
+{% if key == hostname  %}
+{% for node_key, node_value in value.items() %}
+    bmac.agent-install.openshift.io.node-label.{{node_key}} : '{{ node_value }}'
+{% endfor %}
+{% endif %}
+{% endfor %}
 {% endif %}
 spec:
   online: true

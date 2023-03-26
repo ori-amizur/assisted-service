@@ -1,0 +1,11 @@
+{% if manifests is defined %}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ agent_cluster_install_name }}'
+  namespace: '{{ spoke_namespace }}'
+data:
+{% for key, value in manifests.items() %}
+  {{ key }}: '{{ value }}'
+{% endfor %}
+{% endif %}

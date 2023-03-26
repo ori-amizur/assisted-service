@@ -39,4 +39,9 @@ spec:
 {% endif %}
   provisionRequirements:
     controlPlaneAgents: {{ spoke_controlplane_agents }}
+    workerAgents: {{ spoke_worker_agents }}
   sshPublicKey: '{{ ssh_public_key }}'
+{% if manifests is defined %}
+  manifestsConfigMapRefs:
+    - name: '{{ agent_cluster_install_name }}'
+{% endif %}
