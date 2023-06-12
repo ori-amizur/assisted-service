@@ -78,6 +78,12 @@ type InstallCmdRequest struct {
 	// proxy
 	Proxy *Proxy `json:"proxy,omitempty" gorm:"embedded;embeddedPrefix:proxy_"`
 
+	// Pull secret to pull the release image to create the ISO
+	PullSecret string `json:"pull_secret,omitempty"`
+
+	// The release image used for creation of ISO
+	ReleaseImage string `json:"release_image,omitempty"`
+
 	// role
 	// Required: true
 	Role *HostRole `json:"role"`

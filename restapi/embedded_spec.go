@@ -8632,6 +8632,14 @@ func init() {
         "proxy": {
           "$ref": "#/definitions/proxy"
         },
+        "pull_secret": {
+          "description": "Pull secret to pull the release image to create the ISO",
+          "type": "string"
+        },
+        "release_image": {
+          "description": "The release image used for creation of ISO",
+          "type": "string"
+        },
         "role": {
           "$ref": "#/definitions/host-role"
         },
@@ -18950,6 +18958,14 @@ func init() {
         },
         "proxy": {
           "$ref": "#/definitions/proxy"
+        },
+        "pull_secret": {
+          "description": "Pull secret to pull the release image to create the ISO",
+          "type": "string"
+        },
+        "release_image": {
+          "description": "The release image used for creation of ISO",
+          "type": "string"
         },
         "role": {
           "$ref": "#/definitions/host-role"

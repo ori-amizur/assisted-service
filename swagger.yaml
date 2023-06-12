@@ -6436,6 +6436,12 @@ definitions:
       skip_installation_disk_cleanup:
         type: boolean
         description: Skip formatting installation disk
+      pull_secret:
+        type: string
+        description: Pull secret to pull the release image to create the ISO
+      release_image:
+        type: string
+        description: The release image used for creation of ISO
 
   ntp_synchronization_request:
     type: object

@@ -112,6 +112,7 @@ func (i *installCmd) getFullInstallerCommand(ctx context.Context, cluster *commo
 		CheckCvo:             swag.Bool(i.instructionConfig.CheckClusterVersion),
 		InstallerImage:       swag.String(i.instructionConfig.InstallerImage),
 		BootDevice:           swag.String(bootdevice),
+		PullSecret:           cluster.PullSecret,
 	}
 
 	// those flags are not used on day2 installation
@@ -137,6 +138,8 @@ func (i *installCmd) getFullInstallerCommand(ctx context.Context, cluster *commo
 		}
 
 		request.OpenshiftVersion = cluster.OpenshiftVersion
+
+		request.ReleaseImage = swag.StringValue(releaseImage.URL)
 	}
 
 	hostInstallerArgs, err := constructHostInstallerArgs(cluster, host, inventory, infraEnv, i.log)
